@@ -34,7 +34,7 @@ for test in tests:
   except RecognitionException as e:
     if test.get( "result", True ):
       print "Test %s failed:" % test.get("name", "unknown")
-      print "Exception: %s" % e
+      print "Exception: %s" % e, ":", e.index, e.token, e.c, e.line, e.charPositionInLine, e.approximateLineInfo
       failed += 1
     next
 

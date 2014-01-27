@@ -29,9 +29,72 @@ except RecognitionException, e:
   from foo_lang import *
 }
 
-
 // PARSING RULES
 
+compilation_unit : statements?;
+statements : (statement)+;
+statement
+  : declaration
+  | directive
+  | extension
+  ;
+
+declaration : constant_declaration;
+
+directive : usage_directive | import_directive;
+
+constant_declaration : 'const' IDENTIFIER literal;
+
+usage_directive : 'use' IDENTIFIER;
+
+import_directive : 'import' IDENTIFIER 'from' IDENTIFIER;
+
+extension : 'extend' IDENTIFIER 'with' object_literal;
+
+// LITERALS
+
+literal : numeric_literal | boolean_literal;
+
+boolean_literal : TRUE | FALSE;
+
+numeric_literal : integer_literal;
+  
+integer_literal
+  : ZERO
+  | NON_ZERO_DIGIT digit*
+  ;
+
+object_literal: LBRACE (property_type_value_list)? RBRACE;
+fragment property_type_value_list: property_type_value (property_type_value_list_tail)*;
+fragment property_type_value : IDENTIFIER COLON IDENTIFIER EQUAL literal;
+fragment property_type_value_list_tail : IDENTIFIER COLON IDENTIFIER EQUAL literal;
+
+// ATOMIC FRAGMENTS
+
+digit : ZERO | NON_ZERO_DIGIT;
+
+ZERO : '0';
+NON_ZERO_DIGIT : ('1'..'9');
+
+TRUE : 'true';
+FALSE : 'false';
+
+UNDERSCORE : '_';
+PLUS : '+';
+MINUS : '-';
+LBRACE : '{';
+RBRACE : '}';
+COLON: ':';
+EQUAL: '=';
+
+IDENTIFIER : ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
+
+// WHITESPACE and COMMENTS
+
+WS      : (' '|'\r'|'\t'|'\u000C'|'\n') { $channel=HIDDEN };
+COMMENT : '%' ~('\n'|'\r')* '\r'? '\n'  { $channel=HIDDEN };
+
+/*
 compilation_unit returns [list] @init { list = [] }
                  : statements? { list = $statements.list }
                  ;
@@ -74,32 +137,4 @@ float_literal returns [instance]
 integer_literal returns [instance]
                 : INTEGER { instance = integer( int($INTEGER.getText())) }
                 ;
-
-// TOKENS
-
-BOOLEAN : 'true'
-	| 'false'
-	;
-
-FLOAT : ('+'|'-')? ('0'..'9')* '.' ('0'..'9')+
-        ;
-
-INTEGER : ('+'|'-')? ('0' | '1'..'9' '0'..'9'*)
-        ;
-
-IDENTIFIER : ('A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-      	   ;
-
-ATOM : ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-     |  '\'' ~('\'')+ '\''
- 	   ;
-
-EQUALS : '='
-       ;
-
-WS  :  (' '|'\r'|'\t'|'\u000C'|'\n') { $channel=HIDDEN }
-    ;
-
-COMMENT
-    : '%' ~('\n'|'\r')* '\r'? '\n' { $channel=HIDDEN }
-    ;
+*/

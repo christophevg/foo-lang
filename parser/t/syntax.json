@@ -1,32 +1,18 @@
 [ 
   { 
-    "name"  : "integer_literal (pos) to variable assignment"
-  , "input" : "Variable = 123"
+    "name"  : "use"
+  , "input" : "use module_name"
   }
  ,{ 
-    "name"  : "integer_literal (neg) to variable assignment"
-  , "input" : "Variable = -123"
+    "name"  : "const"
+  , "input" : "const some_identifier 123"
   }
- ,{ 
-    "name"  : "trailing rubbish"
-  , "input" : "Variable = -123;"
-  , "result": false
+ ,{
+    "name"  : "importing"
+  , "input" : "from module_name import function_name"
   }
- ,{ 
-    "name"  : "boolean_literal (false) to variable assignment"
-  , "input" : "Variable = true"
+ ,{
+    "name"  : "extension"
+  , "input" : "extend module_name with {\n prop1 : type1 = 0\n prop2 : type2 = true\n}"
   }
- ,{ 
-    "name"  : "boolean_literal (true) to variable assignment"
-  , "input" : "Variable = false"
-  }
- ,{ 
-    "name"  : "float_literal to variable assignment"
-  , "input" : "Variable = 123.45"
- }
- ,{ 
-    "name"  : "float_literal to variable assignment"
-  , "input" : "Variable = .45"
-  , "output": "Variable = 0.45"
- }
 ]
