@@ -51,4 +51,4 @@ def parse(string):
   tStream = antlr3.CommonTokenStream(lexer)
   parser  = foo_langParser(tStream)
 
-  return parser.compilation_unit()
+  return parser.start()

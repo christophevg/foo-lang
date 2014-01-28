@@ -7,8 +7,13 @@ BUILD_DIR=$(APP)
 ANTLR_OUT=antlr.out
 
 PARSER=$(APP)/$(APP)Parser.py
+SRC=../heartbeat.foo
 
-all: clean test
+all: clean dump
+	
+dump: $(PARSER)
+	@echo "*** parsing $(DEMO)"
+	$(PYTHON) dump-ast.py $(SRC)
 
 test: $(PARSER)
 	@echo "*** performing $(APP) parser tests"

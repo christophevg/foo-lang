@@ -74,18 +74,17 @@ after nodes receive do function(from, to, payload) {
   // payload is a list of data. we can consider one or more cases
   case payload {
     // e.g. we can check if we find an atom and three variables after is
-    contains [ 'heartbeat', time, sequence, signature ] :
+    contains( [ #heartbeat, time, sequence, signature ] ) {
       // validate signature
       if(sha1([sequence, time]) == signature) {
         from.last_seen = time
         from.sequence  = sequence
       } else {
         from.fail_count++
-        break
       }
       // validate time
       // TODO
-      break
+    }
   }
 }
 
@@ -94,11 +93,6 @@ after nodes receive do function(from, to, payload) {
 @every(heartbeat_interval)
 with nodes.self do function() {
   time = now()
-  // <- is an operator representing "send to"
-  // * here represents all possible nodes (aka broadcasting)
-  // single quoted strings are so called atoms. in code these strings uniquely
-  // identify something. when generated, these are typically replaced by magic
-  // numbers or simply removed in favor of a known order.
-  * <- [ 'heartbeat', this.sequence, time, sha1([this.sequence,time]) ]
+  nodes.broadcast([ #heartbeat, this.sequence, time, sha1([this.sequence,time]) ])
   this.sequence++
 }

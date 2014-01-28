@@ -48,7 +48,7 @@ after nodes transmit do function(from, to, hop, payload) {
 
 after nodes receive do function(from, to, payload) {
   case payload {
-    contains [ 'reputation', of, alpha, beta ] :
+    contains( [ 'reputation', of, alpha, beta ] ) {
       if( from.trust > indirect_threashold ) {
         // taking into account of indirect reputation information
         weight = (2 * from.alpha) /
@@ -56,7 +56,7 @@ after nodes receive do function(from, to, payload) {
         of.alpha += weight * alpha
         of.beta  += weight * beta
       }
-      break
+    }
     else
       // when we see a payload that matches one we were expecting from the 
       // sender we remove it from its queue by removing any items in the queue 
@@ -96,5 +96,5 @@ with nodes do function() {
 // of all nodes we track, we send out reputation information
 @every(broadcast_interval)
 with nodes do function() {
- send to * [ 'reputation', this, this.alpha, this.beta ]
+ nodes.broadcast( [ 'reputation', this, this.alpha, this.beta ] )
 }
