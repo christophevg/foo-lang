@@ -16,7 +16,11 @@ PARSER=$(APP)/$(APP)Parser.py
 
 C_LANG=UTF-8
 
-all: clean dot
+all: clean src
+
+src: $(PARSER)
+	@echo "*** parsing and dumping $(SRC)"
+	@$(PYTHON) dump-src.py $(SRC)
 
 %.dot: %.foo $(PARSER)
 	@echo "*** creating $@ from $<"
@@ -47,8 +51,10 @@ $(PARSER): $(APP).g
 
 clean:
 	@rm -f $(ANTLR_OUT)
-	@(cd $(APP); rm -f $(APP).tokens $(APP)Lexer.py $(APP)Parser.py *.pyc)
 	@rm -f *.dot *.dump
+
+mrproper: clean
+	@(cd $(APP); rm -f $(APP).tokens $(APP)Lexer.py $(APP)Parser.py *.pyc)
 
 .PHONY: test clean
 .PRECIOUS: $(SRC:.foo=.dot)
