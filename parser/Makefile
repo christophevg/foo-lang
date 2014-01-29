@@ -1,5 +1,6 @@
 ANTLR=java -cp antlr-3.1.jar org.antlr.Tool
 PYTHON=/opt/local/bin/python2.7
+DOT=dot -Tpng -o
 
 APP=foo_lang
 
@@ -9,11 +10,24 @@ ANTLR_OUT=antlr.out
 PARSER=$(APP)/$(APP)Parser.py
 SRC=../heartbeat.foo
 
-all: clean dump
-	
-dump: $(PARSER)
-	@echo "*** parsing $(DEMO)"
-	$(PYTHON) dump-ast.py $(SRC)
+C_LANG=UTF-8
+
+all: clean dot
+
+%.dot: %.foo $(PARSER)
+	@echo "*** creating $@ from $<"
+	@$(PYTHON) dump-ast.py $< dot > $@
+
+dot: $(SRC:.foo=.dot)
+	@echo "*** visualizing AST of $<"
+	@$(DOT) $(<:.dot=.png) $< 2> /dev/null
+
+%.dump: %.foo $(PARSER)
+	@echo "*** parsing $(SRC)"
+	@$(PYTHON) dump-ast.py $(SRC) $< dump > $@
+
+dump: $(SRC:.foo=.dump)
+	cat $<
 
 test: $(PARSER)
 	@echo "*** performing $(APP) parser tests"
@@ -26,5 +40,6 @@ $(PARSER): $(APP).g
 clean:
 	@rm -f $(ANTLR_OUT)
 	@(cd $(APP); rm -f $(APP).tokens $(APP)Lexer.py $(APP)Parser.py *.pyc)
+	@rm -f *.dot *.dump
 
 .PHONY: test clean

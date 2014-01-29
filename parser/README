@@ -1,0 +1,16 @@
+README
+
+The parser of foo-lang is built using ANTLR. Currently only ANTLR3 provides a
+runtime target for python. To visualize ASTs, ANTLR provides dottreegen.py. The
+following instructions help installing the required software to have a
+functional setup, identical to the one used in this repository.
+
+Python  : 2.7.5 + py-antlr3 3.1.3
+Graphviz: 2.34.0_4
+
+To be able to use dottreegen.py the following instructions were required:
+http://stackoverflow.com/questions/8754145/install-stringtemplate3-for-python
++ the additional steps outlined in the comments:
+1. goto http://www.antlr2.org/download/antlr-2.7.7.tar.gz
+2. unzip it and go to lib/python directory
+3. run sudo python setup.py install.
