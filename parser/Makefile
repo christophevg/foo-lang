@@ -1,6 +1,6 @@
 ANTLR=java -cp antlr-3.1.jar org.antlr.Tool
 PYTHON=/opt/local/bin/python2.7
-DOT=dot -Tpng -o
+DOT=dot -Nfixedsize=False -Nfontname=Times
 
 APP=foo_lang
 
@@ -18,9 +18,11 @@ all: clean dot
 	@echo "*** creating $@ from $<"
 	@$(PYTHON) dump-ast.py $< dot > $@
 
-dot: $(SRC:.foo=.dot)
+%.pdf: %.dot
 	@echo "*** visualizing AST of $<"
-	@$(DOT) $(<:.dot=.png) $< 2> /dev/null
+	@$(DOT) -Tpdf -o $@ $<
+
+dot: $(SRC:.foo=.pdf)
 
 %.dump: %.foo $(PARSER)
 	@echo "*** parsing $(SRC)"
