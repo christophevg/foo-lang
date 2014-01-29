@@ -13,9 +13,11 @@ options {
 
 // a few virtual tokens, used as identifying node
 tokens {  // must be declared here/before use, not with other real tokens below
-  ROOT;  CONST;  EXTERNAL;  OBJECT;  FUNC_DECL;  ANON_FUNC_DECL;  FUNC_CALL;
-  METHOD_CALL;  LIST;  PROPERTY;  USE;  IMPORT;  EXTEND;  IF;  BLOCK;  VAR;
-  ANNOTATION;  ANNOTATED;  INC;  ASSIGN;  APPLY;  ON;  ATOM;  CASES;  CASE;
+
+  ROOT; CONST; EXTERNAL; OBJECT; FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL;
+  METHOD_CALL; LIST; PROPERTY; USE; IMPORT; EXTEND; IF; BLOCK; VAR; ANNOTATION;
+  ANNOTATED; INC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY; TUPLE;
+
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -31,7 +33,10 @@ def reportError(self, e):
 @parser::members {
 def getMissingSymbol(self, input, e, expectedTokenType, follow):
   # TODO: raise better exception -> RecognitionException?
-  raise RuntimeError("expecting different input...")
+  #raise RuntimeError("expecting different input...")
+  print "Expected:", self.tokenNames[expectedTokenType], \
+        "after", self.getCurrentInputSymbol(input)
+  sys.exit(1)
 }
 
 @rulecatch {
@@ -63,7 +68,7 @@ declaration
   ;
 
 annotated_declaration
-  : annotation apply_declaration -> ^(ANNOTATED apply_declaration)
+  : annotation apply_declaration -> ^(ANNOTATED annotation apply_declaration)
   ;
 
 annotation
@@ -75,23 +80,22 @@ apply_declaration
     -> ^(APPLY variable function_expression)
   ;
 
-constant_declaration : 'const' identifier IS literal
-                       -> ^(CONST identifier literal);
+constant_declaration : 'const' identifier (COLON type)? ASSIGN literal
+                       -> ^(CONST identifier type? literal);
 
 event_handler_declaration
   : event_timing identifier identifier 'do' function_expression
     -> ^(ON event_timing identifier identifier function_expression)
   ;
 
-fragment event_timing: 'before' | 'after';
+event_timing: 'before' | 'after';
 
-function_declaration : 'function' identifier
-                       LPAREN (function_param_list)? RPAREN
-                       function_body
-                       -> ^(FUNC_DECL identifier function_param_list? function_body);
+function_declaration
+  : 'function' identifier LPAREN (function_param_list)? RPAREN function_body
+     -> ^(FUNC_DECL identifier function_param_list? function_body)
+  ;
 function_expression
-  : 'function' identifier? LPAREN (function_param_list)? RPAREN
-     function_body
+  : 'function' identifier? LPAREN (function_param_list)? RPAREN function_body
      -> ^(ANON_FUNC_DECL identifier? function_param_list? function_body)
   | identifier
   ;
@@ -106,6 +110,7 @@ statement
   | if_statement
   | case_statement
   | call_expression
+  | 'return'
   ;
 
 block_statement
@@ -113,13 +118,11 @@ block_statement
   | LBRACE statement+ RBRACE -> ^(BLOCK statement+);
 
 assignment_statement
-  : property_expression '=' expression  -> ^(ASSIGN property_expression expression)
-  | variable '=' expression             -> ^(ASSIGN variable expression)
+  : variable (ASSIGN|ADD|SUB)^ expression
   ;
 
 increment_statement
-  : property_expression '++' -> ^(INC property_expression)
-  | variable '++'            -> ^(INC variable)
+  : variable '++'            -> ^(INC variable)
   ;
 
 if_statement
@@ -130,15 +133,16 @@ if_statement
   ;
 
 case_statement
-  : 'case' expression LBRACE case_clauses? RBRACE
+  : 'case' expression LBRACE case_clauses? else_clause? RBRACE
     -> ^(CASES expression case_clauses?)
   ;
 
-case_clauses  : case_clause*;
+case_clauses: case_clause*;
 case_clause
   : function_call_expression block_statement
     -> ^(CASE function_call_expression block_statement)
   ;
+else_clause: 'else' statement -> ^(CASE 'else' statement);
 
 expression: logical_expression;
 
@@ -174,16 +178,16 @@ multiplicative_expression
   ;
 
 unary_expression
-  : NOT^? primary_expression { if $NOT != None: print "primary as unary" }
+  : NOT^? primary_expression
   ;
 
 primary_expression
   : LPAREN! logical_expression RPAREN!
   | literal
   | call_expression
-  | property_expression
   | variable
   | atom
+  | matching_expression
   ;
 
 call_expression
@@ -191,19 +195,28 @@ call_expression
   | function_call_expression -> ^(FUNC_CALL function_call_expression)
   ;
 
-method_call_expression : identifier DOT! function_call_expression;
-
+// TODO: extract object_expression
+method_call_expression : identifier DOT! (identifier DOT!)* function_call_expression;
 function_call_expression: identifier LPAREN! (argument_list)? RPAREN!;
-fragment argument_list: a+=expression (COMMA a+=expression)* -> ^(LIST $a+);
-
-property_expression: identifier DOT identifier -> ^(PROPERTY identifier identifier);
+argument_list: a+=expression (COMMA a+=expression)* -> ^(LIST $a+);
 
 // functional aliases for identifiers
 // TODO: add more
 variable
-  : identifier -> ^(VAR identifier)
-  | property_expression;
+  : property_expression
+  | identifier           -> ^(VAR identifier)
+  ;
 
+property_expression
+  : o+=identifier DOT (o+=identifier DOT)* p=identifier
+    -> ^(PROPERTY $o+ $p)
+  ;
+
+/*object_expression
+  : identifier DOT object_expression -> ^(OBJECT identifier object_expression)
+  | identifier                       -> ^(OBJECT identifier)
+  ;
+*/
 // DIRECTIVES
 
 directive : usage_directive | import_directive;
@@ -220,19 +233,36 @@ extension : 'extend' identifier 'with' literal
 
 // LITERALS
 
-literal : numeric_literal | boolean_literal | object_literal | list_literal;
-boolean_literal : 'true' | 'false';
-numeric_literal : INTEGER;
+literal: numeric_literal | boolean_literal | object_literal | list_literal;
+boolean_literal: 'true' | 'false';
+numeric_literal: INTEGER | FLOAT;
 object_literal: LBRACE (property_type_value_list)? RBRACE
                 -> ^(OBJECT property_type_value_list?);
-fragment property_type_value_list: property_type_value (property_type_value)*;
-fragment property_type_value : identifier^ COLON! identifier IS! literal;
+property_type_value_list: property_type_value (property_type_value)*;
+property_type_value
+  : identifier COLON type ASSIGN literal
+    -> ^(PROPERTY identifier type literal)
+  ;
 
 atom : '#' identifier -> ^(ATOM identifier);
+
+matching_expression: dontcare | comparison;
+dontcare: UNDERSCORE;
+comparison: comparator^ expression;
+comparator: LT | LTEQ | GT | GTEQ | EQUALS | NOTEQUALS | NOT;
 
 list_literal 
   : LBRACKET RBRACKET -> ^(LIST)
   | LBRACKET i+=expression (COMMA i+=expression)* RBRACKET -> ^(LIST $i+);
+
+type
+  : basic_type '*' -> ^(TYPE ^(MANY basic_type))
+  | basic_type     -> ^(TYPE basic_type)
+  | tuple_type '*' -> ^(TYPE ^(MANY tuple_type))
+  | tuple_type     -> ^(TYPE tuple_type)
+  ;
+basic_type : 'byte' | 'integer' | 'float' | 'boolean' | 'timestamp';
+tuple_type : '[' t+=type (COMMA t+=type)* ']' -> ^(TUPLE $t+);
 
 // to avoid some keywords to be excluded from being an identifier, we add them
 // again here.
@@ -242,6 +272,7 @@ identifier: IDENTIFIER | 'from' | 'import' | 'with' | 'use' | 'extend';
 // ATOMIC FRAGMENTS
 
 INTEGER: '0' | ('1'..'9') ('0'..'9')*;
+FLOAT: ('0'..'9')+ '.' ('0'..'9')*;
 
 UNDERSCORE : '_';
 PLUS : '+';
@@ -253,11 +284,13 @@ RPAREN 	: ')';
 LBRACKET : '[';
 RBRACKET : ']';
 COLON: ':';
-IS: '=';
 EQUALS: '==';
 NOTEQUALS: '!=';
 COMMA: ',';
 DOT: '.';
+ASSIGN: '=';
+ADD: '+=';
+SUB: '-=';
 
 AND: 'and';
 OR: 'or';

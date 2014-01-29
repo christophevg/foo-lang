@@ -10,11 +10,11 @@
 // see heartbeat.dsl. only functional and additional DSL aspects will be added
 // in comments here.
 
-const forward_timeout     = 1000
-const validation_interval = 5000
-const max_fail_count      =    3
-const aging_weight        =    0.98     // factor to age reputation
-const indirect_threshold  =    0.9      // lower limit before including indirect
+const forward_timeout             = 1000
+const validation_interval         = 5000
+const max_fail_count              =    3
+const aging_weight        : float = 0.98  // factor to age reputation
+const indirect_threshold  : float = 0.9   // lower limit for including indirect
 
 use nodes
 
@@ -37,7 +37,7 @@ after nodes transmit do function(from, to, hop, payload) {
 
   // count the total number of packets that are being sent and for which we
   // expect to see a forward action
-  if ! payload.contains(['reputation']) {
+  if( ! payload.contains([#reputation]) ) {
     hop.msg_count++
   }
 
@@ -48,7 +48,7 @@ after nodes transmit do function(from, to, hop, payload) {
 
 after nodes receive do function(from, to, payload) {
   case payload {
-    contains( [ 'reputation', of, alpha, beta ] ) {
+    contains( [ #reputation, of, alpha, beta ] ) {
       if( from.trust > indirect_threashold ) {
         // taking into account of indirect reputation information
         weight = (2 * from.alpha) /
@@ -86,15 +86,15 @@ with nodes do function() {
 
   // notify bad node
   if(this.trust < 0.25) {
-    send to this [ 'excluded' ]
+    nodes.send_to(this, [ #excluded ])
   }
 
   // reset message counter
-  this.msg_count = 0;
+  this.msg_count = 0
 }
 
 // of all nodes we track, we send out reputation information
 @every(broadcast_interval)
 with nodes do function() {
- nodes.broadcast( [ 'reputation', this, this.alpha, this.beta ] )
+ nodes.broadcast( [ #reputation, this, this.alpha, this.beta ] )
 }
