@@ -1,4 +1,4 @@
-# foo_lang/base.py
+# base.py
 # author: Christophe VG
 
 # Base class for all semantic model classes
