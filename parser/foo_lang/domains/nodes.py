@@ -5,6 +5,6 @@
 
 from base import base
 
-class nodes(base):
+class Nodes(base):
   def __repr__(self):
-    return "use nodes"
+    return "nodes"

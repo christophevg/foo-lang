@@ -13,11 +13,9 @@ options {
 
 // a few virtual tokens, used as identifying node
 tokens {  // must be declared here/before use, not with other real tokens below
-
   ROOT; CONST; EXTERNAL; OBJECT; FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL;
-  METHOD_CALL; LIST; PROPERTY; USE; IMPORT; EXTEND; IF; BLOCK; VAR; ANNOTATION;
+  METHOD_CALL; LIST; PROPERTY; IMPORT; EXTEND; IF; BLOCK; VAR; ANNOTATION;
   ANNOTATED; INC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY; TUPLE;
-
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -219,9 +217,7 @@ property_expression
 */
 // DIRECTIVES
 
-directive : usage_directive | import_directive;
-
-usage_directive : 'use' identifier -> ^(USE identifier);
+directive : import_directive;
 
 import_directive : 'from' identifier 'import' identifier
                    -> ^(IMPORT identifier identifier);

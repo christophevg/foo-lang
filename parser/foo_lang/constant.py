@@ -11,7 +11,8 @@ class Constant(base):
     self.type  = type
     self.value = value
 
-  def __repr__(self):
-    return "const " + self.name \
+  def to_string(self, indent):
+    return "  " * indent + \
+           "const " + self.name \
            + ((" : " + self.type) if self.type != None else "") \
            + " = " + self.value

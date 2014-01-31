@@ -20,11 +20,6 @@ const validation_interval    = 5000    // check nodes every 5 seconds
 from crypto import sha1
 from time   import now
 
-// the nodes modules provides functionality related to nodes' validation and
-// communication. modules consist of a combination of python code and C
-// templates and drive the code generation.
-use nodes
-
 // modules can be extended. the implications can differ. here the internal
 // representation of a node is extended with some properties that are specific
 // to this algorithm. the nodes module already implements things like unique
@@ -38,6 +33,10 @@ extend nodes with {
   trust      : boolean   = true    // we trust nodes until otherwise proven
   sequence   : byte      = 0
 }
+
+// ==> relate to configuration ?
+// ==> voorbeelden andere domeinen -> algemeenheid "extends"
+
 // note: the nodes module keeps track of all nodes it encounters. the very first
 // node is our own node, which can be referenced through nodes.self
 
@@ -53,16 +52,16 @@ extend nodes with {
 
 // every node is validated using this function at the validation_interval.
 @every(validation_interval)
-with nodes do function() {
+with nodes do function(node) {
   // validate if the time that passed since the last heartbeat isn't too long
-  if( now() - this.last_seen > max_last_seen_interval ) {
+  if( now() - node.last_seen > max_last_seen_interval ) {
     // the heartbeat is late, let's track this incident
-    this.fail_count++
+    node.fail_count++
   }
 
   // make sure that the number of failures doesn't exceed our limits
-  if( this.fail_count > max_fail_count ) {
-    this.trust = false
+  if( node.fail_count > max_fail_count ) {
+    node.trust = false
   }
 }
 
@@ -91,8 +90,8 @@ after nodes receive do function(from, to, payload) {
 // adding a send function to our own node, with an execution strategy to have it
 // executed every some milliseconds.
 @every(heartbeat_interval)
-with nodes.self do function() {
+with nodes.self do function(node) {
   time = now()
-  nodes.broadcast([ #heartbeat, this.sequence, time, sha1([this.sequence,time]) ])
-  this.sequence++
+  nodes.broadcast([ #heartbeat, node.sequence, time, sha1([node.sequence,time]) ])
+  node.sequence++
 }

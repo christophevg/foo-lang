@@ -16,8 +16,6 @@ const max_fail_count              =    3
 const aging_weight        : float = 0.98  // factor to age reputation
 const indirect_threshold  : float = 0.9   // lower limit for including indirect
 
-use nodes
-
 extend nodes with {
   queue      : [timestamp, byte*]*   = []
   msg_count  : byte                  = 0
@@ -71,30 +69,30 @@ after nodes receive do function(from, to, payload) {
 // node (aka non-forwarded payloads) and recomputing the reputation taking into
 // account these new 
 @every(validation_interval)
-with nodes do function() {
+with nodes do function(node) {
   // the remove function returns the number of removals, which we simply
   // use as failure count. the matching here uses the don't care operator for
   // the payload and uses a boolean expression to match passed timeouts
-  failures = this.queue.remove([ < now(), _ ])
+  failures = node.queue.remove([ < now(), _ ])
 
   // update the reputation parameters
-  this.alpha = (aging_weight * this.alpha) + this.msg_count - failures
-  this.beta  = (aging_weight * this.beta ) + failures
+  node.alpha = (aging_weight * node.alpha) + node.msg_count - failures
+  node.beta  = (aging_weight * node.beta ) + failures
 
   // and compute trust
-  this.trust = (this.alpha + 1) / (this.alpha + this.beta + 2)
+  node.trust = (node.alpha + 1) / (node.alpha + node.beta + 2)
 
   // notify bad node
-  if(this.trust < 0.25) {
-    nodes.send_to(this, [ #excluded ])
+  if(node.trust < 0.25) {
+    node.send_to([ #excluded ])
   }
 
   // reset message counter
-  this.msg_count = 0
+  node.msg_count = 0
 }
 
 // of all nodes we track, we send out reputation information
 @every(broadcast_interval)
-with nodes do function() {
- nodes.broadcast( [ #reputation, this, this.alpha, this.beta ] )
+with nodes do function(node) {
+ nodes.send_to( [ #reputation, node, node.alpha, node.beta ] )
 }
