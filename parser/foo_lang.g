@@ -15,7 +15,8 @@ options {
 tokens {  // must be declared here/before use, not with other real tokens below
   ROOT; CONST; EXTERNAL; OBJECT; FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL;
   METHOD_CALL; LIST; PROPERTY; IMPORT; EXTEND; IF; BLOCK; VAR; ANNOTATION;
-  ANNOTATED; INC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY; TUPLE;
+  ANNOTATED; INC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY; TUPLE; VALUE;
+  DOMAIN;
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -74,12 +75,22 @@ annotation
   ;
 
 apply_declaration
-  : 'with' variable 'do' function_expression
-    -> ^(APPLY variable function_expression)
+  : 'with' identifier DOT identifier 'do' function_expression
+    -> ^(APPLY ^(PROPERTY identifier identifier) function_expression)
+  | 'with' identifier 'do' function_expression
+    -> ^(APPLY ^(DOMAIN identifier) function_expression)
   ;
 
-constant_declaration : 'const' identifier (COLON type)? ASSIGN literal
-                       -> ^(CONST identifier type? literal);
+constant_declaration
+  : 'const' identifier COLON type ASSIGN literal
+    -> ^(CONST ^(VALUE identifier type literal))
+  | 'const' identifier ASSIGN FLOAT
+    -> ^(CONST ^(VALUE identifier ^(TYPE TYPE['float']) FLOAT))
+  | 'const' identifier ASSIGN INTEGER
+    -> ^(CONST ^(VALUE identifier ^(TYPE TYPE['integer']) INTEGER))
+  | 'const' identifier ASSIGN boolean_literal
+    -> ^(CONST ^(VALUE identifier ^(TYPE TYPE['boolean']) boolean_literal))
+  ;
 
 event_handler_declaration
   : event_timing identifier identifier 'do' function_expression
@@ -237,7 +248,7 @@ object_literal: LBRACE (property_type_value_list)? RBRACE
 property_type_value_list: property_type_value (property_type_value)*;
 property_type_value
   : identifier COLON type ASSIGN literal
-    -> ^(PROPERTY identifier type literal)
+    -> ^(PROPERTY ^(VALUE identifier type literal))
   ;
 
 atom : '#' identifier -> ^(ATOM identifier);

@@ -1,5 +1,5 @@
 IMG_TYPE=pdf
-SRC=../reputation.foo
+SRC=../heartbeat.foo
 
 ANTLR=java -cp antlr-3.1.jar org.antlr.Tool
 PYTHON=/opt/local/bin/python2.7
@@ -52,6 +52,7 @@ $(PARSER): $(APP).g
 clean:
 	@rm -f $(ANTLR_OUT)
 	@rm -f *.dot *.dump
+	@rm -f ../*.{dot,png,pdf,dump}
 
 mrproper: clean
 	@(cd $(APP); rm -f $(APP).tokens $(APP)Lexer.py $(APP)Parser.py *.pyc)
