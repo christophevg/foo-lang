@@ -34,9 +34,6 @@ extend nodes with {
   sequence   : byte      = 0
 }
 
-// ==> relate to configuration ?
-// ==> voorbeelden andere domeinen -> algemeenheid "extends"
-
 // note: the nodes module keeps track of all nodes it encounters. the very first
 // node is our own node, which can be referenced through nodes.self
 
