@@ -14,11 +14,14 @@ from nodes import Nodes
 
 class Model():
   def __init__(self):
-    self.constants = []
-    self.externals = {} # function => module (unique function names)
+    self.constants  = []
+    self.externals  = {}     # function => module (unique function names)
 
-    # set up the functional domain
-    self.domain = Nodes()
+    self.executions = []
+
+    # set up the functional domain, all of them and the current one ;-)
+    self.domains = { 'nodes' : Nodes() }
+    self.domain = self.domains['nodes']
 
   # entry point of request for conversion to string
   def __repr__(self):
@@ -34,5 +37,8 @@ class Model():
 
     # domain with extensions
     string += str(self.domain) + "\n"
+
+    # functions & event handlers (optionally with annotations)
+    
 
     return string

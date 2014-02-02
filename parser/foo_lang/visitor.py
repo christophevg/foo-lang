@@ -28,12 +28,14 @@ class Visitor():
 
   # handle the root
   def handle_root(self, tree):
+    assert tree.text == "ROOT"
     for child in tree.getChildren():
       self.visit(child)
     return None
 
   # handle a constant definition
   def handle_constant(self, tree):
+    assert tree.text == "CONST"
     [name, type, value] = self.tree2ntv(tree.getChildren()[0])
     constant = Constant(name,type,value)
     self.model.constants.append(constant)
@@ -41,6 +43,7 @@ class Visitor():
 
   # apply extensions to domains
   def handle_extend(self, tree):
+    assert tree.text == "EXTEND"
     children = tree.getChildren()
     domain_name = children[0].text
     extension = self.tree2object(children[1])
@@ -49,6 +52,7 @@ class Visitor():
   
   # keep track of imports
   def handle_import(self, tree):
+    assert tree.text == "IMPORT"
     children = tree.getChildren()
     module   = children[0].text
     function = children[1].text
@@ -60,9 +64,10 @@ class Visitor():
     assert tree.text == "ANNOTATED"
     children = tree.getChildren()
     annotated = self.visit(children[1])
+    # TODO
     return None
   
-  #
+  # TODO
   def handle_application(self, tree):
     assert tree.text == "APPLY"
     
@@ -80,6 +85,7 @@ class Visitor():
 
   # extract an object
   def tree2object(self, tree):
+    assert tree.text == "OBJECT"
     obj = Object()
     children = tree.getChildren()
     for child in children:

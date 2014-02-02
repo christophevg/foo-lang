@@ -1,11 +1,15 @@
-# base.py
+# domains.py
 # author: Christophe VG
 
-# Base class for all domain classes
+# Base classes for domains
 
-class base():
+class Domain():
   def __init__(self):
     pass
-
+  
   def extend_with(self, extension):
     raise NotImplementedError("extend_with")
+
+class Scope():
+  def __init__(self, domain):
+    self.domain = domain
