@@ -5,7 +5,7 @@
 
 import sys
 
-from foo_lang import foo_lang
+from foo_lang import api
 from antlr3 import RecognitionException
 import antlr3.extras
 
@@ -23,7 +23,7 @@ def print_indented(tree, indent):
 try:
   input = open(sys.argv[1]).read()
   lines = input.split("\n")
-  tree = foo_lang.parse(input).tree
+  tree = api.parse(input).tree
 
   if style == "dot":
     print antlr3.extras.toDOT(tree)

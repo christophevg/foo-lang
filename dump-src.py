@@ -5,12 +5,12 @@
 
 import sys
 
-from foo_lang import foo_lang
+from foo_lang import api
 
 if len(sys.argv) < 2:
   print "ERROR: please provide a foo-lang source file"
   sys.exit(2)
 
 input = open(sys.argv[1]).read()
-model = foo_lang.load(input)
+model = api.load(input)
 print model

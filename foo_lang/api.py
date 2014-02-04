@@ -6,11 +6,11 @@
 import antlr3
 from antlr3 import RecognitionException
 
-from foo_langLexer  import foo_langLexer
-from foo_langParser import foo_langParser
+from foo_lang.parser.foo_langLexer  import foo_langLexer
+from foo_lang.parser.foo_langParser import foo_langParser
 
-from model import Model
-from visitor import Visitor
+from foo_lang.generator.model import Model
+from foo_lang.generator.visitor import Visitor
 
 def parse(string):
   cStream = antlr3.StringStream(string)

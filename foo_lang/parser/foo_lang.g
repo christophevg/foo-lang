@@ -80,16 +80,18 @@ apply_declaration
   | 'with' identifier 'do' function_expression
     -> ^(APPLY ^(DOMAIN identifier) function_expression)
   ;
+  
+constant_declaration: 'const' typed_value -> ^(CONST typed_value);
 
-constant_declaration
-  : 'const' identifier COLON type ASSIGN literal
-    -> ^(CONST ^(VALUE identifier type literal))
-  | 'const' identifier ASSIGN FLOAT
-    -> ^(CONST ^(VALUE identifier ^(TYPE TYPE['float']) FLOAT))
-  | 'const' identifier ASSIGN INTEGER
-    -> ^(CONST ^(VALUE identifier ^(TYPE TYPE['integer']) INTEGER))
-  | 'const' identifier ASSIGN boolean_literal
-    -> ^(CONST ^(VALUE identifier ^(TYPE TYPE['boolean']) boolean_literal))
+typed_value
+  :  identifier COLON type ASSIGN literal
+    -> ^(VALUE identifier type literal)
+  | identifier ASSIGN FLOAT
+    -> ^(VALUE identifier ^(TYPE TYPE['float']) FLOAT)
+  | identifier ASSIGN INTEGER
+    -> ^(VALUE identifier ^(TYPE TYPE['integer']) INTEGER)
+  | identifier ASSIGN boolean_literal
+    -> ^(VALUE identifier ^(TYPE TYPE['boolean']) boolean_literal)
   ;
 
 event_handler_declaration
@@ -246,10 +248,7 @@ numeric_literal: INTEGER | FLOAT;
 object_literal: LBRACE (property_type_value_list)? RBRACE
                 -> ^(OBJECT property_type_value_list?);
 property_type_value_list: property_type_value (property_type_value)*;
-property_type_value
-  : identifier COLON type ASSIGN literal
-    -> ^(PROPERTY ^(VALUE identifier type literal))
-  ;
+property_type_value: typed_value -> ^(PROPERTY typed_value);
 
 atom : '#' identifier -> ^(ATOM identifier);
 

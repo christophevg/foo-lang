@@ -5,8 +5,8 @@ runtime target for python. To visualize ASTs, ANTLR provides dottreegen.py. The
 following instructions help installing the required software to have a
 functional setup, identical to the one used in this repository.
 
-Python  : 2.7.5 + py-antlr3 3.1.3
-Graphviz: 2.34.0_4
+Python  : 2.7.6 + py-antlr3 3.1.3
+Graphviz: 2.36.0_0
 
 To be able to use dottreegen.py the following instructions were required:
 http://stackoverflow.com/questions/8754145/install-stringtemplate3-for-python
@@ -14,3 +14,21 @@ http://stackoverflow.com/questions/8754145/install-stringtemplate3-for-python
 1. goto http://www.antlr2.org/download/antlr-2.7.7.tar.gz
 2. unzip it and go to lib/python directory
 3. run sudo python setup.py install.
+
+Mac OS X + MacPorts minimal survival instructions:
+$ sudo port selfupdate
+$ sudo port install python27
+$ sudo port install py-antlr3
+$ sudo port install graphviz
+
+$ wget http://pypi.python.org/packages/source/s/stringtemplate3/stringtemplate3-3.1.tar.gz
+$ tar -zxvf stringtemplate3-3.1.tar.gz
+$ cd stringtemplate3
+$ sudo /opt/local/bin/python2.7 setup.py install
+$ cd ..
+
+$ wget http://www.antlr2.org/download/antlr-2.7.7.tar.gz
+$ tar -zxvf antlr-2.7.7.tar.gz
+$ cd antlr-2.7.7/lib/python
+$ sudo /opt/local/bin/python2.7 setup.py install
+$ cd ../..

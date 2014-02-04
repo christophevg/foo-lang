@@ -1,8 +1,8 @@
 IMG_TYPE=pdf
-SRC=../heartbeat.foo
+SRC=heartbeat.foo
 
-ANTLR=java -cp antlr-3.1.jar org.antlr.Tool
-PYTHON=/opt/local/bin/python2.7
+ANTLR=java -cp lib/antlr-3.1.jar org.antlr.Tool
+PYTHON=PYTHONPATH=. /opt/local/bin/python2.7
 
 DOT=dot -Nfixedsize=False -Nfontname=Times-Roman -Nshape=rectangle \
 				-T$(IMG_TYPE) -o
@@ -12,11 +12,9 @@ APP=foo_lang
 BUILD_DIR=$(APP)
 ANTLR_OUT=antlr.out
 
-PARSER=$(APP)/$(APP)Parser.py
+PARSER=$(APP)/parser/$(APP)Parser.py
 
-C_LANG=UTF-8
-
-all: clean src
+all: clean test
 
 src: $(PARSER)
 	@echo "*** parsing and dumping $(SRC)"
@@ -41,12 +39,12 @@ dump: $(SRC:.foo=.dump)
 	cat $<
 
 test: $(PARSER)
-	@echo "*** performing $(APP) parser tests"
-	@(cd t; $(PYTHON) test.py syntax.json)
+	@echo "*** performing $(APP) tests"
+	$(PYTHON) test/test-parser.py
 
-$(PARSER): $(APP).g
+$(PARSER): $(APP)/parser/$(APP).g
 	@echo "*** generating $(APP) parser"
-	@$(ANTLR) -o $(APP) $< > $(ANTLR_OUT) 2>&1 || (cat $(ANTLR_OUT); false)
+	@$(ANTLR) $< > $(ANTLR_OUT) 2>&1 || (cat $(ANTLR_OUT); false)
 	@rm -f $(ANTLR_OUT)
 
 clean:
@@ -55,7 +53,8 @@ clean:
 	@rm -f ../*.{dot,png,pdf,dump}
 
 mrproper: clean
-	@(cd $(APP); rm -f $(APP).tokens $(APP)Lexer.py $(APP)Parser.py *.pyc)
+	@(cd $(APP)/parser/; \
+		rm -f $(APP).tokens $(APP)Lexer.py $(APP)Parser.py *.pyc $(APP)__.g)
 
 .PHONY: test clean
 .PRECIOUS: $(SRC:.foo=.dot)
