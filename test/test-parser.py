@@ -6,24 +6,39 @@
 import unittest
 
 from foo_lang import api
+from antlr3 import RecognitionException
 
 class TestParser(unittest.TestCase):
+  pass
 
-  def test_const(self):
-    input = "const some_identifier = 123"
-    tree = api.parse(input).tree
-    # no exception means success (testing model is something else)
+good = { "const"  : "const some_identifier = 123",
+         "import" : "from module_name import function_name",
+         "extend" : "extend module_name with {prop1 = 0 prop2 : boolean = true}"
+       }
 
-  def test_import(self):
-    input = "from module_name import function_name"
-    tree = api.parse(input).tree
-    # no exception means success (testing model is something else)
+bad = { "bad_identifier" : "const 123test = 123"
+      }
 
-  def test_extend(self):
-    input = "extend module_name with {prop1 = 0 prop2 : boolean = true}"
-    tree = api.parse(input).tree
-    # no exception means success (testing model is something else)
+def test_good(input):
+  def test(self):
+    api.parse(input)
+  return test
+
+def test_bad(input):
+  def test(self):
+    self.assertRaises(RecognitionException, api.parse, input)
+  return test
 
 if __name__ == '__main__':
+  for test in good:
+    test_name = 'test_%s' % test
+    test = test_good(good[test])
+    setattr(TestParser, test_name, test)
+
+  for test in bad:
+    test_name = 'test_%s' % test
+    test = test_bad(bad[test])
+    setattr(TestParser, test_name, test)
+
   suite = unittest.TestLoader().loadTestsFromTestCase(TestParser)
   unittest.TextTestRunner(verbosity=2).run(suite)

@@ -40,7 +40,7 @@ dump: $(SRC:.foo=.dump)
 
 test: $(PARSER)
 	@echo "*** performing $(APP) tests"
-	$(PYTHON) test/test-parser.py
+	@$(PYTHON) test/test-parser.py
 
 $(PARSER): $(APP)/parser/$(APP).g
 	@echo "*** generating $(APP) parser"
