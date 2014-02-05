@@ -29,16 +29,16 @@ def test_bad(input):
     self.assertRaises(RecognitionException, api.parse, input)
   return test
 
+for test in good:
+  test_name = 'test_%s' % test
+  test = test_good(good[test])
+  setattr(TestParser, test_name, test)
+
+for test in bad:
+  test_name = 'test_%s' % test
+  test = test_bad(bad[test])
+  setattr(TestParser, test_name, test)
+
 if __name__ == '__main__':
-  for test in good:
-    test_name = 'test_%s' % test
-    test = test_good(good[test])
-    setattr(TestParser, test_name, test)
-
-  for test in bad:
-    test_name = 'test_%s' % test
-    test = test_bad(bad[test])
-    setattr(TestParser, test_name, test)
-
   suite = unittest.TestLoader().loadTestsFromTestCase(TestParser)
   unittest.TextTestRunner(verbosity=2).run(suite)

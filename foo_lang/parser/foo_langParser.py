@@ -1,4 +1,4 @@
-# $ANTLR 3.1 foo_lang/parser/foo_lang.g 2014-02-04 23:15:40
+# $ANTLR 3.1 foo_lang/parser/foo_lang.g 2014-02-05 11:56:56
 
 import sys
 from antlr3 import *
@@ -638,7 +638,7 @@ class foo_langParser(Parser):
                     stream_apply_declaration.add(apply_declaration12.tree)
 
                 # AST Rewrite
-                # elements: annotation, apply_declaration
+                # elements: apply_declaration, annotation
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -896,7 +896,7 @@ class foo_langParser(Parser):
                         stream_function_expression.add(function_expression20.tree)
 
                     # AST Rewrite
-                    # elements: identifier, function_expression, identifier
+                    # elements: identifier, identifier, function_expression
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -957,7 +957,7 @@ class foo_langParser(Parser):
                         stream_function_expression.add(function_expression24.tree)
 
                     # AST Rewrite
-                    # elements: function_expression, identifier
+                    # elements: identifier, function_expression
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -1231,7 +1231,7 @@ class foo_langParser(Parser):
                         stream_literal.add(literal31.tree)
 
                     # AST Rewrite
-                    # elements: type, literal, identifier
+                    # elements: identifier, literal, type
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -1280,7 +1280,7 @@ class foo_langParser(Parser):
                         stream_FLOAT.add(FLOAT34)
 
                     # AST Rewrite
-                    # elements: FLOAT, identifier
+                    # elements: identifier, FLOAT
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -1393,7 +1393,7 @@ class foo_langParser(Parser):
                         stream_boolean_literal.add(boolean_literal40.tree)
 
                     # AST Rewrite
-                    # elements: boolean_literal, identifier
+                    # elements: identifier, boolean_literal
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -1517,7 +1517,7 @@ class foo_langParser(Parser):
                     stream_function_expression.add(function_expression45.tree)
 
                 # AST Rewrite
-                # elements: identifier, event_timing, function_expression, identifier
+                # elements: identifier, identifier, event_timing, function_expression
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1719,7 +1719,7 @@ class foo_langParser(Parser):
                     stream_function_body.add(function_body52.tree)
 
                 # AST Rewrite
-                # elements: function_param_list, identifier, function_body
+                # elements: function_body, identifier, function_param_list
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -1889,7 +1889,7 @@ class foo_langParser(Parser):
                         stream_function_body.add(function_body58.tree)
 
                     # AST Rewrite
-                    # elements: function_param_list, identifier, function_body
+                    # elements: identifier, function_body, function_param_list
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -2865,7 +2865,7 @@ class foo_langParser(Parser):
                         stream_statement.add(statement86.tree)
 
                     # AST Rewrite
-                    # elements: statement, statement, expression
+                    # elements: expression, statement, statement
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -2923,7 +2923,7 @@ class foo_langParser(Parser):
                         stream_statement.add(statement91.tree)
 
                     # AST Rewrite
-                    # elements: expression, statement
+                    # elements: statement, expression
                     # token labels: 
                     # rule labels: retval
                     # token list labels: 
@@ -3077,7 +3077,7 @@ class foo_langParser(Parser):
                     stream_RBRACE.add(RBRACE97)
 
                 # AST Rewrite
-                # elements: case_clauses, expression
+                # elements: expression, case_clauses
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3252,7 +3252,7 @@ class foo_langParser(Parser):
                     stream_block_statement.add(block_statement100.tree)
 
                 # AST Rewrite
-                # elements: block_statement, function_call_expression
+                # elements: function_call_expression, block_statement
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 
@@ -3344,7 +3344,7 @@ class foo_langParser(Parser):
                     stream_statement.add(statement102.tree)
 
                 # AST Rewrite
-                # elements: statement, 74
+                # elements: 74, statement
                 # token labels: 
                 # rule labels: retval
                 # token list labels: 

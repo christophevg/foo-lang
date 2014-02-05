@@ -40,7 +40,7 @@ dump: $(SRC:.foo=.dump)
 
 test: $(PARSER)
 	@echo "*** performing $(APP) tests"
-	@$(PYTHON) test/test-parser.py
+	@$(PYTHON) test/all.py
 
 $(PARSER): $(APP)/parser/$(APP).g
 	@echo "*** generating $(APP) parser"
@@ -55,6 +55,7 @@ clean:
 mrproper: clean
 	@(cd $(APP)/parser/; \
 		rm -f $(APP).tokens $(APP)Lexer.py $(APP)Parser.py *.pyc $(APP)__.g)
+	@find . -name \*.pyc -type f -delete
 
 .PHONY: test clean
 .PRECIOUS: $(SRC:.foo=.dot)

@@ -5,12 +5,7 @@
 
 import os, sys, inspect
 
-# use this if you want to include modules from a subforder
-cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"domains")))
-if cmd_subfolder not in sys.path:
-  sys.path.insert(0, cmd_subfolder)
-
-from nodes import Nodes
+from foo_lang.semantic.domains.nodes import Nodes
 
 class Model():
   def __init__(self):
@@ -36,7 +31,8 @@ class Model():
       string += "from " + self.externals[function] + " import " + function + "\n"
 
     # domain with extensions
-    string += str(self.domain) + "\n"
+    domain = str(self.domain)
+    if domain != "": string += str(self.domain) + "\n"
 
     # functions & event handlers (optionally with annotations)
     
