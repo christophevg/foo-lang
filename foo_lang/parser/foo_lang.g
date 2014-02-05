@@ -13,7 +13,7 @@ options {
 
 // a few virtual tokens, used as identifying node
 tokens {  // must be declared here/before use, not with other real tokens below
-  ROOT; CONST; EXTERNAL; OBJECT; FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL;
+  ROOT; MODULE; CONST; EXTERNAL; OBJECT; FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL;
   METHOD_CALL; LIST; PROPERTY; IMPORT; EXTEND; IF; BLOCK; VAR; ANNOTATION;
   ANNOTATED; INC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY; TUPLE; VALUE;
   DOMAIN;
@@ -31,11 +31,9 @@ def reportError(self, e):
 
 @parser::members {
 def getMissingSymbol(self, input, e, expectedTokenType, follow):
-  # TODO: raise better exception -> RecognitionException?
-  #raise RuntimeError("expecting different input...")
-  print "Expected:", self.tokenNames[expectedTokenType], \
-        "after", self.getCurrentInputSymbol(input)
-  sys.exit(1)
+#  print "Expected:", self.tokenNames[expectedTokenType], \
+#        "after", self.getCurrentInputSymbol(input)
+  raise RecognitionException(input)
 }
 
 @rulecatch {
@@ -49,7 +47,11 @@ except RecognitionException, e:
 
 // PARSING RULES
 
-start : instructions? EOF -> ^(ROOT instructions?);
+start : modules? EOF -> ^(ROOT modules?);
+
+modules : (module)*;
+module : 'module' identifier instructions -> ^(MODULE identifier instructions);
+
 instructions : (instruction)*;
 instruction
   : declaration

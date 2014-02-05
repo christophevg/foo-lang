@@ -12,18 +12,17 @@ class Nodes(Domain):
     self.extensions   = []
     
     self.scope = {
-                   'nodes'      : AllNodes(self),
-                   'nodes.self' : OwnNode(self)
+                   "nodes"      : AllNodes(self),
+                   "nodes.self" : OwnNode(self)
                  }
 
-  def __repr__(self):
-    return "\n".join( [ "extend nodes with " + str(ext) \
-                        for ext in self.extensions ] )
-
+  def to_string(self, level):
+    return "  " * level + "nodes"
+  
 class AllNodes(Scope):
-  def __repr__(self):
-    return "nodes"
+  def to_string(self, level):
+    return "  " * level + "nodes"
   
 class OwnNode(Scope):
-  def __repr__(self):
-    return "nodes.self"
+  def to_string(self, level):
+    return "  " * level + "nodes.self"

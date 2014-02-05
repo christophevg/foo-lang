@@ -3,20 +3,26 @@
 
 # Implementations of types
 
-class Object():
+from foo_lang.semantic.model import base
+
+class Object(base):
   def __init__(self):
     self.properties = []
 
-  def __repr__(self):
-    return "{\n" + \
-            "\n".join([ str(property) for property in self.properties]) + \
-            "\n}"
+  def to_string(self, level):
+    string = "  " * level + "{";
+    if self.properties != []: string += "\n"
+    for property in self.properties:
+      string += "  " * (level+1) + str(property) + "\n"
+    string += "  " * level + "}"
+    return string
 
-class Property():
+class Property(base):
   def __init__(self, name, type, value):
     self.name  = name
     self.type  = type
     self.value = value
   
-  def __repr__(self):
-    return self.name + " : " + self.type + " = " + self.value
+  def to_string(self, level):
+    return "  " * level + \
+           self.name + " : " + self.type + " = " + self.value

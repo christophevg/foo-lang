@@ -3,13 +3,12 @@
 
 # Base classes for domains
 
-class Domain():
+from foo_lang.semantic.model import base
+
+class Domain(base):
   def __init__(self):
     pass
-  
-  def extend_with(self, extension):
-    raise NotImplementedError("extend_with")
 
-class Scope():
+class Scope(base):
   def __init__(self, domain):
     self.domain = domain

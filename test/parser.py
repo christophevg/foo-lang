@@ -16,7 +16,8 @@ good = { "const"  : "const some_identifier = 123",
          "extend" : "extend module_name with {prop1 = 0 prop2 : boolean = true}"
        }
 
-bad = { "bad_identifier" : "const 123test = 123"
+bad = { "missing_module" : "const test = 123",
+        "bad_identifier" : "module bad const 123test = 123"
       }
 
 def test_good(input):
@@ -31,7 +32,7 @@ def test_bad(input):
 
 for test in good:
   test_name = 'test_%s' % test
-  test = test_good(good[test])
+  test = test_good("module test " + good[test])
   setattr(TestParser, test_name, test)
 
 for test in bad:

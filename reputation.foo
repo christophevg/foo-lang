@@ -10,6 +10,8 @@
 // see heartbeat.dsl. only functional and additional DSL aspects will be added
 // in comments here.
 
+module reputation
+
 const forward_timeout             = 1000
 const validation_interval         = 5000
 const max_fail_count              =    3

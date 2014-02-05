@@ -3,7 +3,7 @@
 
 # Part of the semantic model
 
-from foo_lang.semantic.base import base
+from foo_lang.semantic.model import base
 
 class Constant(base):
   def __init__(self, name, type, value):

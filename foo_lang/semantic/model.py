@@ -1,40 +1,66 @@
 # model.py
 # author: Christophe VG
 
-# The semantic model container
-
-import os, sys, inspect
-
-from foo_lang.semantic.domains.nodes import Nodes
-
-class Model():
-  def __init__(self):
-    self.constants  = []
-    self.externals  = {}     # function => module (unique function names)
-
-    self.executions = []
-
-    # set up the functional domain, all of them and the current one ;-)
-    self.domains = { 'nodes' : Nodes() }
-    self.domain = self.domains['nodes']
-
+# Technical base class for all semantic model classes
+class base():
   # entry point of request for conversion to string
   def __repr__(self):
-    string = ""
+    return self.to_string(0)
 
-    # constants
-    for const in self.constants:
-      string += str(const) + "\n"
+  def to_string(self, level):
+    print "WARNING: need to implement to_string(self, indent)"
+
+
+# The semantic model container
+class Model(base):
+  def __init__(self):
+    self.modules    = {}
+
+    # set up the functional domain, all of them and the current one ;-)
+    self.domains = {}
+
+    # self.executions = []
+
+  # entry point of request for conversion to string
+  def to_string(self, level):
+    string = ""
+    for module in self.modules:
+      string += self.modules[module].to_string(level)
+    return string
+
+# Modules represent input files, a model manages multiple
+class Module(base):
+  def __init__(self, name):
+    self.name       = name
+    self.constants  = {}
+    self.extensions = []
+    self.externals  = {}   # function : library
+    # self.functions  = {}
+  
+  def to_string(self, level):
+    string = "module " + self.name + "\n";
     
-    # imports
+    for constant in self.constants:
+      string += self.constants[constant].to_string(level) + "\n"
+
+    for extension in self.extensions:
+      string += extension.to_string(level) + "\n"
+    
     for function in self.externals:
       string += "from " + self.externals[function] + " import " + function + "\n"
 
-    # domain with extensions
-    domain = str(self.domain)
-    if domain != "": string += str(self.domain) + "\n"
-
-    # functions & event handlers (optionally with annotations)
-    
-
+    # for function in functions:
+    #   string += function.to_string(level)
     return string
+
+class Extension(base):
+  def __init__(self, domain, extension=None):
+    self.domain    = domain
+    self.extension = extension
+
+  def to_string(self, level):
+    if self.extension != None:
+      return "extend " + str(self.domain) + \
+             " with " + self.extension.to_string(level)
+    else:
+      return ""

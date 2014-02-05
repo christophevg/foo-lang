@@ -5,6 +5,9 @@
 // this file includes extensive comments to clarify the DSL and some of the
 // inner workings of the code generator.
 
+// explicit declaration of module, allows for multiple modules in a source file
+module heartbeat
+
 // define constants to configure the solution. types are inferred from the
 // value (integer, float (with .), boolean (true/false), "string", 'atom')
 // or can be explicited using the ": <type>" typing information
