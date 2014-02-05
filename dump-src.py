@@ -12,5 +12,4 @@ if len(sys.argv) < 2:
   sys.exit(2)
 
 input = open(sys.argv[1]).read()
-model = api.load(input)
-print model
+print api.to_model(input)
