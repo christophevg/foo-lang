@@ -6,38 +6,26 @@
 import sys
 
 from foo_lang import api
+
 from antlr3 import RecognitionException
 import antlr3.extras
 
-if len(sys.argv) < 2:
-  print "ERROR: please provide a foo-lang source file"
-  sys.exit(2)
-
-style = sys.argv[2] if len(sys.argv) > 2 else "dump"
-
-def print_indented(tree, indent):
-  print('{0}{1}'.format("  "*indent, tree.text))
+def indent(tree, level):
+  indented = '{0}{1}\n'.format("  "*level, tree.text)
   for child in tree.getChildren():
-    print_indented(child, indent+1)
+    indented += indent(child, level+1)
+  return indented
 
-try:
+if __name__ == '__main__':
+  if len(sys.argv) < 2:
+    print "ERROR: please provide a foo-lang source file"
+    sys.exit(2)
+
   input = open(sys.argv[1]).read()
-  lines = input.split("\n")
-  tree = api.parse(input).tree
+  tree  = api.to_ast(input)
 
+  style = sys.argv[2] if len(sys.argv) > 2 else "dump"
   if style == "dot":
     print antlr3.extras.toDOT(tree)
   else:
-    print_indented(tree, 0);
-
-except RecognitionException as e:
-  print "Exception:", e, ":"
-  print "  index  :", e.index
-  print "  token  :", e.token
-  print "  c      :", e.c
-  print "  line   :", e.line
-  print "          ", lines[e.line-2]
-  print "       -->", lines[e.line-1]
-  print "          ", lines[e.line]
-  print "  pos    :", e.charPositionInLine
-  print "  info   :", e.approximateLineInfo
+    print indent(tree, 0);

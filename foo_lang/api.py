@@ -20,12 +20,10 @@ def parse(string):
 
   return parser.start()
 
-def load(string):
+def to_ast(string):
   lines = string.split("\n")
-  model = Model()
   try:
-    tree = parse(string).tree
-    Visitor(model).visit(tree)
+    return parse(string).tree
   except RecognitionException as e:
     print "Exception:", e, ":"
     print "  index  :", e.index
@@ -37,5 +35,9 @@ def load(string):
     print "          ", lines[e.line]
     print "  pos    :", e.charPositionInLine
     print "  info   :", e.approximateLineInfo
+    raise RuntimeError("Failed to parse")
 
+def load(string):
+  model = Model()
+  Visitor(model).visit(to_ast(string))
   return str(model)
