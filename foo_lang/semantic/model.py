@@ -8,7 +8,7 @@ class base():
     return self.to_string(0)
 
   def to_string(self, level):
-    print "WARNING: need to implement to_string(self, indent)"
+    raise RuntimeError("WARNING: need to implement to_string(self, indent)")
 
 
 # The semantic model container

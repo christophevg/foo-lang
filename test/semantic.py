@@ -1,4 +1,4 @@
-# test-model.py
+# semantic.py
 # author: Christophe VG
 
 # unit tests for the foo-lang semantic model
