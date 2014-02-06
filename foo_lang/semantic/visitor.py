@@ -1,21 +1,29 @@
 # visitor.py
 # author: Christophe VG
 
-# Visitor for converting tree into model
+# Visitor for converting a tree into model
+# Note: trying to create a tree grammar to do this seemed harder in the end
 
-from constant import Constant
-from types import Object, Property
+from foo_lang.semantic.constant import Constant
+from foo_lang.semantic.types    import Object, Property
+from foo_lang.semantic.model    import Module, Extension
 
 class Visitor():
   def __init__(self, model):
     self.model = model
+
+    # local scoping helper
+    self.current_module = None
+
+    # mapping top-node's text to handler (aka poor man's visitor pattern)
     self.dispatch = {
       "ROOT"      : self.handle_root,
+      "MODULE"    : self.handle_module,
       "CONST"     : self.handle_constant,
-      "EXTEND"    : self.handle_extend,
       "IMPORT"    : self.handle_import,
-      "ANNOTATED" : self.handle_annotated,
-      "APPLY"     : self.handle_application
+      "EXTEND"    : self.handle_extend,
+      "ANNOTATED" : self.handle_annotated
+      # "APPLY"     : self.handle_application
     }
 
   # visiting an unknown tree, using the dispatch to get to specialized handler
@@ -26,45 +34,55 @@ class Visitor():
       print "TODO: handle", e
       pass
 
-  # handle the root
+  # HANDLERS
+
   def handle_root(self, tree):
     assert tree.text == "ROOT"
     for child in tree.getChildren():
       self.visit(child)
     return None
 
-  # handle a constant definition
+  def handle_module(self, tree):
+    assert tree.text == "MODULE"
+    children = tree.getChildren()
+    name     = children[0].text
+    module   = Module(name)
+    self.model.modules[name] = module
+    self.current_module      = module
+    for index in range(1,len(children)):
+      self.visit(children[index])
+    return module
+
   def handle_constant(self, tree):
     assert tree.text == "CONST"
     [name, type, value] = self.tree2ntv(tree.getChildren()[0])
-    constant = Constant(name,type,value)
-    self.model.constants.append(constant)
-    return Constant
+    constant            = Constant(name,type,value)
+    self.current_module.constants[constant.name] = constant
+    return constant
 
-  # apply extensions to domains
   def handle_extend(self, tree):
     assert tree.text == "EXTEND"
-    children = tree.getChildren()
-    domain_name = children[0].text
-    extension = self.tree2object(children[1])
-    self.model.domain.extensions.append(extension)
-    return None
+    children  = tree.getChildren()
+    domain    = children[0].text
+    obj       = self.tree2object(children[1])
+    extension = Extension(domain, obj)
+    self.current_module.extensions.append(extension)
+    return extension
   
-  # keep track of imports
   def handle_import(self, tree):
     assert tree.text == "IMPORT"
     children = tree.getChildren()
     module   = children[0].text
     function = children[1].text
-    self.model.externals[function] = module
+    self.current_module.externals[function] = module
     return None
   
-  # record an annotation for a subtree
   def handle_annotated(self, tree):
     assert tree.text == "ANNOTATED"
-    children = tree.getChildren()
-    annotated = self.visit(children[1])
-    # TODO
+    children   = tree.getChildren()
+    annotation = self.visit(children[0])
+    annotated  = self.visit(children[1])
+    # WIP
     return None
   
   # TODO
@@ -73,6 +91,8 @@ class Visitor():
     
     return None
   
+  # HELPERS
+
   # extract a name-type-value tuple
   def tree2ntv(self, tree):
     assert tree.text == "VALUE"
