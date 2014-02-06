@@ -5,18 +5,18 @@
 
 from foo_lang.semantic.model import base
 
-class Expression(base):
+class Exp(base):
   def __init__(self):
-    raise RuntimeError("Expression is an abstract base class")
+    raise RuntimeError("Exp is an abstract base class")
 
-class LiteralExpression(Expression):
+class LiteralExp(Exp):
   def __init__(self, value):
     self.value = value
 
   def to_string(self, level):
     return "  " * level + self.value
 
-class ListLiteral(Expression):
+class ListLiteral(Exp):
   def __init__(self, expressions):
     self.expressions = expressions
 
@@ -24,14 +24,14 @@ class ListLiteral(Expression):
     return "  " * level + \
            "[" + ",".join([str(exp) for exp in self.expressions]) + "]"
 
-class VariableExpression(Expression):
+class VariableExp(Exp):
   def __init__(self, name):
     self.name = name
 
   def to_string(self, level):
     return "  " * level + self.name
 
-class PropertyExpression(Expression):
+class PropertyExp(Exp):
   def __init__(self, object, property):
     self.object   = object
     self.property = property
@@ -39,14 +39,14 @@ class PropertyExpression(Expression):
   def to_string(self, level):
     return "  " * level + str(self.object) + "." + str(self.property)
 
-class AtomExpression(Expression):
+class AtomExp(Exp):
   def __init__(self, name):
     self.name = name
 
   def to_string(self, level):
     return "  " * level + "#" + self.name
 
-class UnaryExpression(Expression):
+class UnaryExp(Exp):
   def __init__(self, operand):
     self.operand = operand
 
@@ -56,7 +56,7 @@ class UnaryExpression(Expression):
   def to_string(self, level):
     return "  " * level + self.operator() + " " + str(self.operand)
 
-class BinaryExpression(Expression):
+class BinaryExp(Exp):
   def __init__(self, left, right):
     self.left  = left
     self.right = right
@@ -68,49 +68,49 @@ class BinaryExpression(Expression):
     return "  " * level + \
            " ".join([ "(", str(self.left), self.operator(), str(self.right), ")"])
 
-class AndExpression(BinaryExpression):
+class AndExp(BinaryExp):
   def operator(self): return "and"
 
-class OrExpression(BinaryExpression):
+class OrExp(BinaryExp):
   def operator(self): return "or"
 
-class EqualsExpression(BinaryExpression):
+class EqualsExp(BinaryExp):
   def operator(self): return "=="
 
-class NotEqualsExpression(BinaryExpression):
+class NotEqualsExp(BinaryExp):
   def operator(self): return "!="
 
-class LTExpression(BinaryExpression):
+class LTExp(BinaryExp):
   def operator(self): return "<"
 
-class LTEQExpression(BinaryExpression):
+class LTEQExp(BinaryExp):
   def operator(self): return "<="
 
-class GTExpression(BinaryExpression):
+class GTExp(BinaryExp):
   def operator(self): return ">"
 
-class GTEQExpression(BinaryExpression):
+class GTEQExp(BinaryExp):
   def operator(self): return ">="
 
-class PlusExpression(BinaryExpression):
+class PlusExp(BinaryExp):
   def operator(self): return "+"
 
-class MinusExpression(BinaryExpression):
+class MinusExp(BinaryExp):
   def operator(self): return "-"
 
-class MultExpression(BinaryExpression):
+class MultExp(BinaryExp):
   def operator(self): return "*"
 
-class DivExpression(BinaryExpression):
+class DivExp(BinaryExp):
   def operator(self): return "/"
 
-class ModuloExpression(BinaryExpression):
+class ModuloExp(BinaryExp):
   def operator(self): return "%"
 
-class NotExpression(UnaryExpression):
+class NotExp(UnaryExp):
   def operator(self): return "!"
 
-class FunctionCallExpression(Expression):
+class FunctionCallExp(Exp):
   def __init__(self, function, arguments=[]):
     self.function  = function
     self.arguments = arguments
@@ -119,7 +119,7 @@ class FunctionCallExpression(Expression):
     return "  " * level + \
            str(self.function) + "(" + ", ".join([str(arg) for arg in self.arguments]) + ")"
 
-class MethodCallExpression(Expression):
+class MethodCallExp(Exp):
   def __init__(self, object, method, arguments):
     self.object    = object
     self.method    = method

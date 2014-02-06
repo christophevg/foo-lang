@@ -9,82 +9,82 @@ from foo_lang.semantic.expressions import *
 
 class TestExpressions(unittest.TestCase):
   def test_and_exp(self):
-    exp = AndExpression(LiteralExpression("true"), LiteralExpression("false"))
+    exp = AndExp(LiteralExp("true"), LiteralExp("false"))
     self.assertEqual(str(exp), "( true and false )")
 
   def test_or_exp(self):
-    exp = OrExpression(LiteralExpression("true"), LiteralExpression("false"))
+    exp = OrExp(LiteralExp("true"), LiteralExp("false"))
     self.assertEqual(str(exp), "( true or false )")
 
   def test_eq_exp(self):
-    exp = EqualsExpression(LiteralExpression("true"), LiteralExpression("false"))
+    exp = EqualsExp(LiteralExp("true"), LiteralExp("false"))
     self.assertEqual(str(exp), "( true == false )")
 
   def test_ne_exp(self):
-    exp = NotEqualsExpression(LiteralExpression("true"), LiteralExpression("false"))
+    exp = NotEqualsExp(LiteralExp("true"), LiteralExp("false"))
     self.assertEqual(str(exp), "( true != false )")
 
   def test_lt_exp(self):
-    exp = LTExpression(LiteralExpression("1"), LiteralExpression("2"))
+    exp = LTExp(LiteralExp("1"), LiteralExp("2"))
     self.assertEqual(str(exp), "( 1 < 2 )")
 
   def test_lteq_exp(self):
-    exp = LTEQExpression(LiteralExpression("1"), LiteralExpression("2"))
+    exp = LTEQExp(LiteralExp("1"), LiteralExp("2"))
     self.assertEqual(str(exp), "( 1 <= 2 )")
 
   def test_gt_exp(self):
-    exp = GTExpression(LiteralExpression("1"), LiteralExpression("2"))
+    exp = GTExp(LiteralExp("1"), LiteralExp("2"))
     self.assertEqual(str(exp), "( 1 > 2 )")
 
   def test_gteq_exp(self):
-    exp = GTEQExpression(LiteralExpression("1"), LiteralExpression("2"))
+    exp = GTEQExp(LiteralExp("1"), LiteralExp("2"))
     self.assertEqual(str(exp), "( 1 >= 2 )")
 
   def test_plus_exp(self):
-    exp = PlusExpression(LiteralExpression("1"), LiteralExpression("2"))
+    exp = PlusExp(LiteralExp("1"), LiteralExp("2"))
     self.assertEqual(str(exp), "( 1 + 2 )")
 
   def test_minus_exp(self):
-    exp = MinusExpression(LiteralExpression("1"), LiteralExpression("2"))
+    exp = MinusExp(LiteralExp("1"), LiteralExp("2"))
     self.assertEqual(str(exp), "( 1 - 2 )")
 
   def test_mult_exp(self):
-    exp = MultExpression(LiteralExpression("1"), LiteralExpression("2"))
+    exp = MultExp(LiteralExp("1"), LiteralExp("2"))
     self.assertEqual(str(exp), "( 1 * 2 )")
 
   def test_div_exp(self):
-    exp = DivExpression(LiteralExpression("1"), LiteralExpression("2"))
+    exp = DivExp(LiteralExp("1"), LiteralExp("2"))
     self.assertEqual(str(exp), "( 1 / 2 )")
 
   def test_modulo_exp(self):
-    exp = ModuloExpression(LiteralExpression("1"), LiteralExpression("2"))
+    exp = ModuloExp(LiteralExp("1"), LiteralExp("2"))
     self.assertEqual(str(exp), "( 1 % 2 )")
 
   def test_not_exp(self):
-    exp = NotExpression(LiteralExpression("true"))
+    exp = NotExp(LiteralExp("true"))
     self.assertEqual(str(exp), "! true")
 
   def test_function_call_exp(self):
-    exp = FunctionCallExpression("test_function", [LiteralExpression("1"),
-                                                   VariableExpression("var_name")])
+    exp = FunctionCallExp("test_function", [LiteralExp("1"),
+                                                   VariableExp("var_name")])
     self.assertEqual(str(exp), "test_function(1, var_name)")
 
   def test_method_call_exp(self):
-    exp = MethodCallExpression("test_object", "test_function", \
-                               [LiteralExpression("1"),
-                                VariableExpression("var_name")])
+    exp = MethodCallExp("test_object", "test_function", \
+                               [LiteralExp("1"),
+                                VariableExp("var_name")])
     self.assertEqual(str(exp), "test_object.test_function(1, var_name)")
 
   def test_complex_expression(self):
-    exp = AndExpression( \
-            OrExpression( \
-              MethodCallExpression("this", "do", [ NotExpression( FunctionCallExpression("work"))]),\
-              GTEQExpression(LiteralExpression("1"), MinusExpression(LiteralExpression("5"), LiteralExpression("6")))\
+    exp = AndExp( \
+            OrExp( \
+              MethodCallExp("this", "do", [ NotExp( FunctionCallExp("work"))]),\
+              GTEQExp(LiteralExp("1"), MinusExp(LiteralExp("5"), LiteralExp("6")))\
             ),\
-            LiteralExpression("false")
+            LiteralExp("false")
           )
     self.assertEqual(str(exp),"( ( this.do(! work()) or ( 1 >= ( 5 - 6 ) ) ) and false )")
 
 if __name__ == '__main__':
-  suite = unittest.TestLoader().loadTestsFromTestCase(TestExpressions)
+  suite = unittest.TestLoader().loadTestsFromTestCase(TestExps)
   unittest.TextTestRunner(verbosity=2).run(suite)
