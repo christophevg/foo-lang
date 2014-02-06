@@ -15,7 +15,7 @@ options {
 tokens {  // must be declared here/before use, not with other real tokens below
   ROOT; MODULE; CONST; EXTERNAL; OBJECT; FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL;
   METHOD_CALL; LIST; PROPERTY; IMPORT; EXTEND; IF; BLOCK; VAR; ANNOTATION;
-  ANNOTATED; INC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY; TUPLE; VALUE;
+  ANNOTATED; INC; DEC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY; TUPLE; VALUE;
   DOMAIN;
 }
 
@@ -116,6 +116,7 @@ statement
   : block_statement
   | assignment_statement
   | increment_statement
+  | decrement_statement
   | if_statement
   | case_statement
   | call_expression
@@ -132,6 +133,10 @@ assignment_statement
 
 increment_statement
   : variable '++'            -> ^(INC variable)
+  ;
+
+decrement_statement
+  : variable '--'            -> ^(DEC variable)
   ;
 
 if_statement
