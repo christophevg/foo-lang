@@ -86,5 +86,5 @@ class TestExpressions(unittest.TestCase):
     self.assertEqual(str(exp),"( ( this.do(! work()) or ( 1 >= ( 5 - 6 ) ) ) and false )")
 
 if __name__ == '__main__':
-  suite = unittest.TestLoader().loadTestsFromTestCase(TestExps)
+  suite = unittest.TestLoader().loadTestsFromTestCase(TestExpressions)
   unittest.TextTestRunner(verbosity=2).run(suite)
