@@ -35,7 +35,7 @@ class Module(base):
     self.constants  = {}
     self.extensions = []
     self.externals  = {}   # function : library
-    # self.functions  = {}
+    self.functions  = {}
   
   def to_string(self, level):
     string = "module " + self.name + "\n";
@@ -49,8 +49,9 @@ class Module(base):
     for function in self.externals:
       string += "from " + self.externals[function] + " import " + function + "\n"
 
-    # for function in functions:
-    #   string += function.to_string(level)
+    for function in self.functions:
+      string += self.functions[function].to_string(level)
+
     return string
 
 class Extension(base):
@@ -64,3 +65,21 @@ class Extension(base):
              " with " + self.extension.to_string(level)
     else:
       return ""
+
+class Function(base):
+  anonymous = 0
+  def __init__(self, name, arguments, body):
+    if name == None:
+      name = "anonymous" + str(Function.anonymous)
+      Function.anonymous += 1
+    self.name      = name
+    self.arguments = arguments
+    self.body      = body
+
+  def to_string(self, level):
+    string = "function"
+    if self.name != None:
+      string += " " + str(self.name)
+    string +=  "(" + ", ".join([str(arg) for arg in self.arguments]) + ") " + \
+               self.body.to_string(level).lstrip()
+    return string

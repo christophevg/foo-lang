@@ -6,9 +6,11 @@
 import unittest
 
 from foo_lang.semantic.types         import Property, Object
-from foo_lang.semantic.model         import Extension, Module, Model
+from foo_lang.semantic.model         import Extension, Module, Function, Model
 from foo_lang.semantic.constant      import Constant
 from foo_lang.semantic.domains.nodes import Nodes, AllNodes, OwnNode
+from foo_lang.semantic.expressions   import LiteralExp, VariableExp, FunctionCallExp
+from foo_lang.semantic.statements    import BlockStmt, IncStmt, DecStmt
 
 class TestModel(unittest.TestCase):
   def setUp(self):
@@ -101,8 +103,26 @@ class TestModel(unittest.TestCase):
                                   "from module3 import function1\n" + \
                                   "from module2 import function2\n")
 
+  # FUNCTIONS
+  def create_function(self, name=None):
+    return Function(name, ["x","y"], BlockStmt([IncStmt(VariableExp("x")),
+                                                IncStmt(VariableExp("y"))]))
+
+  def test_function(self):
+    function = self.create_function("name")
+    self.assertEqual(str(function), "function name(x, y) {\n  x++\n  y++\n}")
+
+  def test_anon_function(self):
+    function = self.create_function()
+    self.assertEqual(str(function), "function anonymous0(x, y) {\n  x++\n  y++\n}")
+
+  def test_function_in_module(self):
+    function = self.create_function("name")
+    module = Module("moduleName")
+    module.functions[function.name] = function
+    self.assertEqual(str(module), "module moduleName\n" + str(function))
+
   # MODEL
-  
   def test_empty_model(self):
     self.assertModelEquals("")
     self.assertEqual(self.model.domains, {})
