@@ -166,7 +166,7 @@ expression: logical_expression;
 logical_expression: or_expression;
 
 or_expression
-  : and_expression (OR and_expression)*
+  : and_expression (OR^ and_expression)*
   ;
 
 and_expression
