@@ -1,7 +1,7 @@
 // foo_lang.g
 // author: Christophe VG
 
-// ANTLR3 grammar for foo_lang-lang, a Function Organisation Optimizing DSL
+// ANTLR3 grammar for foo-lang, a Function Organization Optimizing DSL
 
 grammar foo_lang;
 
@@ -39,10 +39,6 @@ def getMissingSymbol(self, input, e, expectedTokenType, follow):
 @rulecatch {
 except RecognitionException, e:
   raise
-}
-
-@header {
-  from foo_lang import *
 }
 
 // PARSING RULES
