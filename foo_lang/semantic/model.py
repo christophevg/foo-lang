@@ -43,11 +43,11 @@ class Module(base):
     for constant in self.constants:
       string += self.constants[constant].to_string(level) + "\n"
 
-    for extension in self.extensions:
-      string += extension.to_string(level) + "\n"
-    
     for function in self.externals:
       string += "from " + self.externals[function] + " import " + function + "\n"
+
+    for extension in self.extensions:
+      string += extension.to_string(level) + "\n"
 
     for function in self.functions:
       string += self.functions[function].to_string(level)
