@@ -11,6 +11,7 @@ from foo_lang.semantic.constant      import Constant
 from foo_lang.semantic.domains.nodes import Nodes, AllNodes, OwnNode
 from foo_lang.semantic.expressions   import LiteralExp, VariableExp, FunctionCallExp
 from foo_lang.semantic.statements    import BlockStmt, IncStmt, DecStmt
+from foo_lang.semantic.execution     import Every
 
 class TestModel(unittest.TestCase):
   def setUp(self):
@@ -121,6 +122,13 @@ class TestModel(unittest.TestCase):
     module = Module("moduleName")
     module.functions[function.name] = function
     self.assertEqual(str(module), "module moduleName\n" + str(function))
+
+  # EXECUTION STRATEGIES
+  def test_every_strategy(self):
+    function = self.create_function("name")
+    strategy = Every(VariableExp("interval"), AllNodes(Nodes()), function)
+    self.assertEqual(str(strategy), "@every(interval)\n" + \
+                                    "with nodes do " + str(function))
 
   # MODEL
   def test_empty_model(self):
