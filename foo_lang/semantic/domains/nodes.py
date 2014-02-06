@@ -3,8 +3,7 @@
 
 # Nodes domain implementation
 
-from foo_lang.semantic.domain import Domain
-from foo_lang.semantic.domain import Scope
+from foo_lang.semantic.domain import Domain, Scope
 
 class Nodes(Domain):
   def __init__(self):
