@@ -17,5 +17,5 @@ class Every(ExecutionStrategy):
 
   def to_string(self, level):
     return "  " * level + "@every(" + str(self.interval) + ")\n" + \
-           "  " * level + "with " + str(self.scope) + " do " + \
+           self.scope.to_string(level) + " " + \
            self.executed.to_string(level).lstrip()

@@ -8,6 +8,7 @@ import unittest
 from foo_lang.semantic.types         import Property, Object
 from foo_lang.semantic.model         import Extension, Module, Function, Model
 from foo_lang.semantic.constant      import Constant
+from foo_lang.semantic.domain        import Scope, Global
 from foo_lang.semantic.domains.nodes import Nodes, AllNodes, OwnNode
 from foo_lang.semantic.expressions   import LiteralExp, VariableExp, FunctionCallExp
 from foo_lang.semantic.statements    import BlockStmt, IncStmt, DecStmt
@@ -122,6 +123,19 @@ class TestModel(unittest.TestCase):
     module = Module("moduleName")
     module.functions[function.name] = function
     self.assertEqual(str(module), "module moduleName\n" + str(function))
+
+  # SCOPING
+  def test_global_scope(self):
+    scope = Global()
+    self.assertEqual(str(scope), "")
+
+  def test_domain_scope(self):
+    scope = Scope(Nodes())
+    self.assertEqual(str(scope), "")
+
+  def test_domain_specific_scope(self):
+    scope = Nodes().scope['nodes']
+    self.assertEqual(str(scope), "with nodes do")
 
   # EXECUTION STRATEGIES
   def test_every_strategy(self):

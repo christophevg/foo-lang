@@ -19,9 +19,11 @@ class Nodes(Domain):
     return "  " * level + "nodes"
   
 class AllNodes(Scope):
-  def to_string(self, level):
-    return "  " * level + "nodes"
+  def __init__(self, domain):
+    Scope.__init__(self,domain)
+    self.scope = "nodes"
   
 class OwnNode(Scope):
-  def to_string(self, level):
-    return "  " * level + "nodes.self"
+  def __init__(self, domain):
+    Scope.__init__(self, domain)
+    self.scope = "nodes.self"

@@ -10,5 +10,14 @@ class Domain(base):
     pass
 
 class Scope(base):
-  def __init__(self, domain):
+  def __init__(self, domain=None):
     self.domain = domain
+    self.scope  = None
+
+  def to_string(self, level):
+    if self.scope == None: return ""
+    return "with " + str(self.scope) + " do"
+
+# what's in a name ? ;-)
+class Global(Scope):
+  pass
