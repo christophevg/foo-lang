@@ -13,10 +13,10 @@ options {
 
 // a few virtual tokens, used as identifying node
 tokens {  // must be declared here/before use, not with other real tokens below
-  ROOT; MODULE; CONST; EXTERNAL; OBJECT; FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL;
-  METHOD_CALL; LIST; PROPERTY; IMPORT; EXTEND; IF; BLOCK; VAR; ANNOTATION;
-  ANNOTATED; INC; DEC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY; TUPLE; VALUE;
-  DOMAIN;
+  ROOT; MODULE; CONST; EXTERNAL; OBJECT; OBJECT_REF; FUNC_DECL; ANON_FUNC_DECL;
+  FUNC_CALL; METHOD_CALL; LIST; PROPERTY; IMPORT; EXTEND; IF; BLOCK; VAR;
+  ANNOTATION; ANNOTATED; INC; DEC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY;
+  TUPLE; VALUE; DOMAIN;
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -228,8 +228,9 @@ property_expression
   ;
 
 object_expression
-  : identifier DOT identifier -> ^(OBJECT identifier identifier)
-  | identifier                       -> ^(OBJECT identifier)
+  : identifier DOT identifier -> ^(OBJECT_REF identifier identifier)
+  | identifier                -> ^(OBJECT_REF identifier)
+  | object_literal
   ;
 
 // DIRECTIVES

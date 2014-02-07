@@ -11,8 +11,8 @@ from foo_lang.semantic.types       import Object, Property
 from foo_lang.semantic.model       import Module, Extension, Function
 from foo_lang.semantic.domain      import Domain, Scope
 from foo_lang.semantic.execution   import Every
-from foo_lang.semantic.expressions import VariableExp, PropertyExp
-from foo_lang.semantic.statements  import BlockStmt, IfStmt, IncStmt
+from foo_lang.semantic.expressions import *   # too many to import explicitly
+from foo_lang.semantic.statements  import *
 
 class Visitor():
   def __init__(self, model):
@@ -32,9 +32,30 @@ class Visitor():
       "DOMAIN"         : self.handle_domain,
       "PROPERTY"       : self.handle_property,
       "ANON_FUNC_DECL" : self.handle_anon_func_decl,
+
       "BLOCK"          : self.handle_block_stmt,
       "IF"             : self.handle_if_stmt,
-      "INC"            : self.handle_inc_stmt
+      "INC"            : self.handle_inc_stmt,
+      "DEC"            : self.handle_dec_stmt,
+      "="              : self.handle_assign_stmt,
+
+      "OBJECT_REF"     : self.handle_object_ref,
+
+      "VAR"            : self.handle_variable_exp,
+
+      ">"              : lambda t: self.handle_bin_exp(">",   GTExp,        t),
+      ">="             : lambda t: self.handle_bin_exp(">=",  GTEQExp,      t),
+      "<"              : lambda t: self.handle_bin_exp("<",   LTExp,        t),
+      "<="             : lambda t: self.handle_bin_exp("<=",  LTEQExp,      t),
+      "+"              : lambda t: self.handle_bin_exp("+",   PlusExp,      t),
+      "-"              : lambda t: self.handle_bin_exp("-",   MinusExp,     t),
+      "and"            : lambda t: self.handle_bin_exp("and", AndExp,       t),
+      "or"             : lambda t: self.handle_bin_exp("or",  OrExp,        t),
+      "=="             : lambda t: self.handle_bin_exp("==",  EqualsExp,    t),
+      "!="             : lambda t: self.handle_bin_exp("!=",  NotEqualsExp, t),
+      "*"              : lambda t: self.handle_bin_exp("*",   MultExp,      t),
+      "/"              : lambda t: self.handle_bin_exp("/",   DivExp,       t),
+      "%"              : lambda t: self.handle_bin_exp("%",   ModuloExp,    t)
     }
 
   # visiting an unknown tree, using the dispatch to get to specialized handler
@@ -75,6 +96,7 @@ class Visitor():
     assert tree.text == "EXTEND"
     children  = tree.getChildren()
     domain    = children[0].text
+    # TODO: change to handle_object_literal
     obj       = self.tree2object(children[1])
     extension = Extension(domain, obj)
     self.current_module.extensions.append(extension)
@@ -105,10 +127,10 @@ class Visitor():
     assert tree.text == "ANNOTATION"
     children = tree.getChildren()
     return {
-      'every': ['Every', self.handle_variable(children[1].getChildren()[0])]
+      'every': ['Every', self.handle_variable_exp(children[1].getChildren()[0])]
     }[children[0].text]
 
-  def handle_variable(self, tree):
+  def handle_variable_exp(self, tree):
     assert tree.text == "VAR"
     return VariableExp(tree.getChildren()[0].text)
 
@@ -174,6 +196,34 @@ class Visitor():
     assert tree.text == "INC"
     target = self.visit(tree.getChildren()[0])
     return IncStmt(target)
+
+  def handle_dec_stmt(self, tree):
+    assert tree.text == "INC"
+    target = self.visit(tree.getChildren()[0])
+    return DecStmt(target)
+
+  def handle_assign_stmt(self, tree):
+    assert tree.text == "="
+    children = tree.getChildren()
+    left     = self.visit(children[0])
+    right    = self.visit(children[1])
+    return AssignStmt(left, right)
+
+  # ??? :-)
+
+  def handle_object_ref(self, tree):
+    assert tree.text == "OBJECT_REF"
+    # TODO: use something more specific?!
+    return VariableExp(tree.getChildren()[0].text)
+
+  # GENERIC FUNCTION FOR BINARY EXPRESSIONS
+
+  def handle_bin_exp(self, text, constructor, tree):
+    assert tree.text == text
+    children = tree.getChildren()
+    left     = self.visit(children[0])
+    right    = self.visit(children[1])
+    return constructor(left, right)
 
   # HELPERS
 
