@@ -65,7 +65,8 @@ declaration
   ;
 
 annotated_declaration
-  : annotation apply_declaration -> ^(ANNOTATED annotation apply_declaration)
+  : annotation apply_declaration    -> ^(ANNOTATED annotation apply_declaration)
+  | annotation function_declaration -> ^(ANNOTATED annotation function_declaration)
   ;
 
 annotation
@@ -74,7 +75,7 @@ annotation
 
 apply_declaration
   : 'with' identifier DOT identifier 'do' function_expression
-    -> ^(APPLY ^(PROPERTY identifier identifier) function_expression)
+    -> ^(APPLY ^(PROPERTY ^(DOMAIN identifier) identifier) function_expression)
   | 'with' identifier 'do' function_expression
     -> ^(APPLY ^(DOMAIN identifier) function_expression)
   ;
@@ -223,7 +224,7 @@ variable
 
 property_expression
   : o+=identifier DOT (o+=identifier DOT)* p=identifier
-    -> ^(PROPERTY $o+ $p)
+    -> ^(PROPERTY ^(OBJECT $o+) $p)
   ;
 
 /*object_expression

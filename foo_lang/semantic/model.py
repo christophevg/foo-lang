@@ -14,14 +14,13 @@ class base():
 # The semantic model container
 class Model(base):
   def __init__(self):
+    # different modules can be combined in one model
     self.modules    = {}
 
-    # set up the functional domain, all of them and the current one ;-)
+    # the functional domains that are available in this model
     self.domains = {}
 
-    # self.executions = []
-
-  # entry point of request for conversion to string
+  # entry point for conversion to string, triggered from base::__repr__
   def to_string(self, level):
     string = ""
     for module in self.modules:
@@ -33,9 +32,10 @@ class Module(base):
   def __init__(self, name):
     self.name       = name
     self.constants  = {}
-    self.extensions = []
     self.externals  = {}   # function : library
-    self.functions  = {}
+    self.extensions = []
+    self.functions  = {}   # storage, only for reference
+    self.executions = []
   
   def to_string(self, level):
     string = "module " + self.name + "\n";
@@ -49,8 +49,8 @@ class Module(base):
     for extension in self.extensions:
       string += extension.to_string(level) + "\n"
 
-    for function in self.functions:
-      string += self.functions[function].to_string(level)
+    for execution in self.executions:
+      string += execution.to_string(level) + "\n"
 
     return string
 

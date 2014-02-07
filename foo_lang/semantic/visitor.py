@@ -4,9 +4,11 @@
 # Visitor for converting a tree into model
 # Note: trying to create a tree grammar to do this seemed harder in the end
 
-from foo_lang.semantic.constant import Constant
-from foo_lang.semantic.types    import Object, Property
-from foo_lang.semantic.model    import Module, Extension
+from foo_lang.semantic.constant  import Constant
+from foo_lang.semantic.types     import Object, Property
+from foo_lang.semantic.model     import Module, Extension
+from foo_lang.semantic.domain    import Domain, Scope
+from foo_lang.semantic.execution import Every
 
 class Visitor():
   def __init__(self, model):
@@ -22,7 +24,9 @@ class Visitor():
       "CONST"     : self.handle_constant,
       "IMPORT"    : self.handle_import,
       "EXTEND"    : self.handle_extend,
-      "ANNOTATED" : self.handle_annotated
+      "ANNOTATED" : self.handle_annotated,
+      "DOMAIN"    : self.handle_domain,
+      "PROPERTY"  : self.handle_property
       # "APPLY"     : self.handle_application
     }
 
@@ -80,18 +84,66 @@ class Visitor():
   def handle_annotated(self, tree):
     assert tree.text == "ANNOTATED"
     children   = tree.getChildren()
-    annotation = self.visit(children[0])
-    annotated  = self.visit(children[1])
-    # WIP
+    [annotation, arguments] = self.handle_annotation(children[0])
+    [scope, function]       = self.handle_annotated_execution(children[1])
+
+    # TODO: replace with dynamic instantiation
+    strategy = Every(scope, function, arguments)
+    self.current_module.executions.append(strategy)
     return None
+
+  def handle_annotation(self, tree):
+    assert tree.text == "ANNOTATION"
+    children = tree.getChildren()
+    return {
+      'every': ['Every', self.tree2list(children[1])[0]]
+    }[children[0].text]
+
+  # two executions are supported currently:
+  # 1. application of function to scope
+  # 2. (simple) function in global scope (NOT IMPLEMENTED YET)
+  # TODO: implement simple function support
+  def handle_annotated_execution(self, tree):
+    return {
+      'APPLY': self.handle_application(tree)  # returns [scope, function]
+    }[tree.text]
   
-  # TODO
   def handle_application(self, tree):
     assert tree.text == "APPLY"
-    
-    return None
-  
+    children = tree.getChildren()
+    scope    = self.as_scope(self.visit(children[0]))
+    function = self.visit(children[1])
+    return [scope, function]
+
+  def handle_domain(self, tree):
+    assert tree.text == "DOMAIN"
+    return self.model.domains[tree.getChildren()[0].text]
+
+  def handle_property(self, tree):
+    assert tree.text == "PROPERTY"
+    children = tree.getChildren()
+    obj      = self.visit(children[0])
+    prop     = children[1].text
+    return obj.get_property(prop)
+
   # HELPERS
+
+  # makes sure that the argument is a scope
+  def as_scope(self, obj):
+    if isinstance(obj, Scope):
+      return obj
+    elif isinstance(obj, Domain):
+      return obj.get_scope()
+    else:
+      raise RuntimeError("Un-scopable object:", obj)
+
+  # returns an actual list of elements in a list-node
+  def tree2list(self, tree):
+    assert tree.text == "LIST"
+    # TODO handle intermediate VAR level
+    l = [item.getChildren()[0].text for item in tree.getChildren()]
+    print l
+    return l
 
   # extract a name-type-value tuple
   def tree2ntv(self, tree):

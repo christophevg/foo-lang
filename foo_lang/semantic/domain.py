@@ -6,8 +6,11 @@
 from foo_lang.semantic.model import base
 
 class Domain(base):
-  def __init__(self):
-    pass
+  def get_scope(self, sub="*"):
+    return self.scoping[sub]
+
+  def get_property(self, property):
+    return self.get_scope(property)
 
 class Scope(base):
   def __init__(self, domain=None):

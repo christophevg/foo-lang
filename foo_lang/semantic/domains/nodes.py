@@ -7,13 +7,10 @@ from foo_lang.semantic.domain import Domain, Scope
 
 class Nodes(Domain):
   def __init__(self):
-    Domain.__init__(self)
-    self.extensions   = []
-    
-    self.scope = {
-                   "nodes"      : AllNodes(self),
-                   "nodes.self" : OwnNode(self)
-                 }
+    self.scoping = {
+      "*"    : AllNodes(self),
+      "self" : OwnNode(self)
+    }
 
   def to_string(self, level):
     return "  " * level + "nodes"

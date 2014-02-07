@@ -9,8 +9,9 @@ from antlr3 import RecognitionException
 from foo_lang.parser.foo_langLexer  import foo_langLexer
 from foo_lang.parser.foo_langParser import foo_langParser
 
-from foo_lang.semantic.model   import Model
-from foo_lang.semantic.visitor import Visitor
+from foo_lang.semantic.model         import Model
+from foo_lang.semantic.domains.nodes import Nodes
+from foo_lang.semantic.visitor       import Visitor
 
 def parse(string):
   cStream = antlr3.StringStream(string)
@@ -38,6 +39,9 @@ def to_ast(string):
     raise RuntimeError("Failed to parse")
 
 def to_model(string):
+  # create our default model with Nodes support
   model = Model()
+  model.domains['nodes'] = Nodes()
+
   Visitor(model).visit(to_ast(string))
   return model

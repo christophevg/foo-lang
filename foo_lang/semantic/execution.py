@@ -11,11 +11,11 @@ class ExecutionStrategy(base):
 
 # Interval-based execution
 class Every(ExecutionStrategy):
-  def __init__(self, interval, scope, function):
+  def __init__(self, scope, function, interval):
     ExecutionStrategy.__init__(self, scope, function)
     self.interval = interval
 
   def to_string(self, level):
     return "  " * level + "@every(" + str(self.interval) + ")\n" + \
            self.scope.to_string(level) + " " + \
-           self.executed.to_string(level).lstrip()
+           ("" if self.executed == None else self.executed.to_string(level).lstrip())

@@ -118,29 +118,23 @@ class TestModel(unittest.TestCase):
     function = self.create_function()
     self.assertEqual(str(function), "function anonymous0(x, y) {\n  x++\n  y++\n}")
 
-  def test_function_in_module(self):
-    function = self.create_function("name")
-    module = Module("moduleName")
-    module.functions[function.name] = function
-    self.assertEqual(str(module), "module moduleName\n" + str(function))
-
   # SCOPING
   def test_global_scope(self):
     scope = Global()
     self.assertEqual(str(scope), "")
 
   def test_domain_scope(self):
-    scope = Scope(Nodes())
-    self.assertEqual(str(scope), "")
+    scope = Nodes().get_scope()
+    self.assertEqual(str(scope), "with nodes do")
 
   def test_domain_specific_scope(self):
-    scope = Nodes().scope['nodes']
-    self.assertEqual(str(scope), "with nodes do")
+    scope = Nodes().get_scope("self")
+    self.assertEqual(str(scope), "with nodes.self do")
 
   # EXECUTION STRATEGIES
   def test_every_strategy(self):
     function = self.create_function("name")
-    strategy = Every(VariableExp("interval"), AllNodes(Nodes()), function)
+    strategy = Every(AllNodes(Nodes()), function, VariableExp("interval"))
     self.assertEqual(str(strategy), "@every(interval)\n" + \
                                     "with nodes do " + str(function))
 
