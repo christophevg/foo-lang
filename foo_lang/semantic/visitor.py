@@ -4,11 +4,14 @@
 # Visitor for converting a tree into model
 # Note: trying to create a tree grammar to do this seemed harder in the end
 
-from foo_lang.semantic.constant  import Constant
-from foo_lang.semantic.types     import Object, Property
-from foo_lang.semantic.model     import Module, Extension
-from foo_lang.semantic.domain    import Domain, Scope
-from foo_lang.semantic.execution import Every
+import sys
+
+from foo_lang.semantic.constant    import Constant
+from foo_lang.semantic.types       import Object, Property
+from foo_lang.semantic.model       import Module, Extension
+from foo_lang.semantic.domain      import Domain, Scope
+from foo_lang.semantic.execution   import Every
+from foo_lang.semantic.expressions import VariableExp
 
 class Visitor():
   def __init__(self, model):
@@ -87,8 +90,10 @@ class Visitor():
     [annotation, arguments] = self.handle_annotation(children[0])
     [scope, function]       = self.handle_annotated_execution(children[1])
 
-    # TODO: replace with dynamic instantiation
-    strategy = Every(scope, function, arguments)
+    module   = sys.modules["foo_lang.semantic.execution"]
+    clazz    = getattr(module, annotation)
+    strategy = clazz(scope, function, arguments)
+
     self.current_module.executions.append(strategy)
     return None
 
@@ -96,8 +101,12 @@ class Visitor():
     assert tree.text == "ANNOTATION"
     children = tree.getChildren()
     return {
-      'every': ['Every', self.tree2list(children[1])[0]]
+      'every': ['Every', self.handle_variable(children[1].getChildren()[0])]
     }[children[0].text]
+
+  def handle_variable(self, tree):
+    assert tree.text == "VAR"
+    return VariableExp(tree.getChildren()[0].text)
 
   # two executions are supported currently:
   # 1. application of function to scope
@@ -136,14 +145,6 @@ class Visitor():
       return obj.get_scope()
     else:
       raise RuntimeError("Un-scopable object:", obj)
-
-  # returns an actual list of elements in a list-node
-  def tree2list(self, tree):
-    assert tree.text == "LIST"
-    # TODO handle intermediate VAR level
-    l = [item.getChildren()[0].text for item in tree.getChildren()]
-    print l
-    return l
 
   # extract a name-type-value tuple
   def tree2ntv(self, tree):
