@@ -14,7 +14,7 @@ ANTLR_OUT=antlr.out
 
 PARSER=$(APP)/parser/$(APP)Parser.py
 
-all: clean test
+all: clean dot test src
 
 src: $(PARSER)
 	@echo "*** parsing and dumping $(SRC)"

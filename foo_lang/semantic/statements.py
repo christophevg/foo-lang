@@ -20,7 +20,8 @@ class BlockStmt(Stmt):
     else:
       string += "\n"
       for statement in self.statements:
-        string += "  " * (level+1) + str(statement) + "\n"
+        if statement != None:
+          string += statement.to_string(level+1) + "\n"
       string += "  " * level + "}"
     return string
 

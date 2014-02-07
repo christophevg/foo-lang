@@ -223,15 +223,15 @@ variable
   ;
 
 property_expression
-  : o+=identifier DOT (o+=identifier DOT)* p=identifier
-    -> ^(PROPERTY ^(OBJECT $o+) $p)
+  : object_expression DOT identifier
+    -> ^(PROPERTY object_expression identifier)
   ;
 
-/*object_expression
-  : identifier DOT object_expression -> ^(OBJECT identifier object_expression)
+object_expression
+  : identifier DOT identifier -> ^(OBJECT identifier identifier)
   | identifier                       -> ^(OBJECT identifier)
   ;
-*/
+
 // DIRECTIVES
 
 directive : import_directive;

@@ -107,8 +107,8 @@ class TestModel(unittest.TestCase):
 
   # FUNCTIONS
   def create_function(self, name=None):
-    return Function(name, ["x","y"], BlockStmt([IncStmt(VariableExp("x")),
-                                                IncStmt(VariableExp("y"))]))
+    return Function(BlockStmt([IncStmt(VariableExp("x")),
+                               IncStmt(VariableExp("y"))]), name, ["x","y"])
 
   def test_function(self):
     function = self.create_function("name")
@@ -116,7 +116,7 @@ class TestModel(unittest.TestCase):
 
   def test_anon_function(self):
     function = self.create_function()
-    self.assertEqual(str(function), "function anonymous0(x, y) {\n  x++\n  y++\n}")
+    self.assertEqual(str(function), "function(x, y) {\n  x++\n  y++\n}")
 
   # SCOPING
   def test_global_scope(self):

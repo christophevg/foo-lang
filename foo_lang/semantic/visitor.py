@@ -8,10 +8,11 @@ import sys
 
 from foo_lang.semantic.constant    import Constant
 from foo_lang.semantic.types       import Object, Property
-from foo_lang.semantic.model       import Module, Extension
+from foo_lang.semantic.model       import Module, Extension, Function
 from foo_lang.semantic.domain      import Domain, Scope
 from foo_lang.semantic.execution   import Every
-from foo_lang.semantic.expressions import VariableExp
+from foo_lang.semantic.expressions import VariableExp, PropertyExp
+from foo_lang.semantic.statements  import BlockStmt, IfStmt, IncStmt
 
 class Visitor():
   def __init__(self, model):
@@ -22,15 +23,18 @@ class Visitor():
 
     # mapping top-node's text to handler (aka poor man's visitor pattern)
     self.dispatch = {
-      "ROOT"      : self.handle_root,
-      "MODULE"    : self.handle_module,
-      "CONST"     : self.handle_constant,
-      "IMPORT"    : self.handle_import,
-      "EXTEND"    : self.handle_extend,
-      "ANNOTATED" : self.handle_annotated,
-      "DOMAIN"    : self.handle_domain,
-      "PROPERTY"  : self.handle_property
-      # "APPLY"     : self.handle_application
+      "ROOT"           : self.handle_root,
+      "MODULE"         : self.handle_module,
+      "CONST"          : self.handle_constant,
+      "IMPORT"         : self.handle_import,
+      "EXTEND"         : self.handle_extend,
+      "ANNOTATED"      : self.handle_annotated,
+      "DOMAIN"         : self.handle_domain,
+      "PROPERTY"       : self.handle_property,
+      "ANON_FUNC_DECL" : self.handle_anon_func_decl,
+      "BLOCK"          : self.handle_block_stmt,
+      "IF"             : self.handle_if_stmt,
+      "INC"            : self.handle_inc_stmt
     }
 
   # visiting an unknown tree, using the dispatch to get to specialized handler
@@ -133,7 +137,43 @@ class Visitor():
     children = tree.getChildren()
     obj      = self.visit(children[0])
     prop     = children[1].text
-    return obj.get_property(prop)
+    # TODO: make more generic
+    if isinstance(obj, Domain):
+      return obj.get_property(prop)
+    else:
+      return PropertyExp(obj, prop)
+
+  def handle_anon_func_decl(self, tree):
+    assert tree.text == "ANON_FUNC_DECL"
+    children  = tree.getChildren()
+    arguments = [arg.text for arg in children[0].getChildren()]
+    body      = self.visit(children[1])
+    function  = Function(body, arguments=arguments)
+    self.current_module.functions[function.name] = function
+    return function
+
+  # STATEMENTS
+
+  def handle_block_stmt(self, tree):
+    assert tree.text == "BLOCK"
+    statements = tree.getChildren()
+    return BlockStmt([self.visit(statement) for statement in statements])
+
+  def handle_if_stmt(self, tree):
+    assert tree.text == "IF"
+    children  = tree.getChildren()
+    condition = self.visit(children[0])
+    true      = self.visit(children[1])
+    if len(children) > 2:
+      false   = self.visit(children[2])
+    else:
+      false   = None
+    return IfStmt(condition, true, false)
+
+  def handle_inc_stmt(self, tree):
+    assert tree.text == "INC"
+    target = self.visit(tree.getChildren()[0])
+    return IncStmt(target)
 
   # HELPERS
 
