@@ -13,6 +13,6 @@ class Constant(base):
 
   def to_string(self, indent):
     return "  " * indent + \
-           "const " + self.name \
-           + ((" : " + self.type) if self.type != None else "") \
-           + " = " + self.value
+           "const " + str(self.name) \
+           + ((" : " + str(self.type)) if self.type != None else "") \
+           + " = " + str(self.value)

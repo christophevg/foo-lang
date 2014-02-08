@@ -71,6 +71,14 @@ class TestStatements(unittest.TestCase):
                    [BlockStmt([IncStmt(VariableExp("x"))])])
     self.assertEqual(str(stmt), "case something {\n  has(x) {\n    x++\n  }\n}")
 
+  def test_return_stmt(self):
+    stmt = ReturnStmt()
+    self.assertEqual(str(stmt), "return")
+
+  def test_return_stmt_with_value(self):
+    stmt = ReturnStmt(VariableExp("something"))
+    self.assertEqual(str(stmt), "return something")
+
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestStatements)
   unittest.TextTestRunner(verbosity=2).run(suite)

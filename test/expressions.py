@@ -100,7 +100,25 @@ class TestExpressions(unittest.TestCase):
     self.assertEqual(str(exp), "true")
     exp = BooleanLiteralExp(False)
     self.assertEqual(str(exp), "false")
-    
+
+  def test_integer_literal_exp(self):
+    exp = IntegerLiteralExp(123)
+    self.assertEqual(str(exp), "123")
+    exp = IntegerLiteralExp("456")
+    self.assertEqual(str(exp), "456")
+    self.assertRaises(ValueError, IntegerLiteralExp, "789.23")
+
+  def test_float_literal_exp(self):
+    exp = FloatLiteralExp(123)
+    self.assertEqual(str(exp), "123.0")
+    exp = FloatLiteralExp("456")
+    self.assertEqual(str(exp), "456.0")
+    exp = FloatLiteralExp("789.34")
+    self.assertEqual(str(exp), "789.34")
+
+  def test_type_exp(self):
+    exp = TypeExp("test")
+    self.assertEqual(str(exp), "test")
 
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestExpressions)

@@ -1,5 +1,5 @@
 IMG_TYPE=pdf
-SRC=heartbeat.foo
+SRC=reputation.foo
 
 ANTLR=java -cp lib/antlr-3.1.jar org.antlr.Tool
 PYTHON=PYTHONPATH=. /opt/local/bin/python2.7

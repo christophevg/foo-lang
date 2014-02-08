@@ -25,4 +25,6 @@ class Property(base):
   
   def to_string(self, level):
     return "  " * level + \
-           self.name + " : " + self.type + " = " + self.value
+           str(self.name) + \
+           ((" : " + str(self.type)) if self.type != None else "") + \
+           " = " + str(self.value)

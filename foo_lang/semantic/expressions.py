@@ -32,6 +32,34 @@ class BooleanLiteralExp(Exp):
   def to_string(self, level):
     return "  " * level + "true" if self.value else "false"
 
+class IntegerLiteralExp(Exp):
+  def __init__(self, value):
+    self.value = int(value)
+
+  def to_string(self, level):
+    return str(self.value)
+
+class FloatLiteralExp(Exp):
+  def __init__(self, value):
+    self.value = float(value)
+
+  def to_string(self, level):
+    return str(self.value)
+
+class AtomLiteralExp(Exp):
+  def __init__(self, name):
+    self.name = name
+
+  def to_string(self, level):
+    return "  " * level + "#" + self.name
+
+class TypeExp(Exp):
+  def __init__(self, type):
+    self.type = type
+
+  def to_string(self, level):
+    return "  " * level + str(self.type)
+
 class ListLiteral(Exp):
   def __init__(self, expressions):
     self.expressions = expressions
@@ -54,13 +82,6 @@ class PropertyExp(Exp):
 
   def to_string(self, level):
     return "  " * level + str(self.object) + "." + str(self.property)
-
-class AtomExp(Exp):
-  def __init__(self, name):
-    self.name = name
-
-  def to_string(self, level):
-    return "  " * level + "#" + self.name
 
 class UnaryExp(Exp):
   def __init__(self, operand):

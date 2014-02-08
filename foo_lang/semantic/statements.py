@@ -91,3 +91,11 @@ class CaseStmt(Stmt):
       string += case.to_string(level+1) + " " + self.cases[case].to_string(level+1).lstrip() + "\n"
     string += "  " * level + "}"
     return string
+
+class ReturnStmt(Stmt):
+  def __init__(self, value=None):
+    self.value = value
+  
+  def to_string(self, level):
+    return "  " * level + "return" + \
+          ("" if self.value == None else " " + str(self.value))

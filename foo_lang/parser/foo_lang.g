@@ -13,10 +13,11 @@ options {
 
 // a few virtual tokens, used as identifying node
 tokens {  // must be declared here/before use, not with other real tokens below
-  ROOT; MODULE; CONST; EXTERNAL; OBJECT; OBJECT_REF; FUNC_REF; FUNC_DECL;
-  ANON_FUNC_DECL; FUNC_CALL; METHOD_CALL; LIST; PROPERTY; IMPORT; EXTEND; IF;
-  BLOCK; VAR; ANNOTATION; ANNOTATED; INC; DEC; APPLY; ON; ATOM; CASES; CASE;
-  TYPE; MANY; TUPLE; VALUE; DOMAIN; BOOLEAN_LITERAL;
+  ROOT; MODULE; CONST; EXTERNAL; OBJECT_LITERAL; OBJECT_REF; FUNC_REF;
+  FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL; METHOD_CALL; LIST; PROPERTY_LITERAL;
+  PROPERTY_EXP; IMPORT; EXTEND; IF; BLOCK; VAR; ANNOTATION; ANNOTATED; INC;
+  DEC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY; TUPLE; VALUE; DOMAIN;
+  BOOLEAN_LITERAL; INTEGER_LITERAL; FLOAT_LITERAL; RETURN; MATCH; ANYTHING;
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -77,29 +78,18 @@ apply_declaration
   : 'with' scoping 'do' function_expression -> ^(APPLY scoping function_expression)
   ;
   
-constant_declaration
-  : 'const' typed_value -> ^(CONST typed_value)
+constant_declaration: 'const' name_type_value -> ^(CONST name_type_value);
+/*  : 'const' identifier ASSIGN expression-> ^(CONST identifier expression)
+  | 'const' identifier COLON type ASSIGN expression-> ^(CONST identifier type expression)
   ;
-
-// TODO clean up ;-)
-typed_value
-  :  identifier COLON type ASSIGN literal
-    -> ^(VALUE identifier type literal)
-  | identifier ASSIGN FLOAT
-    -> ^(VALUE identifier ^(TYPE TYPE['float']) FLOAT)
-  | identifier ASSIGN INTEGER
-    -> ^(VALUE identifier ^(TYPE TYPE['integer']) INTEGER)
-  | identifier ASSIGN boolean_literal
-    -> ^(VALUE identifier ^(TYPE TYPE['boolean']) boolean_literal)
-  ;
-
+*/
 event_handler_declaration
   : event_timing scoping function_expression 'do' function_expression
     -> ^(ON event_timing scoping function_expression function_expression)
   ;
 
 scoping
-  : domain DOT identifier -> ^(PROPERTY domain identifier)
+  : domain DOT identifier -> ^(PROPERTY_EXP domain identifier)
   | domain
   ;
 
@@ -128,7 +118,7 @@ statement
   | if_statement
   | case_statement
   | call_expression
-  | 'return'
+  | 'return' -> ^(RETURN)
   ;
 
 block_statement
@@ -232,7 +222,7 @@ variable
 
 property_expression
   : object_expression DOT identifier
-    -> ^(PROPERTY object_expression identifier)
+    -> ^(PROPERTY_EXP object_expression identifier)
   ;
 
 object_expression
@@ -256,18 +246,32 @@ extension : 'extend' identifier 'with' literal
 // LITERALS
 
 literal: numeric_literal | boolean_literal | object_literal | list_literal;
-boolean_literal: value='true' | value='false' -> ^(BOOLEAN_LITERAL $value);
-numeric_literal: INTEGER | FLOAT;
-object_literal: LBRACE (property_type_value_list)? RBRACE
-                -> ^(OBJECT property_type_value_list?);
-property_type_value_list: property_type_value (property_type_value)*;
-property_type_value: typed_value -> ^(PROPERTY typed_value);
+boolean_literal
+  : value='true'  -> ^(BOOLEAN_LITERAL $value)
+  | value='false' -> ^(BOOLEAN_LITERAL $value)
+  ;
+numeric_literal
+  : value=INTEGER -> ^(INTEGER_LITERAL $value)
+  | value=FLOAT   -> ^(FLOAT_LITERAL $value)
+  ;
+object_literal: LBRACE (property_literal_list)? RBRACE
+                -> ^(OBJECT_LITERAL property_literal_list?);
+property_literal_list: property_literal (property_literal)*;
+property_literal: name_type_value -> ^(PROPERTY_LITERAL name_type_value);
+
+name_type_value
+  : identifier COLON! type ASSIGN! literal
+  | identifier ASSIGN! literal
+  ;
 
 atom : '#' identifier -> ^(ATOM identifier);
 
-matching_expression: dontcare | comparison;
-dontcare: UNDERSCORE;
-comparison: comparator^ expression;
+matching_expression
+  : dontcare   -> ^(MATCH dontcare)
+  | comparison -> ^(MATCH comparison)
+  ;
+dontcare: UNDERSCORE -> ANYTHING;
+comparison: comparator expression;
 comparator: LT | LTEQ | GT | GTEQ | EQUALS | NOTEQUALS | NOT;
 
 list_literal 

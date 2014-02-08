@@ -30,20 +30,28 @@ class Visitor():
       "EXTEND"          : self.handle_extend,
       "ANNOTATED"       : self.handle_annotated,
       "DOMAIN"          : self.handle_domain,
-      "PROPERTY"        : self.handle_property,
       "ANON_FUNC_DECL"  : self.handle_anon_func_decl,
 
       "BLOCK"           : self.handle_block_stmt,
       "IF"              : self.handle_if_stmt,
       "CASES"           : self.handle_cases_stmt,
+
       "INC"             : self.handle_inc_stmt,
       "DEC"             : self.handle_dec_stmt,
-      "="               : self.handle_assign_stmt,
+
+      "="               : lambda t: self.handle_bin_stmt("=",  AssignStmt, t),
+      "+="              : lambda t: self.handle_bin_stmt("+=", AddStmt,    t),
+      "-="              : lambda t: self.handle_bin_stmt("-=", SubStmt,    t),
+
+      "RETURN"          : self.handle_return_stmt,
 
       "OBJECT_REF"      : self.handle_object_ref,
       "FUNC_REF"        : self.handle_function_ref,
 
+      "PROPERTY_EXP"    : self.handle_property_exp,
+      # TODO: add suffix _EXP
       "VAR"             : self.handle_variable_exp,
+      "TYPE"            : self.handle_type_exp,
 
       ">"               : lambda t: self.handle_bin_exp(">",   GTExp,        t),
       ">="              : lambda t: self.handle_bin_exp(">=",  GTEQExp,      t),
@@ -58,14 +66,23 @@ class Visitor():
       "*"               : lambda t: self.handle_bin_exp("*",   MultExp,      t),
       "/"               : lambda t: self.handle_bin_exp("/",   DivExp,       t),
       "%"               : lambda t: self.handle_bin_exp("%",   ModuloExp,    t),
+      "!"               : self.handle_not_exp,
       
       # TODO: merge these into handle_call ?
       "FUNC_CALL"       : self.handle_function_call,
       "METHOD_CALL"     : self.handle_method_call,
       
-      "BOOLEAN_LITERAL" : self.handle_boolean_literal,
+      "BOOLEAN_LITERAL" : lambda t: self.handle_literal("BOOLEAN_LITERAL", \
+                                                        BooleanLiteralExp, t),
+      "INTEGER_LITERAL" : lambda t: self.handle_literal("INTEGER_LITERAL", \
+                                                        IntegerLiteralExp, t),
+      "FLOAT_LITERAL"   : lambda t: self.handle_literal("FLOAT_LITERAL", \
+                                                        FloatLiteralExp, t),
+      # TODO: add suffix _LITERAL
+      "ATOM"            : lambda t: self.handle_literal("ATOM", \
+                                                        AtomLiteralExp, t),
+
       "LIST"            : self.handle_list_literal,
-      "ATOM"            : self.handle_atom_literal,
       
       "ON"              : self.handle_event_handler_decl
     }
@@ -99,8 +116,15 @@ class Visitor():
 
   def handle_constant(self, tree):
     assert tree.text == "CONST"
-    [name, type, value] = self.tree2ntv(tree.getChildren()[0])
-    constant            = Constant(name,type,value)
+    children = tree.getChildren()
+    name     = children[0].text
+    if len(children) > 2:
+      type   = self.visit(children[1])
+      value  = self.visit(children[2])
+    else:
+      type   = None
+      value  = self.visit(children[1])
+    constant = Constant(name, type, value)
     self.current_module.constants[constant.name] = constant
     return constant
 
@@ -108,8 +132,7 @@ class Visitor():
     assert tree.text == "EXTEND"
     children  = tree.getChildren()
     domain    = children[0].text
-    # TODO: change to handle_object_literal
-    obj       = self.tree2object(children[1])
+    obj       = self.handle_object_literal(children[1])
     extension = Extension(domain, obj)
     self.current_module.extensions.append(extension)
     return extension
@@ -138,10 +161,6 @@ class Visitor():
       'every': ['Every', [self.handle_variable_exp(children[1].getChildren()[0])]]
     }[children[0].text]
 
-  def handle_variable_exp(self, tree):
-    assert tree.text == "VAR"
-    return VariableExp(tree.getChildren()[0].text)
-
   # two executions are supported currently:
   # 1. application of function to scope
   # 2. (simple) function in global scope (NOT IMPLEMENTED YET)
@@ -162,8 +181,8 @@ class Visitor():
     assert tree.text == "DOMAIN"
     return self.model.domains[tree.getChildren()[0].text]
 
-  def handle_property(self, tree):
-    assert tree.text == "PROPERTY"
+  def handle_property_exp(self, tree):
+    assert tree.text == "PROPERTY_EXP"
     children = tree.getChildren()
     obj      = self.visit(children[0])
     prop     = children[1].text
@@ -252,12 +271,16 @@ class Visitor():
     target = self.visit(tree.getChildren()[0])
     return DecStmt(target)
 
-  def handle_assign_stmt(self, tree):
-    assert tree.text == "="
+  def handle_bin_stmt(self, text, constructor, tree):
+    assert tree.text == text
     children = tree.getChildren()
     left     = self.visit(children[0])
     right    = self.visit(children[1])
-    return AssignStmt(left, right)
+    return constructor(left, right)
+
+  def handle_return_stmt(self, tree):
+    assert tree.text == "RETURN"
+    return ReturnStmt()
 
   # ??? :-)
 
@@ -270,6 +293,20 @@ class Visitor():
     assert tree.text == "FUNC_REF"
     # TODO: use something more specific?!
     return VariableExp(tree.getChildren()[0].text)
+
+  # EXPRESSIONS
+
+  def handle_variable_exp(self, tree):
+    assert tree.text == "VAR"
+    return VariableExp(tree.getChildren()[0].text)
+
+  def handle_type_exp(self, tree):
+    assert tree.text == "TYPE"
+    return TypeExp(tree.getChildren()[0].text)
+
+  def handle_not_exp(self, tree):
+    assert tree.text == "!"
+    return NotExp(self.visit(tree.getChildren()[0]))
 
   # GENERIC FUNCTION FOR BINARY EXPRESSIONS
 
@@ -305,18 +342,33 @@ class Visitor():
 
   # TYPES
 
-  def handle_boolean_literal(self, tree):
-    assert tree.text == "BOOLEAN_LITERAL"
-    return BooleanLiteralExp(tree.getChildren()[0].text)
+  def handle_literal(self, text, constructor, tree):
+    assert tree.text == text
+    return constructor(tree.getChildren()[0].text)
 
   def handle_list_literal(self, tree):
     assert tree.text == "LIST"
     children = tree.getChildren()
     return ListLiteral([self.visit(child) for child in children])
 
-  def handle_atom_literal(self, tree):
-    assert tree.text == "ATOM"
-    return AtomExp(tree.getChildren()[0].text)
+  def handle_object_literal(self, tree):
+    assert tree.text == "OBJECT_LITERAL"
+    obj = Object()
+    for child in tree.getChildren():
+      obj.properties.append(self.handle_property_literal(child))
+    return obj
+
+  def handle_property_literal(self, tree):
+    assert tree.text == "PROPERTY_LITERAL"
+    children = tree.getChildren()
+    name     = children[0].text
+    if len(children) > 2:
+      type   = self.visit(children[1])
+      value  = self.visit(children[2])
+    else:
+      type   = None
+      value  = self.visit(children[1])
+    return Property(name, type, value)
 
   # HELPERS
 
@@ -332,26 +384,3 @@ class Visitor():
       return obj.get_scope()
     else:
       raise RuntimeError("Un-scopable object:", obj)
-
-  # extract a name-type-value tuple
-  # TODO: should become handle_named_typed_value
-  def tree2ntv(self, tree):
-    assert tree.text == "VALUE"
-    children = tree.getChildren()
-    assert children[1].text == "TYPE"
-    # TODO convert value to actual number, ...
-    return [children[0].text, 
-            children[1].getChildren()[0].text,
-            children[2].text]
-
-  # extract an object
-  # TODO: should become handle_object_literal
-  def tree2object(self, tree):
-    assert tree.text == "OBJECT"
-    obj = Object()
-    children = tree.getChildren()
-    for child in children:
-      assert child.text == "PROPERTY"
-      [name, type, value] = self.tree2ntv(child.getChildren()[0])
-      obj.properties.append(Property(name, type, value))
-    return obj
