@@ -9,12 +9,28 @@ class Exp(base):
   def __init__(self):
     raise RuntimeError("Exp is an abstract base class")
 
+# TODO: phase out in favor of typed literals
 class LiteralExp(Exp):
   def __init__(self, value):
     self.value = value
 
   def to_string(self, level):
     return "  " * level + self.value
+
+# NOTE: this does already more than possible ;-)
+class BooleanLiteralExp(Exp):
+  def __init__(self, value):
+    if isinstance(value, bool):
+      self.value = value
+    elif isinstance(value, str) or isinstance(value, unicode):
+      self.value = value == "true"
+    elif isinstance(value, int):
+      self.value = value != 0
+    else:
+      raise RuntimeError("Can't convert value to boolean:" + str(value))
+
+  def to_string(self, level):
+    return "  " * level + "true" if self.value else "false"
 
 class ListLiteral(Exp):
   def __init__(self, expressions):

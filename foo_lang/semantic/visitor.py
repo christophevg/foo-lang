@@ -23,39 +23,43 @@ class Visitor():
 
     # mapping top-node's text to handler (aka poor man's visitor pattern)
     self.dispatch = {
-      "ROOT"           : self.handle_root,
-      "MODULE"         : self.handle_module,
-      "CONST"          : self.handle_constant,
-      "IMPORT"         : self.handle_import,
-      "EXTEND"         : self.handle_extend,
-      "ANNOTATED"      : self.handle_annotated,
-      "DOMAIN"         : self.handle_domain,
-      "PROPERTY"       : self.handle_property,
-      "ANON_FUNC_DECL" : self.handle_anon_func_decl,
+      "ROOT"            : self.handle_root,
+      "MODULE"          : self.handle_module,
+      "CONST"           : self.handle_constant,
+      "IMPORT"          : self.handle_import,
+      "EXTEND"          : self.handle_extend,
+      "ANNOTATED"       : self.handle_annotated,
+      "DOMAIN"          : self.handle_domain,
+      "PROPERTY"        : self.handle_property,
+      "ANON_FUNC_DECL"  : self.handle_anon_func_decl,
 
-      "BLOCK"          : self.handle_block_stmt,
-      "IF"             : self.handle_if_stmt,
-      "INC"            : self.handle_inc_stmt,
-      "DEC"            : self.handle_dec_stmt,
-      "="              : self.handle_assign_stmt,
+      "BLOCK"           : self.handle_block_stmt,
+      "IF"              : self.handle_if_stmt,
+      "INC"             : self.handle_inc_stmt,
+      "DEC"             : self.handle_dec_stmt,
+      "="               : self.handle_assign_stmt,
 
-      "OBJECT_REF"     : self.handle_object_ref,
+      "OBJECT_REF"      : self.handle_object_ref,
 
-      "VAR"            : self.handle_variable_exp,
+      "VAR"             : self.handle_variable_exp,
 
-      ">"              : lambda t: self.handle_bin_exp(">",   GTExp,        t),
-      ">="             : lambda t: self.handle_bin_exp(">=",  GTEQExp,      t),
-      "<"              : lambda t: self.handle_bin_exp("<",   LTExp,        t),
-      "<="             : lambda t: self.handle_bin_exp("<=",  LTEQExp,      t),
-      "+"              : lambda t: self.handle_bin_exp("+",   PlusExp,      t),
-      "-"              : lambda t: self.handle_bin_exp("-",   MinusExp,     t),
-      "and"            : lambda t: self.handle_bin_exp("and", AndExp,       t),
-      "or"             : lambda t: self.handle_bin_exp("or",  OrExp,        t),
-      "=="             : lambda t: self.handle_bin_exp("==",  EqualsExp,    t),
-      "!="             : lambda t: self.handle_bin_exp("!=",  NotEqualsExp, t),
-      "*"              : lambda t: self.handle_bin_exp("*",   MultExp,      t),
-      "/"              : lambda t: self.handle_bin_exp("/",   DivExp,       t),
-      "%"              : lambda t: self.handle_bin_exp("%",   ModuloExp,    t)
+      ">"               : lambda t: self.handle_bin_exp(">",   GTExp,        t),
+      ">="              : lambda t: self.handle_bin_exp(">=",  GTEQExp,      t),
+      "<"               : lambda t: self.handle_bin_exp("<",   LTExp,        t),
+      "<="              : lambda t: self.handle_bin_exp("<=",  LTEQExp,      t),
+      "+"               : lambda t: self.handle_bin_exp("+",   PlusExp,      t),
+      "-"               : lambda t: self.handle_bin_exp("-",   MinusExp,     t),
+      "and"             : lambda t: self.handle_bin_exp("and", AndExp,       t),
+      "or"              : lambda t: self.handle_bin_exp("or",  OrExp,        t),
+      "=="              : lambda t: self.handle_bin_exp("==",  EqualsExp,    t),
+      "!="              : lambda t: self.handle_bin_exp("!=",  NotEqualsExp, t),
+      "*"               : lambda t: self.handle_bin_exp("*",   MultExp,      t),
+      "/"               : lambda t: self.handle_bin_exp("/",   DivExp,       t),
+      "%"               : lambda t: self.handle_bin_exp("%",   ModuloExp,    t),
+      
+      "FUNC_CALL"       : self.handle_function_call,
+      
+      "BOOLEAN_LITERAL" : self.handle_boolean_literal
     }
 
   # visiting an unknown tree, using the dispatch to get to specialized handler
@@ -165,6 +169,7 @@ class Visitor():
     else:
       return PropertyExp(obj, prop)
 
+  # TODO: make generic to handle also named function decl
   def handle_anon_func_decl(self, tree):
     assert tree.text == "ANON_FUNC_DECL"
     children  = tree.getChildren()
@@ -225,7 +230,34 @@ class Visitor():
     right    = self.visit(children[1])
     return constructor(left, right)
 
+  # FUNCTIONS
+  
+  def handle_function_call(self, tree):
+    assert tree.text == "FUNC_CALL"
+    children  = tree.getChildren()
+    function  = children[0].text
+    if len(children) > 1:
+      arguments = self.as_list(self.handle_list(children[1]))
+      return FunctionCallExp(function, arguments)
+    else:
+      return FunctionCallExp(function)
+
+  # TYPES
+
+  def handle_boolean_literal(self, tree):
+    assert tree.text == "BOOLEAN_LITERAL"
+    return BooleanLiteralExp(tree.getChildren()[0].text)
+
+  def handle_list(self, tree):
+    assert tree.text == "LIST"
+    children = tree.getChildren()
+    return ListLiteral([self.visit(child) for child in children])
+
   # HELPERS
+
+  def as_list(self, list_exp):
+    assert instanceof(list_exp, ListLiteral)
+    return list_exp.expressions
 
   # makes sure that the argument is a scope
   def as_scope(self, obj):
@@ -237,6 +269,7 @@ class Visitor():
       raise RuntimeError("Un-scopable object:", obj)
 
   # extract a name-type-value tuple
+  # TODO: should become handle_named_typed_value
   def tree2ntv(self, tree):
     assert tree.text == "VALUE"
     children = tree.getChildren()
@@ -247,6 +280,7 @@ class Visitor():
             children[2].text]
 
   # extract an object
+  # TODO: should become handle_object_literal
   def tree2object(self, tree):
     assert tree.text == "OBJECT"
     obj = Object()

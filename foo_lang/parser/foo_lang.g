@@ -16,7 +16,7 @@ tokens {  // must be declared here/before use, not with other real tokens below
   ROOT; MODULE; CONST; EXTERNAL; OBJECT; OBJECT_REF; FUNC_DECL; ANON_FUNC_DECL;
   FUNC_CALL; METHOD_CALL; LIST; PROPERTY; IMPORT; EXTEND; IF; BLOCK; VAR;
   ANNOTATION; ANNOTATED; INC; DEC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY;
-  TUPLE; VALUE; DOMAIN;
+  TUPLE; VALUE; DOMAIN; BOOLEAN_LITERAL;
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -248,7 +248,7 @@ extension : 'extend' identifier 'with' literal
 // LITERALS
 
 literal: numeric_literal | boolean_literal | object_literal | list_literal;
-boolean_literal: 'true' | 'false';
+boolean_literal: value='true' | value='false' -> ^(BOOLEAN_LITERAL $value);
 numeric_literal: INTEGER | FLOAT;
 object_literal: LBRACE (property_type_value_list)? RBRACE
                 -> ^(OBJECT property_type_value_list?);

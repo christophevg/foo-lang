@@ -85,6 +85,23 @@ class TestExpressions(unittest.TestCase):
           )
     self.assertEqual(str(exp),"( ( this.do(! work()) or ( 1 >= ( 5 - 6 ) ) ) and false )")
 
+  def test_boolean_literal_exp(self):
+    exp = BooleanLiteralExp("true")
+    self.assertEqual(str(exp), "true")
+    exp = BooleanLiteralExp("false")
+    self.assertEqual(str(exp), "false")
+    exp = BooleanLiteralExp(123)
+    self.assertEqual(str(exp), "true")
+    exp = BooleanLiteralExp(-123)
+    self.assertEqual(str(exp), "true")
+    exp = BooleanLiteralExp(0)
+    self.assertEqual(str(exp), "false")
+    exp = BooleanLiteralExp(True)
+    self.assertEqual(str(exp), "true")
+    exp = BooleanLiteralExp(False)
+    self.assertEqual(str(exp), "false")
+    
+
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestExpressions)
   unittest.TextTestRunner(verbosity=2).run(suite)
