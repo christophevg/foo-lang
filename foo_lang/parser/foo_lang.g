@@ -13,10 +13,10 @@ options {
 
 // a few virtual tokens, used as identifying node
 tokens {  // must be declared here/before use, not with other real tokens below
-  ROOT; MODULE; CONST; EXTERNAL; OBJECT; OBJECT_REF; FUNC_DECL; ANON_FUNC_DECL;
-  FUNC_CALL; METHOD_CALL; LIST; PROPERTY; IMPORT; EXTEND; IF; BLOCK; VAR;
-  ANNOTATION; ANNOTATED; INC; DEC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY;
-  TUPLE; VALUE; DOMAIN; BOOLEAN_LITERAL;
+  ROOT; MODULE; CONST; EXTERNAL; OBJECT; OBJECT_REF; FUNC_REF; FUNC_DECL;
+  ANON_FUNC_DECL; FUNC_CALL; METHOD_CALL; LIST; PROPERTY; IMPORT; EXTEND; IF;
+  BLOCK; VAR; ANNOTATION; ANNOTATED; INC; DEC; APPLY; ON; ATOM; CASES; CASE;
+  TYPE; MANY; TUPLE; VALUE; DOMAIN; BOOLEAN_LITERAL;
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -74,14 +74,14 @@ annotation
   ;
 
 apply_declaration
-  : 'with' identifier DOT identifier 'do' function_expression
-    -> ^(APPLY ^(PROPERTY ^(DOMAIN identifier) identifier) function_expression)
-  | 'with' identifier 'do' function_expression
-    -> ^(APPLY ^(DOMAIN identifier) function_expression)
+  : 'with' scoping 'do' function_expression -> ^(APPLY scoping function_expression)
   ;
   
-constant_declaration: 'const' typed_value -> ^(CONST typed_value);
+constant_declaration
+  : 'const' typed_value -> ^(CONST typed_value)
+  ;
 
+// TODO clean up ;-)
 typed_value
   :  identifier COLON type ASSIGN literal
     -> ^(VALUE identifier type literal)
@@ -94,9 +94,16 @@ typed_value
   ;
 
 event_handler_declaration
-  : event_timing identifier identifier 'do' function_expression
-    -> ^(ON event_timing identifier identifier function_expression)
+  : event_timing scoping function_expression 'do' function_expression
+    -> ^(ON event_timing scoping function_expression function_expression)
   ;
+
+scoping
+  : domain DOT identifier -> ^(PROPERTY domain identifier)
+  | domain
+  ;
+
+domain: identifier -> ^(DOMAIN identifier);
 
 event_timing: 'before' | 'after';
 
@@ -107,7 +114,7 @@ function_declaration
 function_expression
   : 'function' identifier? LPAREN (function_param_list)? RPAREN function_body
      -> ^(ANON_FUNC_DECL identifier? function_param_list? function_body)
-  | identifier
+  | identifier -> ^(FUNC_REF identifier)
   ;
 function_param_list: p+=identifier (COMMA p+=identifier)* -> ^(LIST $p+);
 function_body: block_statement;
@@ -126,7 +133,8 @@ statement
 
 block_statement
   : LBRACE RBRACE            -> ^(BLOCK)
-  | LBRACE statement+ RBRACE -> ^(BLOCK statement+);
+  | LBRACE statement+ RBRACE -> ^(BLOCK statement+)
+  ;
 
 assignment_statement
   : variable (ASSIGN|ADD|SUB)^ expression
@@ -211,7 +219,7 @@ call_expression
   ;
 
 // TODO: extract object_expression
-method_call_expression : identifier DOT! (identifier DOT!)* function_call_expression;
+method_call_expression : object_expression DOT! function_call_expression;
 function_call_expression: identifier LPAREN! (argument_list)? RPAREN!;
 argument_list: a+=expression (COMMA a+=expression)* -> ^(LIST $a+);
 

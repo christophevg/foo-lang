@@ -35,11 +35,13 @@ class Visitor():
 
       "BLOCK"           : self.handle_block_stmt,
       "IF"              : self.handle_if_stmt,
+      "CASES"           : self.handle_cases_stmt,
       "INC"             : self.handle_inc_stmt,
       "DEC"             : self.handle_dec_stmt,
       "="               : self.handle_assign_stmt,
 
       "OBJECT_REF"      : self.handle_object_ref,
+      "FUNC_REF"        : self.handle_function_ref,
 
       "VAR"             : self.handle_variable_exp,
 
@@ -57,9 +59,15 @@ class Visitor():
       "/"               : lambda t: self.handle_bin_exp("/",   DivExp,       t),
       "%"               : lambda t: self.handle_bin_exp("%",   ModuloExp,    t),
       
+      # TODO: merge these into handle_call ?
       "FUNC_CALL"       : self.handle_function_call,
+      "METHOD_CALL"     : self.handle_method_call,
       
-      "BOOLEAN_LITERAL" : self.handle_boolean_literal
+      "BOOLEAN_LITERAL" : self.handle_boolean_literal,
+      "LIST"            : self.handle_list_literal,
+      "ATOM"            : self.handle_atom_literal,
+      
+      "ON"              : self.handle_event_handler_decl
     }
 
   # visiting an unknown tree, using the dispatch to get to specialized handler
@@ -120,18 +128,14 @@ class Visitor():
     [annotation, arguments] = self.handle_annotation(children[0])
     [scope, function]       = self.handle_annotated_execution(children[1])
 
-    module   = sys.modules["foo_lang.semantic.execution"]
-    clazz    = getattr(module, annotation)
-    strategy = clazz(scope, function, arguments)
-
-    self.current_module.executions.append(strategy)
+    self.add_execution(annotation, scope, function, arguments)
     return None
 
   def handle_annotation(self, tree):
     assert tree.text == "ANNOTATION"
     children = tree.getChildren()
     return {
-      'every': ['Every', self.handle_variable_exp(children[1].getChildren()[0])]
+      'every': ['Every', [self.handle_variable_exp(children[1].getChildren()[0])]]
     }[children[0].text]
 
   def handle_variable_exp(self, tree):
@@ -179,6 +183,23 @@ class Visitor():
     self.current_module.functions[function.name] = function
     return function
 
+  def handle_event_handler_decl(self, tree):
+    assert tree.text == "ON"
+    children = tree.getChildren()
+    timing   = children[0].text
+    scope    = self.visit(children[1])
+    event    = self.visit(children[2])
+    function = self.visit(children[3])
+    
+    return self.add_execution("When", scope, function, [timing, event])
+
+  def add_execution(self, class_name, scope, function, arguments):
+    module   = sys.modules["foo_lang.semantic.execution"]
+    clazz    = getattr(module, class_name)
+    strategy = clazz(scope, function, *arguments)
+    self.current_module.executions.append(strategy)
+    return strategy
+
   # STATEMENTS
 
   def handle_block_stmt(self, tree):
@@ -196,6 +217,30 @@ class Visitor():
     else:
       false   = None
     return IfStmt(condition, true, false)
+
+  def handle_cases_stmt(self, tree):
+    assert tree.text == "CASES"
+    children     = tree.getChildren()
+    expression   = self.visit(children[0])
+    cases        = []
+    for index in range(1,len(children)):
+      cases.append(self.handle_case(children[index]))
+    [cases, consequences] = zip(*cases)
+    return CaseStmt(expression, cases, consequences)
+
+  # TODO: copy/paste from handle_function_call -> merge somehow or pull up ?
+  def handle_case(self, tree):
+    assert tree.text == "CASE"
+    children       = tree.getChildren()
+    function_name  = children[0].text
+    if len(children) > 2:
+      arguments = self.as_list(self.handle_list_literal(children[1]))
+      function = FunctionCallExp(function_name, arguments)
+      body     = self.visit(children[2])
+    else:
+      function = FunctionCallExp(function_name)
+      body     = self.visit(children[1])
+    return [function, body]
 
   def handle_inc_stmt(self, tree):
     assert tree.text == "INC"
@@ -221,6 +266,11 @@ class Visitor():
     # TODO: use something more specific?!
     return VariableExp(tree.getChildren()[0].text)
 
+  def handle_function_ref(self, tree):
+    assert tree.text == "FUNC_REF"
+    # TODO: use something more specific?!
+    return VariableExp(tree.getChildren()[0].text)
+
   # GENERIC FUNCTION FOR BINARY EXPRESSIONS
 
   def handle_bin_exp(self, text, constructor, tree):
@@ -230,17 +280,28 @@ class Visitor():
     right    = self.visit(children[1])
     return constructor(left, right)
 
-  # FUNCTIONS
+  # CALLING
   
   def handle_function_call(self, tree):
     assert tree.text == "FUNC_CALL"
     children  = tree.getChildren()
     function  = children[0].text
     if len(children) > 1:
-      arguments = self.as_list(self.handle_list(children[1]))
+      arguments = self.as_list(self.handle_list_literal(children[1]))
       return FunctionCallExp(function, arguments)
     else:
       return FunctionCallExp(function)
+
+  def handle_method_call(self, tree):
+    assert tree.text == "METHOD_CALL"
+    children = tree.getChildren()
+    obj      = self.visit(children[0])
+    method   = children[1].text
+    if len(children) > 2:
+      arguments = self.as_list(self.handle_list_literal(children[2]))
+      return MethodCallExp(obj, method, arguments)
+    else:
+      return MethodCallExp(obj, method)
 
   # TYPES
 
@@ -248,15 +309,19 @@ class Visitor():
     assert tree.text == "BOOLEAN_LITERAL"
     return BooleanLiteralExp(tree.getChildren()[0].text)
 
-  def handle_list(self, tree):
+  def handle_list_literal(self, tree):
     assert tree.text == "LIST"
     children = tree.getChildren()
     return ListLiteral([self.visit(child) for child in children])
 
+  def handle_atom_literal(self, tree):
+    assert tree.text == "ATOM"
+    return AtomExp(tree.getChildren()[0].text)
+
   # HELPERS
 
   def as_list(self, list_exp):
-    assert instanceof(list_exp, ListLiteral)
+    assert isinstance(list_exp, ListLiteral)
     return list_exp.expressions
 
   # makes sure that the argument is a scope
