@@ -14,7 +14,7 @@ ANTLR_OUT=antlr.out
 
 PARSER=$(APP)/parser/$(APP)Parser.py
 
-all: clean dot test src
+all: clean $(SRC:.foo=.$(IMG_TYPE)) test
 
 src: $(PARSER)
 	@echo "*** parsing and dumping $(SRC)"
@@ -28,7 +28,7 @@ src: $(PARSER)
 	@echo "*** visualizing AST of $<"
 	@$(DOT) $@ $<
 
-dot: $(SRC:.foo=.$(IMG_TYPE))
+$(IMG_TYPE): $(SRC:.foo=.$(IMG_TYPE))
 	@open $<
 
 %.dump: %.foo $(PARSER)
