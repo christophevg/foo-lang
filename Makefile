@@ -1,11 +1,9 @@
-IMG_TYPE=pdf
-SRC=reputation.foo
+SRCS=heartbeat.foo reputation.foo
 
 ANTLR=java -cp lib/antlr-3.1.jar org.antlr.Tool
 PYTHON=PYTHONPATH=. /opt/local/bin/python2.7
 
-DOT=dot -Nfixedsize=False -Nfontname=Times-Roman -Nshape=rectangle \
-				-T$(IMG_TYPE) -o
+DOT=dot -Nfixedsize=False -Nfontname=Times-Roman -Nshape=rectangle
 
 APP=foo_lang
 
@@ -14,29 +12,25 @@ ANTLR_OUT=antlr.out
 
 PARSER=$(APP)/parser/$(APP)Parser.py
 
+LC_CTYPE=en_US.UTF-8
+
 all: clean test
 
-src: $(PARSER)
-	@echo "*** parsing and dumping $(SRC)"
-	@$(PYTHON) dump-src.py $(SRC)
+%.ast: %.foo $(PARSER)
+	@echo "*** pasring $< and dumping AST into $@"
+	@$(PYTHON) foo.py -o ast $< > $@ || (cat $@; rm $@; false)
 
 %.dot: %.foo $(PARSER)
 	@echo "*** creating $@ from $<"
-	@$(PYTHON) dump-ast.py $< dot > $@
+	@$(PYTHON) foo.py -o dot $< > $@ || (cat $@; rm $@; false)
 
-%.$(IMG_TYPE): %.dot
-	@echo "*** visualizing AST of $<"
-	@$(DOT) $@ $<
+%.pdf: %.dot
+	@echo "*** visualizing AST of $< as PDF $@"
+	@$(DOT) -Tpdf -o $@ $<
 
-$(IMG_TYPE): $(SRC:.foo=.$(IMG_TYPE))
-	@open $<
-
-%.dump: %.foo $(PARSER)
-	@echo "*** parsing $(SRC)"
-	@$(PYTHON) dump-ast.py $(SRC) $< dump > $@ || (cat $@; false)
-
-dump: $(SRC:.foo=.dump)
-	cat $<
+foo: $(PARSER)
+	@echo "*** loading $(SRCS) into a model and dumping in foo-lang"
+	@$(PYTHON) foo.py -o foo $(SRCS) || (cat $@; rm $@; false)
 
 test: $(PARSER)
 	@echo "*** performing $(APP) tests"

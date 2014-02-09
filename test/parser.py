@@ -27,7 +27,7 @@ def test_good(input):
 
 def test_bad(input):
   def test(self):
-    self.assertRaises(RecognitionException, api.parse, input)
+    self.assertRaises(RecognitionException, api.parse, input, noprint=True)
   return test
 
 for test in good:

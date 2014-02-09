@@ -25,8 +25,8 @@ def make_test_source(file):
     be exactly the same.
     """
     input   = open(file).read()
-    output1 = str(api.to_model(input))
-    output2 = str(api.to_model(output1))
+    output1 = str(api.load(input))
+    output2 = str(api.load(output1))
     if output1 != output2:
       for line in unified_diff(output1.split("\n"), output2.split("\n")):
         print(line, end='\n', file=sys.stderr)

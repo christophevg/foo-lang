@@ -1,5 +1,7 @@
 *.dot
 *.png
 *.pdf
-*.dump
 *.pyc
+*.ast
+.coverage
+
