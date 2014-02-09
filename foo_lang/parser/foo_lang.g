@@ -18,7 +18,7 @@ tokens {  // must be declared here/before use, not with other real tokens below
   PROPERTY_LITERAL; PROPERTY_EXP; IMPORT; EXTEND; IF; BLOCK; VAR_EXP;
   ANNOTATION; ANNOTATED; INC; DEC; APPLY; ON; ATOM_LITERAL; CASES; CASE;
   TYPE_EXP; MANY_TYPE_EXP; TUPLE_TYPE_EXP; VALUE; DOMAIN; BOOLEAN_LITERAL; INTEGER_LITERAL;
-  FLOAT_LITERAL; RETURN; MATCH; ANYTHING; PARAMS; ARGS;
+  FLOAT_LITERAL; RETURN; MATCH_EXP; ANYTHING; PARAMS; ARGS;
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -80,10 +80,7 @@ apply_declaration
   ;
   
 constant_declaration: 'const' name_type_value -> ^(CONST name_type_value);
-/*  : 'const' identifier ASSIGN expression-> ^(CONST identifier expression)
-  | 'const' identifier COLON type ASSIGN expression-> ^(CONST identifier type expression)
-  ;
-*/
+
 event_handler_declaration
   : event_timing scoping function_expression 'do' function_expression
     -> ^(ON event_timing scoping function_expression function_expression)
@@ -132,11 +129,11 @@ assignment_statement
   ;
 
 increment_statement
-  : variable '++'            -> ^(INC variable)
+  : variable '++' -> ^(INC variable)
   ;
 
 decrement_statement
-  : variable '--'            -> ^(DEC variable)
+  : variable '--' -> ^(DEC variable)
   ;
 
 if_statement
@@ -209,7 +206,6 @@ call_expression
   | function_call_expression -> ^(FUNC_CALL function_call_expression)
   ;
 
-// TODO: extract object_expression
 method_call_expression : object_expression DOT! function_call_expression;
 function_call_expression: identifier LPAREN! (argument_list)? RPAREN!;
 argument_list: a+=expression (COMMA a+=expression)* -> ^(ARGS $a+);
@@ -268,8 +264,8 @@ name_type_value
 atom : '#' identifier -> ^(ATOM_LITERAL identifier);
 
 matching_expression
-  : dontcare   -> ^(MATCH dontcare)
-  | comparison -> ^(MATCH comparison)
+  : dontcare   -> ^(MATCH_EXP dontcare)
+  | comparison -> ^(MATCH_EXP comparison)
   ;
 dontcare: UNDERSCORE -> ANYTHING;
 comparison: comparator expression;

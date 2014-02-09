@@ -51,7 +51,7 @@ class Visitor():
       "FUNC_REF"        : self.handle_function_ref,
 
       "PROPERTY_EXP"    : self.handle_property_exp,
-      # "MATCH_EXP"       : self.handle_match_exp,
+      "MATCH_EXP"       : self.handle_match_exp,
       "VAR_EXP"         : self.handle_variable_exp,
       "TYPE_EXP"        : self.handle_type_exp,
       "MANY_TYPE_EXP"   : self.handle_many_type_exp,
@@ -300,6 +300,16 @@ class Visitor():
       return obj.get_property(prop)
     else:
       return PropertyExp(obj, prop)
+
+  def handle_match_exp(self, tree):
+    assert tree.text == "MATCH_EXP"
+    children = tree.getChildren()
+    if children[0].text == "ANYTHING":
+      return MatchExp(AnythingExp())
+    else:
+      # first child is a string representation of the comparator-operator
+      # second child is an expression: the right operand of the comparator
+      return MatchExp(children[0].text, self.visit(children[1]))
 
   def handle_variable_exp(self, tree):
     assert tree.text == "VAR_EXP"

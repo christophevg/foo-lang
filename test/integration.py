@@ -15,7 +15,7 @@ from foo_lang import api
 class TestIntegration(unittest.TestCase):
   pass
 
-sources = [ "heartbeat" ]
+sources = [ "heartbeat", "reputation" ]
 
 def make_test_source(file):
   def test_source(self):

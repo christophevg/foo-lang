@@ -14,7 +14,7 @@ ANTLR_OUT=antlr.out
 
 PARSER=$(APP)/parser/$(APP)Parser.py
 
-all: clean $(SRC:.foo=.$(IMG_TYPE)) test
+all: clean test
 
 src: $(PARSER)
 	@echo "*** parsing and dumping $(SRC)"

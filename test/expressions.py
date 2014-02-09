@@ -132,6 +132,14 @@ class TestExpressions(unittest.TestCase):
     exp = ManyTypeExp(TupleTypeExp([ManyTypeExp(TypeExp("many")),TypeExp("single")]))
     self.assertEqual(str(exp), "[many*,single]*")
 
+  def test_anything_exp(self):
+    exp = AnythingExp()
+    self.assertEqual(str(exp), "_")
+
+  def test_match_exp(self):
+    exp = MatchExp("<", FunctionCallExp("biggest"))
+    self.assertEqual(str(exp), "< biggest()")
+
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestExpressions)
   unittest.TextTestRunner(verbosity=2).run(suite)

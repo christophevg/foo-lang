@@ -184,3 +184,19 @@ class MethodCallExp(Exp):
            str(self.object) + "." + str(self.method) + \
            "(" + ", ".join([str(arg) for arg in self.arguments]) + ")"
 
+class AnythingExp(Exp):
+  def __init__(self):
+    pass
+
+  def to_string(self, level):
+    return "  " * level + "_"
+
+class MatchExp(Exp):
+  def __init__(self, operator, operand=None):
+    self.operator = operator
+    self.operand  = operand
+
+  def to_string(self, level):
+    return "  " * level + \
+           str(self.operator) + \
+           ((" " + str(self.operand)) if self.operand != None else "")
