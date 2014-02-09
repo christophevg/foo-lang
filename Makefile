@@ -1,4 +1,4 @@
-SRCS=heartbeat.foo reputation.foo
+SRCS=examples/heartbeat.foo examples/reputation.foo
 
 ANTLR=java -cp lib/antlr-3.1.jar org.antlr.Tool
 PYTHON=PYTHONPATH=. /opt/local/bin/python2.7
@@ -14,7 +14,7 @@ PARSER=$(APP)/parser/$(APP)Parser.py
 
 LC_CTYPE=en_US.UTF-8
 
-FOO=$(PYTHON) foo.py -o
+FOO=$(PYTHON) foo.py -g
 
 all: clean test coverage generate
 
