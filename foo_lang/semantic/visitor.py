@@ -54,6 +54,8 @@ class Visitor():
       # "MATCH_EXP"       : self.handle_match_exp,
       "VAR_EXP"         : self.handle_variable_exp,
       "TYPE_EXP"        : self.handle_type_exp,
+      "MANY_TYPE_EXP"   : self.handle_many_type_exp,
+      "TUPLE_TYPE_EXP"  : self.handle_tuple_type_exp,
 
       ">"               : lambda t: self.handle_bin_exp(">",   GTExp,        t),
       ">="              : lambda t: self.handle_bin_exp(">=",  GTEQExp,      t),
@@ -305,7 +307,21 @@ class Visitor():
 
   def handle_type_exp(self, tree):
     assert tree.text == "TYPE_EXP"
-    return TypeExp(tree.getChildren()[0].text)
+    child = tree.getChildren()[0]
+    if len(child.getChildren()) > 0:
+      return TypeExp(self.visit(child))
+    else:
+      return TypeExp(child.text)
+
+  def handle_many_type_exp(self, tree):
+    assert tree.text == "MANY_TYPE_EXP"
+    type = self.visit(tree.getChildren()[0])
+    return ManyTypeExp(type)
+
+  def handle_tuple_type_exp(self, tree):
+    assert tree.text == "TUPLE_TYPE_EXP"
+    types = [self.visit(type) for type in tree.getChildren()]
+    return TupleTypeExp(types)
 
   def handle_not_exp(self, tree):
     assert tree.text == "!"

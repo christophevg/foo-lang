@@ -120,6 +120,18 @@ class TestExpressions(unittest.TestCase):
     exp = TypeExp("test")
     self.assertEqual(str(exp), "test")
 
+  def test_many_type_exp(self):
+    exp = ManyTypeExp(TypeExp("test"))
+    self.assertEqual(str(exp), "test*")
+
+  def test_tuple_type_exp(self):
+    exp = TupleTypeExp([TypeExp("test1"), TypeExp("test2")])
+    self.assertEqual(str(exp), "[test1,test2]")
+
+  def test_complex_type(self):
+    exp = ManyTypeExp(TupleTypeExp([ManyTypeExp(TypeExp("many")),TypeExp("single")]))
+    self.assertEqual(str(exp), "[many*,single]*")
+
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestExpressions)
   unittest.TextTestRunner(verbosity=2).run(suite)

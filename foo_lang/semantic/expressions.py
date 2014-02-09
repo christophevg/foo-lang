@@ -60,6 +60,23 @@ class TypeExp(Exp):
   def to_string(self, level):
     return "  " * level + str(self.type)
 
+class ManyTypeExp(TypeExp):
+  def __init__(self, type):
+    assert isinstance(type, TypeExp)
+    self.type = type
+
+  def to_string(self, level):
+    return "  " * level + str(self.type) + "*"
+
+class TupleTypeExp(TypeExp):
+  def __init__(self, types):
+    isinstance(types, TypeExp)
+    self.types = types
+
+  def to_string(self, level):
+    return "  " * level + \
+           "[" + ",".join([str(type) for type in self.types]) + "]"
+
 class ListLiteral(Exp):
   def __init__(self, expressions):
     self.expressions = expressions

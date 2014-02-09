@@ -17,7 +17,7 @@ tokens {  // must be declared here/before use, not with other real tokens below
   FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL; METHOD_CALL; LIST_LITERAL;
   PROPERTY_LITERAL; PROPERTY_EXP; IMPORT; EXTEND; IF; BLOCK; VAR_EXP;
   ANNOTATION; ANNOTATED; INC; DEC; APPLY; ON; ATOM_LITERAL; CASES; CASE;
-  TYPE_EXP; MANY; TUPLE; VALUE; DOMAIN; BOOLEAN_LITERAL; INTEGER_LITERAL;
+  TYPE_EXP; MANY_TYPE_EXP; TUPLE_TYPE_EXP; VALUE; DOMAIN; BOOLEAN_LITERAL; INTEGER_LITERAL;
   FLOAT_LITERAL; RETURN; MATCH; ANYTHING; PARAMS; ARGS;
 }
 
@@ -280,13 +280,19 @@ list_literal
   | LBRACKET i+=expression (COMMA i+=expression)* RBRACKET -> ^(LIST_LITERAL $i+);
 
 type
-  : basic_type '*' -> ^(TYPE_EXP ^(MANY basic_type))
+  : basic_type '*' -> ^(MANY_TYPE_EXP basic_type)
   | basic_type     -> ^(TYPE_EXP basic_type)
-  | tuple_type '*' -> ^(TYPE_EXP ^(MANY tuple_type))
-  | tuple_type     -> ^(TYPE_EXP tuple_type)
+  | tuple_type '*' -> ^(MANY_TYPE_EXP tuple_type)
+  | tuple_type     -> tuple_type
   ;
-basic_type : 'byte' | 'integer' | 'float' | 'boolean' | 'timestamp';
-tuple_type : '[' t+=type (COMMA t+=type)* ']' -> ^(TUPLE $t+);
+basic_type
+  : t='byte'      -> ^(TYPE_EXP $t)
+  | t='integer'   -> ^(TYPE_EXP $t)
+  | t='float'     -> ^(TYPE_EXP $t)
+  | t='boolean'   -> ^(TYPE_EXP $t)
+  | t='timestamp' -> ^(TYPE_EXP $t)
+  ;
+tuple_type : '[' t+=type (COMMA t+=type)* ']' -> ^(TUPLE_TYPE_EXP $t+);
 
 // to avoid some keywords to be excluded from being an identifier, we add them
 // again here.
