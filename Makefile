@@ -14,19 +14,25 @@ PARSER=$(APP)/parser/$(APP)Parser.py
 
 LC_CTYPE=en_US.UTF-8
 
-all: clean test coverage
+FOO=$(PYTHON) foo.py -o
+
+all: clean test coverage generate
 
 %.ast: %.foo parser
 	@echo "*** pasring $< and dumping AST into $@"
-	@$(PYTHON) foo.py -o ast $< > $@ || (cat $@; rm $@; false)
+	@$(FOO) ast $< > $@ || (cat $@; rm $@; false)
 
 %.dot: %.foo parser
 	@echo "*** creating $@ from $<"
-	@$(PYTHON) foo.py -o dot $< > $@ || (cat $@; rm $@; false)
+	@$(FOO) dot $< > $@ || (cat $@; rm $@; false)
 
 %.pdf: %.dot
 	@echo "*** visualizing AST of $< as PDF $@"
 	@$(DOT) -Tpdf -o $@ $<
+
+generate: parser
+	@echo "*** generating code for $(SRCS)"
+	@$(FOO) code $(SRCS)
 
 coverage:
 	@echo "*** generating unittest coverage report (based on last test run)"
@@ -34,7 +40,7 @@ coverage:
 
 foo: parser
 	@echo "*** loading $(SRCS) into a model and dumping in foo-lang"
-	@$(PYTHON) foo.py -o foo $(SRCS) || (cat $@; rm $@; false)
+	@$(FOO) foo $(SRCS) || (cat $@; rm $@; false)
 
 test: parser
 	@echo "*** performing $(APP) tests"

@@ -6,8 +6,8 @@
 import antlr3
 from antlr3 import RecognitionException
 
-from foo_lang.parser.foo_langLexer  import foo_langLexer
-from foo_lang.parser.foo_langParser import foo_langParser
+from foo_lang.parser.foo_langLexer   import foo_langLexer
+from foo_lang.parser.foo_langParser  import foo_langParser
 
 from foo_lang.semantic.model         import Model
 from foo_lang.semantic.domains.nodes import Nodes
@@ -55,3 +55,6 @@ def load(string, model=None):
 
   Visitor(model).visit(parse(string).tree)
   return model
+
+def generate(model, generator):
+  generator.transform(model)
