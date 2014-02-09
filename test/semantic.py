@@ -149,10 +149,9 @@ class TestModel(unittest.TestCase):
     module2 = self.create_module_with_extension("module2", Nodes(), obj)
     self.model.modules['mod1'] = module1
     self.model.modules['mod2'] = module2
-    # FIXME: order of consts ???
     self.assertModelEquals("module module1\n" + \
-                           "const name1 : type1 = value1\n" + \
                            "const name0 : type0 = value0\n" + \
+                           "const name1 : type1 = value1\n" + \
                            "module module2\n" + \
                            "extend nodes with " + str(obj) + "\n") 
  

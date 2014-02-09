@@ -1,6 +1,8 @@
 # model.py
 # author: Christophe VG
 
+from collections import OrderedDict
+
 # Technical base class for all semantic model classes
 class base():
   # entry point of request for conversion to string
@@ -31,10 +33,10 @@ class Model(base):
 class Module(base):
   def __init__(self, name):
     self.name       = name
-    self.constants  = {}
-    self.externals  = {}   # function : library
+    self.constants  = OrderedDict()
+    self.externals  = OrderedDict()   # function : library
     self.extensions = []
-    self.functions  = {}   # storage, only for reference
+    self.functions  = OrderedDict()   # storage, only for reference
     self.executions = []
   
   def to_string(self, level):
