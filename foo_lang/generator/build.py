@@ -4,6 +4,9 @@
 # module for constructing a generator
 
 class Generator():
+  def __init__(self):
+    self.verbose = False
+
   def using(self, language):
     self.language = language
     return self
@@ -14,6 +17,9 @@ class Generator():
 
   def __repr__(self):
     return "generator for " + self.language + " on " + self.platform
+
+  def be_verbose(self):
+    self.verbose = True
 
   def transform(self, model):
     # TODO
