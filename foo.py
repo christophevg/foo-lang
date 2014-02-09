@@ -46,10 +46,9 @@ def dump_ast(args):
     print indent_ast(api.parse(source.read()).tree)
 
 def generate_code(args):
-  if args.verbose: print "foo: generating code"
   model     = load(args)
-  generator = build.Generator().using(args.language).on(args.platform)
-  if args.verbose: generator.be_verbose()
+  generator = build.Generator(args)
+  if args.verbose: print "foo: " + str(generator)
   api.generate(model, generator)
 
 if __name__ == "__main__":

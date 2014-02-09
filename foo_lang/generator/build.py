@@ -4,23 +4,16 @@
 # module for constructing a generator
 
 class Generator():
-  def __init__(self):
-    self.verbose = False
-
-  def using(self, language):
-    self.language = language
-    return self
-
-  def on(self, platform):
-    self.platform = platform
-    return self
+  def __init__(self, args):
+    self.verbose  = args.verbose
+    self.language = args.language
+    self.platform = args.platform
+    self.output   = args.output
 
   def __repr__(self):
-    return "generator for " + self.language + " on " + self.platform
-
-  def be_verbose(self):
-    self.verbose = True
+    return "generating to " + self.output + " using " + self.language + \
+                     " on " + self.platform
 
   def transform(self, model):
     # TODO
-    print model
+    pass
