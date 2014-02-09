@@ -3,8 +3,12 @@
 
 # integration unit tests for foo-lang
 
+from __future__ import print_function
+
 import sys
 import unittest
+
+from difflib import *
 
 from foo_lang import api
 
@@ -23,7 +27,10 @@ def make_test_source(file):
     input   = open(file).read()
     output1 = str(api.to_model(input))
     output2 = str(api.to_model(output1))
-    self.assertEqual(output1, output2)
+    if output1 != output2:
+      for line in unified_diff(output1.split("\n"), output2.split("\n")):
+        print(line, end='\n', file=sys.stderr)
+      assert False, "Roundtripping of " + file + "failed."
   return test_source
 
 for source in sources:

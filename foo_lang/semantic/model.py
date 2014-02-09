@@ -68,18 +68,18 @@ class Extension(base):
 
 class Function(base):
   anonymous = 0
-  def __init__(self, body, name=None, arguments=[]):
+  def __init__(self, body, name=None, parameters=[]):
     if name == None:
       name = "anonymous" + str(Function.anonymous)
       Function.anonymous += 1
-    self.name      = name
-    self.arguments = arguments
-    self.body      = body
+    self.name       = name
+    self.parameters = parameters
+    self.body       = body
 
   def to_string(self, level):
     string = "function"
     if self.name[0:9] != "anonymous":
       string += " " + str(self.name)
-    string +=  "(" + ", ".join([str(arg) for arg in self.arguments]) + ") " + \
+    string +=  "(" + ", ".join([str(arg) for arg in self.parameters]) + ") " + \
                self.body.to_string(level).lstrip()
     return string

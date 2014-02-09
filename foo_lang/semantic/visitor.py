@@ -30,8 +30,10 @@ class Visitor():
       "EXTEND"          : self.handle_extend,
       "ANNOTATED"       : self.handle_annotated,
       "DOMAIN"          : self.handle_domain,
-      "ANON_FUNC_DECL"  : self.handle_anon_func_decl,
 
+      "ANON_FUNC_DECL"  : self.handle_anon_func_decl,
+      "ON"              : self.handle_event_handler_decl,
+      
       "BLOCK"           : self.handle_block_stmt,
       "IF"              : self.handle_if_stmt,
       "CASES"           : self.handle_cases_stmt,
@@ -49,9 +51,9 @@ class Visitor():
       "FUNC_REF"        : self.handle_function_ref,
 
       "PROPERTY_EXP"    : self.handle_property_exp,
-      # TODO: add suffix _EXP
-      "VAR"             : self.handle_variable_exp,
-      "TYPE"            : self.handle_type_exp,
+      # "MATCH_EXP"       : self.handle_match_exp,
+      "VAR_EXP"         : self.handle_variable_exp,
+      "TYPE_EXP"        : self.handle_type_exp,
 
       ">"               : lambda t: self.handle_bin_exp(">",   GTExp,        t),
       ">="              : lambda t: self.handle_bin_exp(">=",  GTEQExp,      t),
@@ -78,14 +80,10 @@ class Visitor():
                                                         IntegerLiteralExp, t),
       "FLOAT_LITERAL"   : lambda t: self.handle_literal("FLOAT_LITERAL", \
                                                         FloatLiteralExp, t),
-      # TODO: add suffix _LITERAL
-      "ATOM"            : lambda t: self.handle_literal("ATOM", \
+      "ATOM_LITERAL"    : lambda t: self.handle_literal("ATOM_LITERAL", \
                                                         AtomLiteralExp, t),
-
-      "LIST"            : self.handle_list_literal,
-      
-      "ON"              : self.handle_event_handler_decl
-    }
+      "LIST_LITERAL"    : self.handle_list_literal
+  }
 
   # visiting an unknown tree, using the dispatch to get to specialized handler
   def visit(self, tree):
@@ -181,26 +179,20 @@ class Visitor():
     assert tree.text == "DOMAIN"
     return self.model.domains[tree.getChildren()[0].text]
 
-  def handle_property_exp(self, tree):
-    assert tree.text == "PROPERTY_EXP"
-    children = tree.getChildren()
-    obj      = self.visit(children[0])
-    prop     = children[1].text
-    # TODO: make more generic
-    if isinstance(obj, Domain):
-      return obj.get_property(prop)
-    else:
-      return PropertyExp(obj, prop)
-
   # TODO: make generic to handle also named function decl
   def handle_anon_func_decl(self, tree):
     assert tree.text == "ANON_FUNC_DECL"
-    children  = tree.getChildren()
-    arguments = [arg.text for arg in children[0].getChildren()]
-    body      = self.visit(children[1])
-    function  = Function(body, arguments=arguments)
+    children   = tree.getChildren()
+    parameters = self.handle_parameters(children[0])
+    body       = self.visit(children[1])
+    function   = Function(body, parameters=parameters)
     self.current_module.functions[function.name] = function
     return function
+
+  def handle_parameters(self, tree):
+    assert tree.text == "PARAMS"
+    parameters = tree.getChildren()
+    return [parameter.text for parameter in parameters]
 
   def handle_event_handler_decl(self, tree):
     assert tree.text == "ON"
@@ -253,9 +245,9 @@ class Visitor():
     children       = tree.getChildren()
     function_name  = children[0].text
     if len(children) > 2:
-      arguments = self.as_list(self.handle_list_literal(children[1]))
-      function = FunctionCallExp(function_name, arguments)
-      body     = self.visit(children[2])
+      arguments = self.handle_arguments(children[1])
+      function  = FunctionCallExp(function_name, arguments)
+      body      = self.visit(children[2])
     else:
       function = FunctionCallExp(function_name)
       body     = self.visit(children[1])
@@ -296,12 +288,23 @@ class Visitor():
 
   # EXPRESSIONS
 
+  def handle_property_exp(self, tree):
+    assert tree.text == "PROPERTY_EXP"
+    children = tree.getChildren()
+    obj      = self.visit(children[0])
+    prop     = children[1].text
+    # TODO: make more generic
+    if isinstance(obj, Domain):
+      return obj.get_property(prop)
+    else:
+      return PropertyExp(obj, prop)
+
   def handle_variable_exp(self, tree):
-    assert tree.text == "VAR"
+    assert tree.text == "VAR_EXP"
     return VariableExp(tree.getChildren()[0].text)
 
   def handle_type_exp(self, tree):
-    assert tree.text == "TYPE"
+    assert tree.text == "TYPE_EXP"
     return TypeExp(tree.getChildren()[0].text)
 
   def handle_not_exp(self, tree):
@@ -324,7 +327,7 @@ class Visitor():
     children  = tree.getChildren()
     function  = children[0].text
     if len(children) > 1:
-      arguments = self.as_list(self.handle_list_literal(children[1]))
+      arguments = self.handle_arguments(children[1])
       return FunctionCallExp(function, arguments)
     else:
       return FunctionCallExp(function)
@@ -335,10 +338,15 @@ class Visitor():
     obj      = self.visit(children[0])
     method   = children[1].text
     if len(children) > 2:
-      arguments = self.as_list(self.handle_list_literal(children[2]))
+      arguments = self.handle_arguments(children[2])
       return MethodCallExp(obj, method, arguments)
     else:
       return MethodCallExp(obj, method)
+
+  def handle_arguments(self, tree):
+    assert tree.text == "ARGS"
+    arguments = tree.getChildren()
+    return [self.visit(argument) for argument in arguments]
 
   # TYPES
 
@@ -347,7 +355,7 @@ class Visitor():
     return constructor(tree.getChildren()[0].text)
 
   def handle_list_literal(self, tree):
-    assert tree.text == "LIST"
+    assert tree.text == "LIST_LITERAL"
     children = tree.getChildren()
     return ListLiteral([self.visit(child) for child in children])
 
@@ -371,10 +379,6 @@ class Visitor():
     return Property(name, type, value)
 
   # HELPERS
-
-  def as_list(self, list_exp):
-    assert isinstance(list_exp, ListLiteral)
-    return list_exp.expressions
 
   # makes sure that the argument is a scope
   def as_scope(self, obj):

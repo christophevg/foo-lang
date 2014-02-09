@@ -14,10 +14,11 @@ options {
 // a few virtual tokens, used as identifying node
 tokens {  // must be declared here/before use, not with other real tokens below
   ROOT; MODULE; CONST; EXTERNAL; OBJECT_LITERAL; OBJECT_REF; FUNC_REF;
-  FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL; METHOD_CALL; LIST; PROPERTY_LITERAL;
-  PROPERTY_EXP; IMPORT; EXTEND; IF; BLOCK; VAR; ANNOTATION; ANNOTATED; INC;
-  DEC; APPLY; ON; ATOM; CASES; CASE; TYPE; MANY; TUPLE; VALUE; DOMAIN;
-  BOOLEAN_LITERAL; INTEGER_LITERAL; FLOAT_LITERAL; RETURN; MATCH; ANYTHING;
+  FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL; METHOD_CALL; LIST_LITERAL;
+  PROPERTY_LITERAL; PROPERTY_EXP; IMPORT; EXTEND; IF; BLOCK; VAR_EXP;
+  ANNOTATION; ANNOTATED; INC; DEC; APPLY; ON; ATOM_LITERAL; CASES; CASE;
+  TYPE_EXP; MANY; TUPLE; VALUE; DOMAIN; BOOLEAN_LITERAL; INTEGER_LITERAL;
+  FLOAT_LITERAL; RETURN; MATCH; ANYTHING; PARAMS; ARGS;
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -106,7 +107,7 @@ function_expression
      -> ^(ANON_FUNC_DECL identifier? function_param_list? function_body)
   | identifier -> ^(FUNC_REF identifier)
   ;
-function_param_list: p+=identifier (COMMA p+=identifier)* -> ^(LIST $p+);
+function_param_list: p+=identifier (COMMA p+=identifier)* -> ^(PARAMS $p+);
 function_body: block_statement;
 
 statements: (statement)*;
@@ -211,13 +212,13 @@ call_expression
 // TODO: extract object_expression
 method_call_expression : object_expression DOT! function_call_expression;
 function_call_expression: identifier LPAREN! (argument_list)? RPAREN!;
-argument_list: a+=expression (COMMA a+=expression)* -> ^(LIST $a+);
+argument_list: a+=expression (COMMA a+=expression)* -> ^(ARGS $a+);
 
 // functional aliases for identifiers
 // TODO: add more
 variable
   : property_expression
-  | identifier           -> ^(VAR identifier)
+  | identifier           -> ^(VAR_EXP identifier)
   ;
 
 property_expression
@@ -264,7 +265,7 @@ name_type_value
   | identifier ASSIGN! literal
   ;
 
-atom : '#' identifier -> ^(ATOM identifier);
+atom : '#' identifier -> ^(ATOM_LITERAL identifier);
 
 matching_expression
   : dontcare   -> ^(MATCH dontcare)
@@ -275,14 +276,14 @@ comparison: comparator expression;
 comparator: LT | LTEQ | GT | GTEQ | EQUALS | NOTEQUALS | NOT;
 
 list_literal 
-  : LBRACKET RBRACKET -> ^(LIST)
-  | LBRACKET i+=expression (COMMA i+=expression)* RBRACKET -> ^(LIST $i+);
+  : LBRACKET RBRACKET -> ^(LIST_LITERAL)
+  | LBRACKET i+=expression (COMMA i+=expression)* RBRACKET -> ^(LIST_LITERAL $i+);
 
 type
-  : basic_type '*' -> ^(TYPE ^(MANY basic_type))
-  | basic_type     -> ^(TYPE basic_type)
-  | tuple_type '*' -> ^(TYPE ^(MANY tuple_type))
-  | tuple_type     -> ^(TYPE tuple_type)
+  : basic_type '*' -> ^(TYPE_EXP ^(MANY basic_type))
+  | basic_type     -> ^(TYPE_EXP basic_type)
+  | tuple_type '*' -> ^(TYPE_EXP ^(MANY tuple_type))
+  | tuple_type     -> ^(TYPE_EXP tuple_type)
   ;
 basic_type : 'byte' | 'integer' | 'float' | 'boolean' | 'timestamp';
 tuple_type : '[' t+=type (COMMA t+=type)* ']' -> ^(TUPLE $t+);
@@ -292,7 +293,7 @@ tuple_type : '[' t+=type (COMMA t+=type)* ']' -> ^(TUPLE $t+);
 // TODO: implement error reporting when the source contains a reserved keyword
 identifier: IDENTIFIER | 'from' | 'import' | 'with' | 'use' | 'extend';
 
-// ATOMIC FRAGMENTS
+// ATOMIC FRAGMENTS aka TOKENS ;-)
 
 INTEGER: '0' | ('1'..'9') ('0'..'9')*;
 FLOAT: ('0'..'9')+ '.' ('0'..'9')*;
