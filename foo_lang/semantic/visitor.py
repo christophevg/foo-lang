@@ -261,7 +261,7 @@ class Visitor():
     return IncStmt(target)
 
   def handle_dec_stmt(self, tree):
-    assert tree.text == "INC"
+    assert tree.text == "DEC"
     target = self.visit(tree.getChildren()[0])
     return DecStmt(target)
 
