@@ -2,20 +2,32 @@
 # instructions to represent abstract (procedural+OO) code - AST anyone? ;-)
 # author: Christophe VG
 
-from util.visitor import Visitable, visitor_for
+from util.visitor import Visitable, visitor_for, virtual
+from util.check   import isstring, islistof, isidentifier
+
+@virtual
+class Part(Visitable): pass
 
 class Program(Visitable):
   def __init__(self, instructions):
     assert islistof(instructions, Instruction)
     self.instructions = instructions
 
+@virtual
 class Instruction(Visitable): pass
 
+@virtual
 class Declaration(Instruction): pass
+
+class Identifier(Part):
+  def __init__(self, name):
+    assert isstring(name)
+    assert isidentifier(name)
+    self.name = name
 
 class FunctionDecl(Declaration):
   def __init__(self, name, parameters, body, type=None):
-    assert isidentifier(name)
+    assert isinstance(name, Identifier)
     assert islistof(parameters, ParameterDecl)
     assert isinstance(body,    Stmt)
     assert type == None or isinstance(type, TypeExp)
@@ -28,13 +40,14 @@ class FunctionDecl(Declaration):
 
 class ParameterDecl(Declaration):
   def __init__(self, name, type, default=None):
-    assert isidentifier(name)
+    assert isinstance(name, Identifier)
     assert isinstance(type, TypeExp)
     assert default == None or isinstance(default, Expression)
     self.name    = name
     self.type    = type
     self.default = default
 
+@virtual
 class Stmt(Instruction): pass
 
 class EmptyStmt(Stmt): pass
@@ -45,14 +58,15 @@ class BlockStmt(Stmt):
     self.statements = statements
 
 class IfStmt(Stmt):
-  def __init__(self, expression, true_clause, false_clause):
+  def __init__(self, expression, true_clause, false_clause=None):
     assert isinstance(expression, Expression)
     assert isinstance(true_clause, Stmt)
-    assert isinstance(false_clause, Stmt)
+    assert false_clause == None or isinstance(false_clause, Stmt)
     self.expression   = expression
     self.true_clause  = true_clause
     self.false_clause = false_clause
 
+@virtual
 class MutUnOpStmt(Stmt):
   def __init__(self, operand):
     assert isinstance(operand, VariableExp)
@@ -61,9 +75,11 @@ class MutUnOpStmt(Stmt):
 class IncStmt(MutUnOpStmt): pass
 class DecStmt(MutUnOpStmt): pass
 
+@virtual
 class ImmutUnOpStmt(Stmt):
   def __init__(self, expression):
     assert isinstance(expression, Expression)
+    self.expression = expression
 
 class PrintStmt(ImmutUnOpStmt): pass
 class RaiseStmt(ImmutUnOpStmt): pass
@@ -75,6 +91,7 @@ class Comment(Stmt):
   def __repr__(self):
     return self.comment
 
+@virtual
 class BinOpStmt(Stmt):
   def __init__(self, operand, expression):
     assert isinstance(operand, VariableExp)
@@ -91,6 +108,7 @@ class ReturnStmt(Stmt):
     assert expression == None or isinstance(expression, Expression)
     self.expression = expression
 
+@virtual
 class CondLoopStmt(Stmt):
   def __init__(self, condition, body):
     assert isinstance(condition, Expression)
@@ -112,22 +130,27 @@ class ForStmt(Stmt):
     self.change = change
     self.body   = body
 
+@virtual
 class Expression(Instruction): pass
 
+@virtual
 class VariableExp(Expression): pass
 
 class SimpleVariableExp(VariableExp):
   def __init__(self, name):
-    assert isidentifier(name)
+    assert isinstance(name, Identifier)
     self.name = name
 
-class PropertyExp(VariableExp):
+class ObjectExp(SimpleVariableExp): pass
+
+class PropertyExp(ObjectExp):
   def __init__(self, obj, property):
     assert isinstance(obj, ObjectExp)
-    assert isidentifier(property)
+    assert isinstance(property, Identifier)
     self.obj  = obj
     self.prop = prop
 
+@virtual
 class UnOpExp(Expression):
   def __init__(self, operand):
     assert isinstance(operand, Expression)
@@ -135,6 +158,7 @@ class UnOpExp(Expression):
 
 class NotExp(UnOpExp): pass
 
+@virtual
 class BinOpExp(Expression):
   def __init__(self, left, right):
     assert isinstance(left, Expression)
@@ -158,7 +182,7 @@ class ModuloExp(BinOpExp): pass
 
 class FunctionCallExp(Expression):
   def __init__(self, function, arguments):
-    assert isidentifier(function)
+    assert isinstance(function, Identifier)
     assert islistof(arguments, Expression)
     self.function  = function
     self.arguments = arguments
@@ -166,12 +190,13 @@ class FunctionCallExp(Expression):
 class MethodCallExp(Expression):
   def __init__(self, obj, method, arguments):
     assert isinstance(obj, ObjectExp)
-    assert isidentifier(method)
+    assert isinstance(method, Identifier)
     assert islistof(arguments, Expression)
     self.obj       = obj
     self.method    = method
     self.arguments = arguments
     
+@virtual
 class LiteralExp(Expression): pass
 
 class BooleanLiteral(LiteralExp):
@@ -201,37 +226,15 @@ class TupleLiteral(LiteralExp):
 
 class AtomLiteral(LiteralExp):
   def __init__(self, name):
-    assert isidentifier(name)
+    assert isinstance(name, Identifier)
     self.name = name
 
 class TypeExp(Expression):
   def __init__(self, name=None):
-    assert name == None or isidentifier(name)
+    assert name == None or isinstance(name, Identifier)
     self.name = name
 
 # VISITOR FOR INSTRUCTIONS
 
-@visitor_for(Instruction)
+@visitor_for([Instruction, Part])
 class InstructionVisitor(): pass
-
-# HELPERS
-
-# TODO: move centrally ? or better Python way
-
-def islistof(var, type):
-  assert isinstance(var, list)
-  for item in var:
-    assert isinstance(item, type)
-  return True
-
-def isstring(var):
-  assert isinstance(var, str) or isinstance(var, unicode)
-  return True
-
-import re
-identifier = re.compile(r"^[^\d\W]\w*\Z")
-
-def isidentifier(var):
-  assert isstring(var)
-  assert re.match(identifier, var) is not None
-  return True

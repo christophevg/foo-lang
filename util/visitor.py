@@ -20,16 +20,31 @@ class Visitor(object):
   """
   Baseclass for visitors.
   """
-  pass
+  def check_coverage(self):
+    """
+    Function to see which handling functions are still missing.
+    """
+    methods = inspect.getmembers(self, predicate=inspect.ismethod)
+    for name, method in methods:
+      if name not in [ "__init__", "check_coverage" ]:
+        try:
+          method(self)
+        except AttributeError:
+          pass
+
+virtuals = []
+def virtual(clazz):
+  virtuals.append(clazz.__name__)
+  return clazz
 
 class visitor_for(object):
   """
-  Decorator @visit(superclass) makes a decorated class a visitor for all classes in
-  the module of the decorated class. The visitable classes can be limited to
-  a common superclass.
+  Decorator @visit(superclass) makes a decorated class a visitor for all
+  classes in the module of the decorated class. The visitable classes can be
+  limited to a number of common superclasses.
   """
-  def __init__(self, super=None):
-    self.super = super
+  def __init__(self, supers=[]):
+    self.supers = supers
 
   def __call__(self, visitor):
     # make the visitor a subclass of Visitor
@@ -47,7 +62,8 @@ class visitor_for(object):
       return dummy
 
     for name, clazz in classes:
-      if super == None or issubclass(clazz, self.super):
-        setattr(visitor, "handle_" + name, NotImplemented("handle_" + name))
+      if name not in virtuals:
+        if super == [] or any([issubclass(clazz, sup) for sup in self.supers]):
+          setattr(visitor, "handle_" + name, NotImplemented("handle_" + name))
 
     return visitor
