@@ -39,7 +39,7 @@ def virtual(clazz):
 
 class visitor_for(object):
   """
-  Decorator @visit(superclass) makes a decorated class a visitor for all
+  Decorator @visitor_for(superclass) makes a decorated class a visitor for all
   classes in the module of the decorated class. The visitable classes can be
   limited to a number of common superclasses.
   """
