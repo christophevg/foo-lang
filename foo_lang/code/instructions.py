@@ -4,6 +4,11 @@
 
 from util.visitor import Visitable, visitor_for
 
+class Program(Visitable):
+  def __init__(self, instructions):
+    assert islistof(instructions, Instruction)
+    self.instructions = instructions
+
 class Instruction(Visitable): pass
 
 class Declaration(Instruction): pass
@@ -51,6 +56,7 @@ class IfStmt(Stmt):
 class MutUnOpStmt(Stmt):
   def __init__(self, operand):
     assert isinstance(operand, VariableExp)
+    self.operand = operand
 
 class IncStmt(MutUnOpStmt): pass
 class DecStmt(MutUnOpStmt): pass
@@ -66,6 +72,8 @@ class Comment(Stmt):
   def __init__(self, comment):
     assert isstring(comment)
     self.comment = comment
+  def __repr__(self):
+    return self.comment
 
 class BinOpStmt(Stmt):
   def __init__(self, operand, expression):
