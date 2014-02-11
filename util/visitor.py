@@ -28,7 +28,7 @@ class Visitor(object):
     for name, method in methods:
       if name not in [ "__init__", "check_coverage" ]:
         try:
-          method(self)
+          method(None)
         except AttributeError:
           pass
 

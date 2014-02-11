@@ -57,4 +57,4 @@ def load(string, model=None):
   return model
 
 def generate(model, generator):
-  generator.transform(model)
+  generator.generate(model)

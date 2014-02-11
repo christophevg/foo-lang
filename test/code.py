@@ -27,8 +27,8 @@ class TestCode(unittest.TestCase):
       raise AssertionError
 
   def test_program_with_comment_and_function_decl(self):
-    program = Program([ Comment("multi-line\ncomment"),
-                        FunctionDecl(Identifier("fname"), [], EmptyStmt()) ])
+    program = InstructionList([ Comment("multi-line\ncomment"),
+                                FunctionDecl(Identifier("fname"), [], EmptyStmt()) ])
     self.assertEqual( program.accept(Emitter()),
                       "/* multi-line\ncomment */\nvoid fname() {}" )
 
@@ -38,7 +38,7 @@ class TestCode(unittest.TestCase):
                               ParameterDecl(Identifier("param2"), TypeExp(Identifier("type2"))) ],
                             BlockStmt([IncStmt(SimpleVariableExp(Identifier("type")))]))
     self.assertEqual( program.accept(Emitter()),
-                      "void fname(type1 param1, type2 param2) {type++;}" )
+                      "void fname(type1 param1, type2 param2) {\ntype++;\n}" )
 
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestCode)

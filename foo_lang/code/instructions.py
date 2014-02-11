@@ -3,40 +3,69 @@
 # author: Christophe VG
 
 from util.visitor import Visitable, visitor_for, virtual
-from util.check   import isstring, islistof, isidentifier
+from util.check   import isstring, isidentifier
 
 @virtual
-class Part(Visitable): pass
+class Fragment(Visitable): pass
 
-class Program(Visitable):
-  def __init__(self, instructions):
-    assert islistof(instructions, Instruction)
-    self.instructions = instructions
-
-@virtual
-class Instruction(Visitable): pass
-
-@virtual
-class Declaration(Instruction): pass
-
-class Identifier(Part):
+class Identifier(Fragment):
   def __init__(self, name):
     assert isstring(name)
     assert isidentifier(name)
     self.name = name
 
+@virtual
+class Instruction(Visitable): pass
+
+class InstructionList(Visitable):
+  def __init__(self, instructions):
+    self.instructions = []
+    [self.append(instruction) for instruction in instructions]
+  def __iter__(self):
+    return iter(self.instructions)
+  def prepend(self, parameter):
+    assert isinstance(instruction, Instruction)
+    self.instruction.insert(0, instruction)
+    return self
+  def append(self, instruction):
+    assert isinstance(instruction, Instruction)
+    self.instructions.append(instruction)
+    return self
+
+@virtual
+class Declaration(Instruction): pass
+
 class FunctionDecl(Declaration):
-  def __init__(self, name, parameters, body, type=None):
+  def __init__(self, name, parameters=[], body=None, type=None):
     assert isinstance(name, Identifier)
-    assert islistof(parameters, ParameterDecl)
-    assert isinstance(body,    Stmt)
-    assert type == None or isinstance(type, TypeExp)
+    if body == None:
+      body = BlockStmt()
+    else:
+      assert isinstance(body, Stmt)
     if type == None:
       type = TypeExp(None)
+    else:
+      assert isinstance(type, TypeExp)
     self.name       = name
-    self.parameters = parameters
+    self.parameters = ParameterList(parameters)
     self.body       = body
     self.type       = type
+
+@virtual
+class ParameterList(Fragment):
+  def __init__(self, parameters):
+    self.parameters = []
+    [self.append(parameter) for parameter in parameters]
+  def __iter__(self):
+    return iter(self.parameters)
+  def prepend(self, parameter):
+    assert isinstance(parameter, ParameterDecl)
+    self.parameters.insert(0, parameter)
+    return self
+  def append(self, parameter):
+    assert isinstance(parameter, ParameterDecl)
+    self.parameters.append(parameter)
+    return self
 
 class ParameterDecl(Declaration):
   def __init__(self, name, type, default=None):
@@ -48,14 +77,26 @@ class ParameterDecl(Declaration):
     self.default = default
 
 @virtual
-class Stmt(Instruction): pass
+class Stmt(Instruction):
+  def ends(self):
+    return False
 
 class EmptyStmt(Stmt): pass
 
 class BlockStmt(Stmt):
-  def __init__(self, statements):
-    assert islistof(statements, Stmt)
-    self.statements = statements
+  def __init__(self, statements=[]):
+    self.statements = []
+    [self.append(statement) for statement in statements]
+  def __iter__(self):
+    return iter(self.statements)
+  def prepend(self, statement):
+    assert isinstance(statement, Stmt)
+    self.statements.insert(0, statement)
+    return self
+  def append(self, statement):
+    assert isinstance(statement, Stmt)
+    self.statements.append(statement)
+    return self
 
 class IfStmt(Stmt):
   def __init__(self, expression, true_clause, false_clause=None):
@@ -71,6 +112,8 @@ class MutUnOpStmt(Stmt):
   def __init__(self, operand):
     assert isinstance(operand, VariableExp)
     self.operand = operand
+  def ends(self):
+    return True
 
 class IncStmt(MutUnOpStmt): pass
 class DecStmt(MutUnOpStmt): pass
@@ -80,6 +123,8 @@ class ImmutUnOpStmt(Stmt):
   def __init__(self, expression):
     assert isinstance(expression, Expression)
     self.expression = expression
+  def ends(self):
+    return True
 
 class PrintStmt(ImmutUnOpStmt): pass
 class RaiseStmt(ImmutUnOpStmt): pass
@@ -98,6 +143,8 @@ class BinOpStmt(Stmt):
     assert isinstance(expression, Expression)
     self.operand    = operand
     self.expression = expression
+  def ends(self):
+    return True
 
 class AssignStmt(BinOpStmt): pass
 class AddStmt(BinOpStmt): pass
@@ -107,6 +154,8 @@ class ReturnStmt(Stmt):
   def __init__(self, expression=None):
     assert expression == None or isinstance(expression, Expression)
     self.expression = expression
+  def ends(self):
+    return True
 
 @virtual
 class CondLoopStmt(Stmt):
@@ -120,11 +169,14 @@ class WhileDoStmt(CondLoopStmt): pass
 class RepeatUntilStmt(CondLoopStmt): pass
 
 class ForStmt(Stmt):
-  def __init__(self, init, check, change, body):
+  def __init__(self, init, check, change, body=None):
     assert isinstance(init,   Stmt) and not isinstance(init,   BlockStmt)
     assert isinstance(check,  Expression)
     assert isinstance(change, Stmt) and not isinstance(change, BlockStmt)
-    assert isinstance(body,   Stmt)
+    if body == None:
+      body = BlockStmt()
+    else:
+      assert isinstance(body, BlockStmt)
     self.init   = init
     self.check  = check
     self.change = change
@@ -181,21 +233,35 @@ class DivExp(BinOpExp): pass
 class ModuloExp(BinOpExp): pass
 
 class FunctionCallExp(Expression):
-  def __init__(self, function, arguments):
+  def __init__(self, function, arguments=[]):
     assert isinstance(function, Identifier)
-    assert islistof(arguments, Expression)
     self.function  = function
-    self.arguments = arguments
+    self.arguments = ExpressionList(arguments)
 
 class MethodCallExp(Expression):
-  def __init__(self, obj, method, arguments):
+  def __init__(self, obj, method, arguments=[]):
     assert isinstance(obj, ObjectExp)
     assert isinstance(method, Identifier)
-    assert islistof(arguments, Expression)
     self.obj       = obj
     self.method    = method
-    self.arguments = arguments
-    
+    self.arguments = ExpressionList(arguments)
+
+@virtual
+class ExpressionList(Fragment):
+  def __init__(self, expressions):
+    self.expressions = []
+    [self.append(expression) for expression in expressions]
+  def __iter__(self):
+    return iter(self.expressions)
+  def prepend(self, expression):
+    assert isinstance(expression, Expression)
+    self.expressions.insert(0, expression)
+    return self
+  def append(self, expression):
+    assert isinstance(expression, Expression)
+    self.expressions.append(expression)
+    return self
+
 @virtual
 class LiteralExp(Expression): pass
 
@@ -215,14 +281,12 @@ class FloatLiteral(LiteralExp):
     self.value = value
 
 class ListLiteral(LiteralExp):
-  def __init__(self, expressions):
-    assert islistof(expressions, Expression)
-    self.expressions = expressions
+  def __init__(self, expressions=[]):
+    self.expressions = ExpressionList(expressions)
 
 class TupleLiteral(LiteralExp):
-  def __init__(self, expressions):
-    assert islistof(expressions, Expression)
-    self.expressions = expressions
+  def __init__(self, expressions=[]):
+    self.expressions = ExpressionList(expressions)
 
 class AtomLiteral(LiteralExp):
   def __init__(self, name):
@@ -236,5 +300,5 @@ class TypeExp(Expression):
 
 # VISITOR FOR INSTRUCTIONS
 
-@visitor_for([Instruction, Part])
+@visitor_for([Instruction, Fragment])
 class InstructionVisitor(): pass

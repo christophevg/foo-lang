@@ -4,7 +4,7 @@
 
 from util.support import warn
 
-from foo_lang.code.instructions import InstructionVisitor
+from foo_lang.code.instructions import * #InstructionVisitor
 
 class Emitter(InstructionVisitor):
   def __init__(self):
@@ -13,7 +13,7 @@ class Emitter(InstructionVisitor):
   def handle_Identifier(self, id):
     return str(id.name)
 
-  def handle_Program(self, program):
+  def handle_InstructionList(self, program):
     return "\n".join([ instruction.accept(self)
                        for instruction in program.instructions ])
 
@@ -33,8 +33,10 @@ class Emitter(InstructionVisitor):
     return param.type.accept(self) + " " + param.name.accept(self)
 
   def handle_BlockStmt(self, block):
-    return "{" + "\n".join([ (statement.accept(self) + ";")
-                             for statement in block.statements ]) + "}"
+    if block == None: block = [] # Fixme, happens when testing coverage
+    return "{\n" + "\n".join([ (statement.accept(self) + \
+                                (";" if statement.ends() else ""))
+                                 for statement in block ]) + "\n}"
 
   def handle_SimpleVariableExp(self, var):
     return var.name.accept(self)
