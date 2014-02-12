@@ -3,6 +3,8 @@
 
 # module for constructing a generator
 
+import os
+
 import foo_lang.code.emitters.C as C
 import foo_lang.code.builders   as build
 
@@ -21,18 +23,17 @@ class Generator():
                      " on " + self.platform
 
   def generate(self, model):
+    if not os.path.exists(self.output): os.makedirs(self.output)
     files = self.transform(model)
-    print "=" * 79
     for name, builder in files.items():
-      print "FILE:", name
-      print "-" * 79
-      print builder.code().accept(self.language)
-      print "=" * 79
+      file_name = os.path.join(self.output, name)
+      print "foo-gen: creating", file_name
+      file = open(file_name, 'w+')
+      file.write(builder.code().accept(self.language) + "\n")
+      file.close()
 
   def transform(self, model):
     files = {}
     files['main.c'] = build.MainProgram()
-    files['main.c'].function.body.append(IncStmt(build.Variable("x"))) \
-                                 .prepend(Comment("inside main"))
 
     return files
