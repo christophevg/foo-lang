@@ -94,7 +94,7 @@ class BlockStmt(Stmt):
     self.statements.insert(0, statement)
     return self
   def append(self, statement):
-    assert isinstance(statement, Stmt)
+    assert isinstance(statement, Stmt), "Not a Stmt:" + str(statement)
     self.statements.append(statement)
     return self
 
@@ -183,7 +183,7 @@ class ForStmt(Stmt):
     self.body   = body
 
 @virtual
-class Expression(Instruction): pass
+class Expression(Stmt): pass
 
 @virtual
 class VariableExp(Expression): pass
@@ -237,6 +237,8 @@ class FunctionCallExp(Expression):
     assert isinstance(function, Identifier)
     self.function  = function
     self.arguments = ExpressionList(arguments)
+  def ends(self):
+    return True
 
 class MethodCallExp(Expression):
   def __init__(self, obj, method, arguments=[]):
