@@ -18,9 +18,10 @@ class Emitter(InstructionVisitor):
                        for instruction in program.instructions ])
 
   def handle_FunctionDecl(self, function):
+    params = ", ".join([ param.accept(self) for param in function.parameters ])
+    if params == "": params = "void"
     return function.type.accept(self) + " " + function.name.accept(self) + \
-           "(" + ", ".join([ param.accept(self)
-                             for param in function.parameters ]) + ")" + \
+           "(" + params + ")" + \
            " " + function.body.accept(self)
 
   def handle_TypeExp(self, type):

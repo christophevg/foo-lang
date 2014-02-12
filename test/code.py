@@ -30,7 +30,7 @@ class TestCode(unittest.TestCase):
     program = InstructionList([ Comment("multi-line\ncomment"),
                                 FunctionDecl(Identifier("fname"), [], EmptyStmt()) ])
     self.assertEqual( program.accept(Emitter()),
-                      "/* multi-line\ncomment */\nvoid fname() {}" )
+                      "/* multi-line\ncomment */\nvoid fname(void) {}" )
 
   def test_full_function_decl(self):
     program = FunctionDecl( Identifier("fname"),
