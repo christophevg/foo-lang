@@ -22,9 +22,7 @@ class TestCode(unittest.TestCase):
     sys.stdout = backup
     output     = cache.getvalue()
     if output != "":
-      print("\nNot all handler methods are implemented:", end='\n', file=sys.stderr)
-      print(output, end='\n', file=sys.stderr)
-      raise AssertionError
+      raise AssertionError, "Not all handlers are implemented:\n" + output
 
   def test_program_with_comment_and_function_decl(self):
     program = InstructionList([ Comment("multi-line\ncomment"),

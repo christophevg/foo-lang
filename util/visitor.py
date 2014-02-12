@@ -26,7 +26,7 @@ class Visitor(object):
     """
     methods = inspect.getmembers(self, predicate=inspect.ismethod)
     for name, method in methods:
-      if name not in [ "__init__", "check_coverage" ]:
+      if name[:7] == "handle_":
         try:
           method(None)
         except AttributeError:

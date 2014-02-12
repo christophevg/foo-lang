@@ -4,11 +4,13 @@
 
 from util.support import warn
 
-from foo_lang.code.instructions import * #InstructionVisitor
+from foo_lang.code.language import Language
 
-class Emitter(InstructionVisitor):
+class Emitter(Language):
   def __init__(self):
     self.atoms = [] # list with emitted atoms
+
+  def ext(self): return "c"
 
   def handle_Identifier(self, id):
     return str(id.name)

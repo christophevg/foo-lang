@@ -18,14 +18,14 @@ class Identifier(Fragment):
 class Instruction(Visitable): pass
 
 class InstructionList(Visitable):
-  def __init__(self, instructions):
+  def __init__(self, instructions=[]):
     self.instructions = []
     [self.append(instruction) for instruction in instructions]
   def __iter__(self):
     return iter(self.instructions)
-  def prepend(self, parameter):
+  def prepend(self, instruction):
     assert isinstance(instruction, Instruction)
-    self.instruction.insert(0, instruction)
+    self.instructions.insert(0, instruction)
     return self
   def append(self, instruction):
     assert isinstance(instruction, Instruction)
