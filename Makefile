@@ -4,6 +4,9 @@ ANTLR=java -cp lib/antlr-3.1.jar org.antlr.Tool
 PYTHON=PYTHONPATH=. /opt/local/bin/python2.7
 COVERAGE=/opt/local/bin/coverage-2.7
 DOT=dot -Nfixedsize=False -Nfontname=Times-Roman -Nshape=rectangle
+ASTYLE=/opt/local/bin/astyle --style=attach --indent=spaces=2 \
+														 --indent-col1-comments --suffix=none \
+														 --quiet --errors-to-stdout
 
 APP=foo_lang
 
@@ -16,7 +19,9 @@ LC_CTYPE=en_US.UTF-8
 
 FOO=$(PYTHON) foo.py -g
 
-all: clean test coverage generate
+OUTPUT=out
+
+all: clean test coverage generate beautify show
 
 %.ast: %.foo parser
 	@echo "*** pasring $< and dumping AST into $@"
@@ -31,8 +36,20 @@ all: clean test coverage generate
 	@$(DOT) -Tpdf -o $@ $<
 
 generate: parser
+	@rm -rf $(OUTPUT)
 	@echo "*** generating code for $(SRCS)"
-	@$(FOO) code $(SRCS)
+	@$(FOO) code -o $(OUTPUT) $(SRCS)
+
+beautify:
+	@$(ASTYLE) --recursive "$(OUTPUT)/*"
+
+show:
+	@for f in $(OUTPUT)/*; do \
+		echo "FILE: " $$f; \
+		printf '~%.0s' {1..79}; echo; \
+		cat $$f; \
+		printf '=%.0s' {1..79}; echo; \
+	done
 
 coverage:
 	@echo "*** generating unittest coverage report (based on last test run)"
