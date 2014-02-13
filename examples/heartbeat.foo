@@ -89,9 +89,14 @@ after nodes receive do function(from, to, payload) {
 
 // adding a send function to our own node, with an execution strategy to have it
 // executed every some milliseconds.
-@every(heartbeat_interval)
-with nodes.self do function(node) {
+
+// we can also define a function and use it by name afterwards. typing of the
+// parameters is not required and will be validated when used. every use will
+// be processed and an error will be raised in case of conflicting inference
+function broadcast_heartbeat(node) {
   time = now()
   nodes.broadcast([ #heartbeat, node.sequence, time, sha1([node.sequence,time]) ])
   node.sequence++
 }
+
+@every(heartbeat_interval) with nodes.self do broadcast_heartbeat
