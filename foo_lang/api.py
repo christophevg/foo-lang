@@ -13,6 +13,9 @@ from foo_lang.semantic.model         import Model
 from foo_lang.semantic.domains.nodes import Nodes
 from foo_lang.semantic.visitor       import Visitor
 
+from foo_lang.semantic.checker       import Checker
+from foo_lang.semantic.inferrer      import Inferrer
+
 def create_model():
   model = Model()
   model.domains['nodes'] = Nodes()
@@ -56,5 +59,13 @@ def load(string, model=None):
   Visitor(model).visit(parse(string).tree)
   return model
 
+def check(model):
+  Checker(model).check()
+
+def infer(model):
+  Inferrer(model).infer()
+
 def generate(model, generator):
+  check(model)
+  infer(model)
   generator.generate(model)
