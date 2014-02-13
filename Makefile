@@ -21,7 +21,7 @@ FOO=$(PYTHON) foo.py -g
 
 OUTPUT=out
 
-all: clean test coverage generate beautify show
+all: clean test generate pdf coverage generate beautify show
 
 %.ast: %.foo parser
 	@echo "*** pasring $< and dumping AST into $@"
@@ -54,6 +54,8 @@ show:
 coverage:
 	@echo "*** generating unittest coverage report (based on last test run)"
 	@$(COVERAGE) report -m --omit 'foo_lang/parser/foo_lang*.py,*__init__.py,test/*'
+
+pdf: $(SRCS:.foo=.pdf)
 
 foo: parser
 	@echo "*** loading $(SRCS) into a model and dumping in foo-lang"
