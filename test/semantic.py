@@ -5,14 +5,13 @@
 
 import unittest
 
-from foo_lang.semantic.types         import Property, Object
-from foo_lang.semantic.model         import Extension, Module, Function, Model
-from foo_lang.semantic.constant      import Constant
-from foo_lang.semantic.domain        import Scope, Global
+from foo_lang.semantic.model         import *
 from foo_lang.semantic.domains.nodes import Nodes, AllNodes, OwnNode
-from foo_lang.semantic.expressions   import LiteralExp, VariableExp, FunctionCallExp
-from foo_lang.semantic.statements    import BlockStmt, IncStmt, DecStmt
-from foo_lang.semantic.execution     import Every
+
+from foo_lang.semantic.dumper import Dumper
+dumper = Dumper()
+def dump(model):
+  return model.accept(dumper)
 
 class TestModel(unittest.TestCase):
   def setUp(self):
@@ -22,67 +21,63 @@ class TestModel(unittest.TestCase):
     self.model = None
 
   def assertModelEquals(self, string):
-    self.assertEqual(str(self.model), string)
+    self.assertEqual(dump(self.model), string)
 
   # OBJECTS AND PROPERTIES
   def test_property(self):
-    prop = Property("name", "type", "value")
-    self.assertEqual(str(prop), "name : type = value")
+    prop = Property("name", value=IntegerLiteralExp("123"), type=TypeExp("type"))
+    self.assertEqual(dump(prop), "name : type = 123")
   
   def test_empty_object(self):
-    obj = Object()
-    self.assertEqual(str(obj), "{}")
+    obj = ObjectLiteralExp()
+    self.assertEqual(dump(obj), "{}")
 
   def create_object_with_properties(self, amount=2):
-    obj = Object()
+    obj = ObjectLiteralExp()
     for index in range(amount):
       obj.properties.append(Property("name"  + str(index), \
-                                     "type"  + str(index), \
-                                     "value" + str(index)))
+                                     type=TypeExp("type"  + str(index)), \
+                                     value=IntegerLiteralExp(str(index))))
     return obj
 
   def test_object_with_properties(self):
     obj = self.create_object_with_properties()
-    self.assertEqual(str(obj), "{\n  name0 : type0 = value0\n" + \
-                                  "  name1 : type1 = value1\n}")
+    self.assertEqual(dump(obj), "{\n  name0 : type0 = 0\n" + \
+                                  "  name1 : type1 = 1\n}")
 
   # CONST SUPPORT
   def test_const(self):
-    const = Constant("name", "type", "value")
-    self.assertEqual(str(const), "const name : type = value")
+    const = Constant("name", value=IntegerLiteralExp("123"), type=TypeExp("type"))
+    self.assertEqual(dump(const), "const name : type = 123")
 
   def test_const_with_unknown_type(self):
-    const = Constant("name", None, "value")
-    self.assertEqual(str(const), "const name = value")
+    const = Constant("name", value=IntegerLiteralExp("123"))
+    self.assertEqual(dump(const), "const name = 123")
 
   # EXTENSIONS
-  def test_extension_without_extension(self):
-    ext = Extension("domain", None)
-    self.assertEqual(str(ext), "")
-  
   def test_extension_with_object_extension(self):
     obj = self.create_object_with_properties()
-    ext = Extension("domain", obj)
-    self.assertEqual(str(ext), "extend domain with " + str(obj))
+    ext = Extension(Nodes(), obj)
+    self.assertEqual(dump(ext), "extend nodes with " + dump(obj))
 
   # MODULE SUPPORT
   def test_empty_module(self):
      module = Module("name")
-     self.assertEqual(str(module), "module name\n")
+     self.assertEqual(dump(module), "module name\n")
 
   def create_module_with_constants(self, name, amount=2):
     module = Module(name)
     for index in range(amount):
-      module.constants[name + str(index)] = Constant("name"  + str(index), \
-                                                     "type"  + str(index), \
-                                                     "value" + str(index))
+      module.constants.append(Constant("name"  + str(index), \
+                                       type=TypeExp("type"  + str(index)), \
+                                       value=IntegerLiteralExp(str(index))))
     return module
 
   def test_module_with_constants(self):
     module = self.create_module_with_constants("moduleName")
-    self.assertEqual(str(module), "module moduleName\n" + \
-                                  "const name0 : type0 = value0\n" + \
-                                  "const name1 : type1 = value1\n")
+    self.assertEqual(dump(module), "module moduleName\n" + \
+                                  "const name0 : type0 = 0\n" + \
+                                  "const name1 : type1 = 1\n")
 
   def create_module_with_extension(self, name, domain, obj):
     ext = Extension(domain, obj)
@@ -93,50 +88,47 @@ class TestModel(unittest.TestCase):
   def test_module_with_extensions(self):
     obj = self.create_object_with_properties()
     module = self.create_module_with_extension("moduleName", Nodes(), obj)
-    self.assertEqual(str(module), "module moduleName\n" + \
-                                  "extend nodes with " + str(obj) + "\n")
+    self.assertEqual(dump(module), "module moduleName\n" + \
+                                  "extend nodes with " + dump(obj) + "\n")
     
   def test_module_with_imports(self):
     module = Module("moduleName")
     module.externals["function1"] = "module1"
     module.externals["function2"] = "module2"
     module.externals["function1"] = "module3"   # simple overriding principle
-    self.assertEqual(str(module), "module moduleName\n" + \
+    self.assertEqual(dump(module), "module moduleName\n" + \
                                   "from module3 import function1\n" + \
                                   "from module2 import function2\n")
 
   # FUNCTIONS
   def create_function(self, name=None):
-    return Function(BlockStmt([IncStmt(VariableExp("x")),
-                               IncStmt(VariableExp("y"))]), name, ["x","y"])
+    return FunctionDecl(BlockStmt([IncStmt(VariableExp("x")),
+                                   IncStmt(VariableExp("y"))]),
+                        name=name, parameters=[Parameter("x"),Parameter("y")])
 
   def test_function(self):
     function = self.create_function("name")
-    self.assertEqual(str(function), "function name(x, y) {\n  x++\n  y++\n}")
+    self.assertEqual(dump(function), "function name(x, y) {\n  x++\n  y++\n}")
 
   def test_anon_function(self):
     function = self.create_function()
-    self.assertEqual(str(function), "function(x, y) {\n  x++\n  y++\n}")
+    self.assertEqual(dump(function), "function(x, y) {\n  x++\n  y++\n}")
 
   # SCOPING
-  def test_global_scope(self):
-    scope = Global()
-    self.assertEqual(str(scope), "")
-
   def test_domain_scope(self):
     scope = Nodes().get_scope()
-    self.assertEqual(str(scope), "with nodes do")
+    self.assertEqual(dump(scope), "nodes")
 
   def test_domain_specific_scope(self):
     scope = Nodes().get_scope("self")
-    self.assertEqual(str(scope), "with nodes.self do")
+    self.assertEqual(dump(scope), "nodes.self")
 
   # EXECUTION STRATEGIES
   def test_every_strategy(self):
     function = self.create_function("name")
     strategy = Every(AllNodes(Nodes()), function, VariableExp("interval"))
-    self.assertEqual(str(strategy), "@every(interval)\n" + \
-                                    "with nodes do " + str(function))
+    self.assertEqual(dump(strategy), "@every(interval)\n" + \
+                                    "with nodes do " + dump(function))
 
   # MODEL
   def test_empty_model(self):
@@ -150,10 +142,10 @@ class TestModel(unittest.TestCase):
     self.model.modules['mod1'] = module1
     self.model.modules['mod2'] = module2
     self.assertModelEquals("module module1\n" + \
-                           "const name0 : type0 = value0\n" + \
-                           "const name1 : type1 = value1\n" + \
+                           "const name0 : type0 = 0\n" + \
+                           "const name1 : type1 = 1\n" + \
                            "module module2\n" + \
-                           "extend nodes with " + str(obj) + "\n") 
+                           "extend nodes with " + dump(obj) + "\n") 
  
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestModel)

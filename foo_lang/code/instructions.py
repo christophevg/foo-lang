@@ -2,10 +2,10 @@
 # instructions to represent abstract (procedural+OO) code - AST anyone? ;-)
 # author: Christophe VG
 
-from util.visitor import Visitable, visitor_for, virtual
+from util.visitor import Visitable, visitor_for, nohandling
 from util.check   import isstring, isidentifier
 
-@virtual
+@nohandling
 class Fragment(Visitable): pass
 
 class Identifier(Fragment):
@@ -14,7 +14,7 @@ class Identifier(Fragment):
     assert isidentifier(name)
     self.name = name
 
-@virtual
+@nohandling
 class Instruction(Visitable): pass
 
 class InstructionList(Visitable):
@@ -32,7 +32,7 @@ class InstructionList(Visitable):
     self.instructions.append(instruction)
     return self
 
-@virtual
+@nohandling
 class Declaration(Instruction): pass
 
 class FunctionDecl(Declaration):
@@ -51,7 +51,7 @@ class FunctionDecl(Declaration):
     self.body       = body
     self.type       = type
 
-@virtual
+@nohandling
 class ParameterList(Fragment):
   def __init__(self, parameters):
     self.parameters = []
@@ -76,7 +76,7 @@ class ParameterDecl(Declaration):
     self.type    = type
     self.default = default
 
-@virtual
+@nohandling
 class Stmt(Instruction):
   def ends(self):
     return False
@@ -107,7 +107,7 @@ class IfStmt(Stmt):
     self.true_clause  = true_clause
     self.false_clause = false_clause
 
-@virtual
+@nohandling
 class MutUnOpStmt(Stmt):
   def __init__(self, operand):
     assert isinstance(operand, VariableExp)
@@ -118,7 +118,7 @@ class MutUnOpStmt(Stmt):
 class IncStmt(MutUnOpStmt): pass
 class DecStmt(MutUnOpStmt): pass
 
-@virtual
+@nohandling
 class ImmutUnOpStmt(Stmt):
   def __init__(self, expression):
     assert isinstance(expression, Expression)
@@ -136,7 +136,7 @@ class Comment(Stmt):
   def __repr__(self):
     return self.comment
 
-@virtual
+@nohandling
 class BinOpStmt(Stmt):
   def __init__(self, operand, expression):
     assert isinstance(operand, VariableExp)
@@ -157,7 +157,7 @@ class ReturnStmt(Stmt):
   def ends(self):
     return True
 
-@virtual
+@nohandling
 class CondLoopStmt(Stmt):
   def __init__(self, condition, body):
     assert isinstance(condition, Expression)
@@ -182,10 +182,10 @@ class ForStmt(Stmt):
     self.change = change
     self.body   = body
 
-@virtual
+@nohandling
 class Expression(Stmt): pass
 
-@virtual
+@nohandling
 class VariableExp(Expression): pass
 
 class SimpleVariableExp(VariableExp):
@@ -202,7 +202,7 @@ class PropertyExp(ObjectExp):
     self.obj  = obj
     self.prop = prop
 
-@virtual
+@nohandling
 class UnOpExp(Expression):
   def __init__(self, operand):
     assert isinstance(operand, Expression)
@@ -210,7 +210,7 @@ class UnOpExp(Expression):
 
 class NotExp(UnOpExp): pass
 
-@virtual
+@nohandling
 class BinOpExp(Expression):
   def __init__(self, left, right):
     assert isinstance(left, Expression)
@@ -248,7 +248,7 @@ class MethodCallExp(Expression):
     self.method    = method
     self.arguments = ExpressionList(arguments)
 
-@virtual
+@nohandling
 class ExpressionList(Fragment):
   def __init__(self, expressions):
     self.expressions = []
@@ -264,7 +264,7 @@ class ExpressionList(Fragment):
     self.expressions.append(expression)
     return self
 
-@virtual
+@nohandling
 class LiteralExp(Expression): pass
 
 class BooleanLiteral(LiteralExp):

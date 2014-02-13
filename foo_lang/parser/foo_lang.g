@@ -237,8 +237,8 @@ import_directive : 'from' identifier 'import' identifier
 
 // EXTENSIONS
 
-extension : 'extend' identifier 'with' literal
-            -> ^(EXTEND identifier literal);
+extension : 'extend' domain 'with' object_literal
+            -> ^(EXTEND domain object_literal);
 
 // LITERALS
 
@@ -277,7 +277,7 @@ list_literal
 
 type
   : basic_type '*' -> ^(MANY_TYPE_EXP basic_type)
-  | basic_type     -> ^(TYPE_EXP basic_type)
+  | basic_type     -> basic_type
   | tuple_type '*' -> ^(MANY_TYPE_EXP tuple_type)
   | tuple_type     -> tuple_type
   ;

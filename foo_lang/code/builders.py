@@ -3,6 +3,7 @@
 # and can be accesses as final a code instructions tree
 # author: Christophe VG
 
+import foo_lang.semantic.model as model
 from foo_lang.code.instructions import *
 
 class Builder():

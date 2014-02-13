@@ -11,15 +11,14 @@ def islistof(alist, type):
   """
   assert isinstance(alist, list)
   for item in alist:
-    assert isinstance(item, type)
+    if not isinstance(item, type): return False
   return True
 
 def isstring(candidate):
   """
   Asserts that a given candidate is a string, both "normal" or unicode.
   """
-  assert isinstance(candidate, str) or isinstance(candidate, unicode)
-  return True
+  return isinstance(candidate, str) or isinstance(candidate, unicode)
 
 def isidentifier(candidate):
-  return re.match(identifier, candidate) is not None
+  return isstring(candidate) and (re.match(identifier, candidate) is not None)

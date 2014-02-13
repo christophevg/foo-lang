@@ -6,13 +6,7 @@
 
 import sys
 
-from foo_lang.semantic.constant    import Constant
-from foo_lang.semantic.types       import Object, Property
-from foo_lang.semantic.model       import Module, Extension, Function
-from foo_lang.semantic.domain      import Domain, Scope
-from foo_lang.semantic.execution   import Every
-from foo_lang.semantic.expressions import *   # too many to import explicitly
-from foo_lang.semantic.statements  import *
+from foo_lang.semantic.model       import *     # too many to import explicitly
 
 class Visitor():
   def __init__(self, model):
@@ -32,6 +26,7 @@ class Visitor():
       "DOMAIN"          : self.handle_domain,
 
       "ANON_FUNC_DECL"  : self.handle_anon_func_decl,
+      "FUNC_DECL"       : self.handle_func_decl,
       "ON"              : self.handle_event_handler_decl,
       
       "BLOCK"           : self.handle_block_stmt,
@@ -124,14 +119,14 @@ class Visitor():
     else:
       type   = None
       value  = self.visit(children[1])
-    constant = Constant(name, type, value)
-    self.current_module.constants[constant.name] = constant
+    constant = Constant(name, value, type)
+    self.current_module.constants.append(constant)
     return constant
 
   def handle_extend(self, tree):
     assert tree.text == "EXTEND"
     children  = tree.getChildren()
-    domain    = children[0].text
+    domain    = self.handle_domain(children[0])
     obj       = self.handle_object_literal(children[1])
     extension = Extension(domain, obj)
     self.current_module.extensions.append(extension)
@@ -181,20 +176,29 @@ class Visitor():
     assert tree.text == "DOMAIN"
     return self.model.domains[tree.getChildren()[0].text]
 
-  # TODO: make generic to handle also named function decl
   def handle_anon_func_decl(self, tree):
     assert tree.text == "ANON_FUNC_DECL"
     children   = tree.getChildren()
     parameters = self.handle_parameters(children[0])
     body       = self.visit(children[1])
-    function   = Function(body, parameters=parameters)
-    self.current_module.functions[function.name] = function
+    function   = FunctionDecl(body, parameters=parameters)
+    self.current_module.functions.append(function)
+    return function
+
+  def handle_func_decl(self, tree):
+    assert tree.text == "FUNC_DECL"
+    children   = tree.getChildren()
+    name       = children[0].text
+    parameters = self.handle_parameters(children[1])
+    body       = self.visit(children[2])
+    function   = FunctionDecl(body, name=name, parameters=parameters)
+    self.current_module.functions.append(function)
     return function
 
   def handle_parameters(self, tree):
     assert tree.text == "PARAMS"
     parameters = tree.getChildren()
-    return [parameter.text for parameter in parameters]
+    return [Parameter(parameter.text) for parameter in parameters]
 
   def handle_event_handler_decl(self, tree):
     assert tree.text == "ON"
@@ -207,7 +211,7 @@ class Visitor():
     return self.add_execution("When", scope, function, [timing, event])
 
   def add_execution(self, class_name, scope, function, arguments):
-    module   = sys.modules["foo_lang.semantic.execution"]
+    module   = sys.modules["foo_lang.semantic.model"]
     clazz    = getattr(module, class_name)
     strategy = clazz(scope, function, *arguments)
     self.current_module.executions.append(strategy)
@@ -241,14 +245,13 @@ class Visitor():
     [cases, consequences] = zip(*cases)
     return CaseStmt(expression, cases, consequences)
 
-  # TODO: copy/paste from handle_function_call -> merge somehow or pull up ?
   def handle_case(self, tree):
     assert tree.text == "CASE"
     children       = tree.getChildren()
     function_name  = children[0].text
     if len(children) > 2:
       arguments = self.handle_arguments(children[1])
-      function  = FunctionCallExp(function_name, arguments)
+      function  = FunctionCallExp(FunctionExp(function_name), arguments)
       body      = self.visit(children[2])
     else:
       function = FunctionCallExp(function_name)
@@ -280,13 +283,11 @@ class Visitor():
 
   def handle_object_ref(self, tree):
     assert tree.text == "OBJECT_REF"
-    # TODO: use something more specific?!
-    return VariableExp(tree.getChildren()[0].text)
+    return ObjectExp(tree.getChildren()[0].text)
 
   def handle_function_ref(self, tree):
     assert tree.text == "FUNC_REF"
-    # TODO: use something more specific?!
-    return VariableExp(tree.getChildren()[0].text)
+    return FunctionExp(tree.getChildren()[0].text)
 
   # EXPRESSIONS
 
@@ -354,9 +355,9 @@ class Visitor():
     function  = children[0].text
     if len(children) > 1:
       arguments = self.handle_arguments(children[1])
-      return FunctionCallExp(function, arguments)
+      return FunctionCallExp(FunctionExp(function), arguments)
     else:
-      return FunctionCallExp(function)
+      return FunctionCallExp(FunctionExp(function))
 
   def handle_method_call(self, tree):
     assert tree.text == "METHOD_CALL"
@@ -383,11 +384,11 @@ class Visitor():
   def handle_list_literal(self, tree):
     assert tree.text == "LIST_LITERAL"
     children = tree.getChildren()
-    return ListLiteral([self.visit(child) for child in children])
+    return ListLiteralExp([self.visit(child) for child in children])
 
   def handle_object_literal(self, tree):
     assert tree.text == "OBJECT_LITERAL"
-    obj = Object()
+    obj = ObjectLiteralExp()
     for child in tree.getChildren():
       obj.properties.append(self.handle_property_literal(child))
     return obj
@@ -402,7 +403,7 @@ class Visitor():
     else:
       type   = None
       value  = self.visit(children[1])
-    return Property(name, type, value)
+    return Property(name, value, type)
 
   # HELPERS
 

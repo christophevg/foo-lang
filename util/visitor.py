@@ -3,18 +3,27 @@
 # author: Christophe VG
 
 import inspect
+import sys
 
 class Visitable(object):
   """
   Baseclass for visitable classes
   """
+  def handler(self):
+    return self.__class__.__name__
+
   def accept(self, visitor):
-    class_name  = self.__class__.__name__
+    class_name  = self.handler()
     method_name = "handle_" + class_name
     try:
       return getattr(visitor, method_name)(self)
-    except AttributeError:
-      print visitor.__class__.__name__ + " doesn't handle " + class_name
+    except AttributeError, e:
+      print visitor.__class__.__name__, "doesn't provide", method_name, \
+            "(", e,")"
+      raise e
+    except:
+      print "Unexpected exception in", method_name, ":", sys.exc_info()[1]
+      raise
 
 class Visitor(object):
   """
@@ -32,9 +41,9 @@ class Visitor(object):
         except AttributeError:
           pass
 
-virtuals = []
-def virtual(clazz):
-  virtuals.append(clazz.__name__)
+nohandlings = []
+def nohandling(clazz):
+  nohandlings.append(clazz.__module__ + "." + clazz.__name__)
   return clazz
 
 class visitor_for(object):
@@ -62,7 +71,8 @@ class visitor_for(object):
       return dummy
 
     for name, clazz in classes:
-      if name not in virtuals:
+      fqn = module.__name__ + "." + name
+      if fqn not in nohandlings:
         if super == [] or any([issubclass(clazz, sup) for sup in self.supers]):
           setattr(visitor, "handle_" + name, NotImplemented("handle_" + name))
 

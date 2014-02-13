@@ -21,4 +21,12 @@ class Nodes(Domain):
     module.event_loop.body.append(build.Call("nodes_process"))
 
   def create(self, module, model):
-    return build.Module().code()
+    # TODO: fix naming of module/mod/... :-(
+    mod = build.Module(["header", "body", "footer"])
+    
+    # include all functions
+    for function in module.functions:
+      mod.body.append(build.Function(function.name))
+    
+
+    return mod.code()

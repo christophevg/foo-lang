@@ -3,7 +3,7 @@
 
 # Nodes domain implementation
 
-from foo_lang.semantic.domain import Domain, Scope
+from foo_lang.semantic.model import Domain, Scope
 
 class Nodes(Domain):
   def __init__(self):
@@ -11,13 +11,10 @@ class Nodes(Domain):
       "*"    : AllNodes(self),
       "self" : OwnNode(self)
     }
-
-  def to_string(self, level):
-    return "  " * level + "nodes"
   
 class AllNodes(Scope):
   def __init__(self, domain):
-    Scope.__init__(self,domain)
+    Scope.__init__(self, domain)
     self.scope = "nodes"
   
 class OwnNode(Scope):

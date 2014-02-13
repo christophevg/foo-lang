@@ -48,6 +48,22 @@ class Generator():
     modules['main'] = self.create_main_module(model)
     return modules
 
+  def create_modules(self, model):
+    """
+    Creates a module for each domain/module pair.
+    """
+    modules = {}
+    
+    for domain_name, domain in model.domains.items():
+      domain_generator = self.generator_for_domain(domain_name)
+      for module_name, module in model.modules.items():
+        code = domain_generator.create(module, model)
+        name = domain_name + "-" + module_name
+        if self.verbose: print "creating " + name
+        modules[name] = code
+
+    return modules
+
   def create_main_module(self, model):
     """
     Creates the top-level main module.
@@ -76,22 +92,6 @@ class Generator():
     main.body.append(module.event_loop.code())
 
     return module.code()
-
-  def create_modules(self, model):
-    """
-    Creates a module for each domain/module pair.
-    """
-    modules = {}
-    
-    for domain_name, domain in model.domains.items():
-      domain_generator = self.generator_for_domain(domain_name)
-      for module_name, module in model.modules.items():
-        module = domain_generator.create(module, model)
-        name = domain_name + "-" + module_name
-        if self.verbose: print "creating " + name
-        modules[name] = module
-
-    return modules
 
   def generator_for_domain(self, domain_name):
     """

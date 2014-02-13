@@ -10,7 +10,9 @@ import unittest
 
 from difflib import *
 
-from foo_lang import api
+from foo_lang                 import api
+from foo_lang.semantic.dumper import Dumper
+
 
 class TestIntegration(unittest.TestCase):
   pass
@@ -25,8 +27,8 @@ def make_test_source(file):
     be exactly the same.
     """
     input   = open(file).read()
-    output1 = str(api.load(input))
-    output2 = str(api.load(output1))
+    output1 = api.load(input).accept(Dumper())
+    output2 = api.load(output1).accept(Dumper())
     if output1 != output2:
       for line in unified_diff(output1.split("\n"), output2.split("\n")):
         print(line, end='\n', file=sys.stderr)

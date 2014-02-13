@@ -1,87 +1,398 @@
 # model.py
+# classes to construct the Semantic Model
 # author: Christophe VG
 
 from collections import OrderedDict
 
-# Technical base class for all semantic model classes
-class base():
-  # entry point of request for conversion to string
-  def __repr__(self):
-    return self.to_string(0)
+from util.visitor import Visitable, visitor_for, nohandling
+from util.check   import isstring, isidentifier
 
-  def to_string(self, level):
-    raise RuntimeError("WARNING: need to implement to_string(self, indent)")
-
-
-# The semantic model container
-class Model(base):
+class Model(Visitable):
+  """
+  Top-level model container.
+  """
   def __init__(self):
-    # different modules can be combined in one model
-    self.modules    = {}
-
-    # the functional domains that are available in this model
+    self.modules = {}
     self.domains = {}
 
-  # entry point for conversion to string, triggered from base::__repr__
-  def to_string(self, level):
-    string = ""
-    for module in self.modules:
-      string += self.modules[module].to_string(level)
-    return string
+@nohandling
+class Domain(Visitable):
+  def get_scope(self, sub="*"):
+    return self.scoping[sub]
 
-# Modules represent input files, a model manages multiple
-class Module(base):
-  def __init__(self, name):
-    self.name       = name
-    self.constants  = OrderedDict()
-    self.externals  = OrderedDict()   # function : library
-    self.extensions = []
-    self.functions  = OrderedDict()   # storage, only for reference
-    self.executions = []
+  def get_property(self, property):
+    return self.get_scope(property)
   
-  def to_string(self, level):
-    string = "module " + self.name + "\n";
-    
-    for constant in self.constants:
-      string += self.constants[constant].to_string(level) + "\n"
+  def handler(self):
+    return "Domain"
 
-    for function in self.externals:
-      string += "from " + self.externals[function] + " import " + function + "\n"
+@nohandling
+class Scope(Visitable):
+  def __init__(self, domain):
+    assert isinstance(domain, Domain)
+    self.domain = domain
+    self.scope  = None    # implemented by concrete Scope implementation
 
-    for extension in self.extensions:
-      string += extension.to_string(level) + "\n"
+  def handler(self):
+    return "Scope"
 
-    for execution in self.executions:
-      string += execution.to_string(level) + "\n"
+class Module(Visitable):
+  """
+  Modules match input files. Each module contains all related functions and
+  configuration regarding an aspect of the implementation.
+  """
+  def __init__(self, name):
+    assert isidentifier(name)
 
-    return string
+    self.name       = name
+    self.constants  = NamedTypedOrderedDict(Constant)
+    self.externals  = OrderedDict()     # { function : library }
+    self.extensions = TypedList(Extension)
+    self.executions = TypedList(ExecutionStrategy)
 
-class Extension(base):
-  def __init__(self, domain, extension=None):
+    # functions are part of a module, but are linked from ExecutionStrategies
+    self.functions  = NamedTypedOrderedDict(FunctionDecl)
+
+@nohandling
+class NamedTypedOrderedDict(Visitable):
+  def __init__(self, type):
+    self.objects = OrderedDict()
+    self.type    = type
+  def __iter__(self):
+    return iter(self.objects.values())
+  def append(self, obj):
+    assert isinstance(obj, self.type)
+    self.objects[obj.name] = obj
+    return self
+
+@nohandling
+class TypedList(Visitable):
+  def __init__(self, type, objects=[]):
+    self.objects = []
+    self.type    = type
+    [self.append(obj) for obj in objects]
+  def __iter__(self):
+    return iter(self.objects)
+  def append(self, obj):
+    assert isinstance(obj, self.type), \
+           "TypedList's provided obj is a " + + obj.__class__.__name__ + \
+           " but got a " + self.type.__name__
+    self.objects.append(obj)
+    return self
+  def __len__(self):
+    return len(self.objects)
+
+class Constant(Visitable):
+  def __init__(self, name, value, type=None):
+    assert isidentifier(name)
+    assert type == None or isinstance(type, TypeExp)
+    assert isinstance(value, LiteralExp), \
+           "Constant.value is a " + value.__class__.__name__ + \
+           " but exptected a LiteralExp"
+    self.name  = name
+    self.type  = type
+    self.value = value
+
+class Extension(Visitable):
+  def __init__(self, domain, extension):
+    assert isinstance(domain, Domain), \
+           "Extension.domain is a " + domain.__class__.__name__ + \
+           " but expected a Domain"
+    assert isinstance(extension, ObjectLiteralExp), \
+           "Extension.extension is a " + extension.__class__.__name__ + \
+           " but expected an ObjectLiteralExp"
     self.domain    = domain
     self.extension = extension
 
-  def to_string(self, level):
-    if self.extension != None:
-      return "extend " + str(self.domain) + \
-             " with " + self.extension.to_string(level)
-    else:
-      return ""
+@nohandling
+class ExecutionStrategy(Visitable):
+  def __init__(self, scope, function):
+    assert isinstance(scope, Domain) or isinstance(scope, Scope), \
+           "ExecutionStrategy.scope is a " + scope.__class__.__name__ + \
+           " but expected a Scope or a Domain"
+    assert isinstance(function, FunctionExp) or isinstance(function, FunctionDecl)
+    self.scope    = scope
+    self.executed = function
 
-class Function(base):
+class Every(ExecutionStrategy):
+  """
+  Interval-based execution.
+  """
+  def __init__(self, scope, function, interval):
+    assert isinstance(interval, VariableExp) \
+        or isinstance(interval, IntegerLiteralExp), \
+           "Every.interval is a " + interval.__class__.__name__ + \
+           " but exptected an IntegerLiteralExp or a VariableExp"
+    ExecutionStrategy.__init__(self, scope, function)
+    self.interval = interval
+
+class When(ExecutionStrategy):
+  """
+  Event-based execution.
+  """
+  def __init__(self, scope, function, timing, event):
+    ExecutionStrategy.__init__(self, scope, function)
+    assert timing == "after" or timing == "before"
+    assert isinstance(event, FunctionExp), \
+           "When.event is a " + event.__class__.__name__ + \
+           " but expected an identifier"
+    self.timing = timing
+    self.event  = event
+
+class FunctionDecl(Visitable):
   anonymous = 0
-  def __init__(self, body, name=None, parameters=[]):
+  def __init__(self, body, name=None, parameters=[], type=None):
     if name == None:
-      name = "anonymous" + str(Function.anonymous)
-      Function.anonymous += 1
+      name = "anonymous" + str(FunctionDecl.anonymous)
+      FunctionDecl.anonymous += 1
+    assert isidentifier(name)
+    assert isinstance(body, Stmt)
+    assert type == None or isinstance(type, TypeExp)
     self.name       = name
-    self.parameters = parameters
+    self.parameters = TypedList(Parameter, parameters)
     self.body       = body
+    self.type       = type
 
-  def to_string(self, level):
-    string = "function"
-    if self.name[0:9] != "anonymous":
-      string += " " + str(self.name)
-    string +=  "(" + ", ".join([str(arg) for arg in self.parameters]) + ") " + \
-               self.body.to_string(level).lstrip()
-    return string
+class Parameter(Visitable):
+  def __init__(self, name, type=None):
+    assert isidentifier(name)
+    assert type == None or isinstance(type, TypeExp)
+    self.name = name
+    self._type = type
+  def get_type():
+    return self._type
+  def set_type(type):
+    assert self._type == None or self._type == type
+    self._type = type
+  def del_type():
+    del self._type
+  type = property(get_type, set_type, del_type)
+
+# STATEMENTS
+
+@nohandling
+class Stmt(Visitable): pass
+
+class BlockStmt(Stmt):
+  def __init__(self, statements=[]):
+    self.statements = TypedList(Stmt, statements)
+
+@nohandling
+class VariableValueStmt(Stmt):
+  def __init__(self, variable, value):
+    assert isinstance(variable, VariableExp) or isinstance(variable, PropertyExp)
+    assert isinstance(value, Exp)
+    self.variable = variable
+    self.value    = value
+
+class AssignStmt(VariableValueStmt): pass
+class AddStmt(VariableValueStmt): pass
+class SubStmt(VariableValueStmt): pass
+
+@nohandling
+class VariableStmt(Stmt):
+  def __init__(self, variable):
+    assert isinstance(variable, VariableExp) or isinstance(variable, PropertyExp)
+    self.variable = variable
+
+class IncStmt(VariableStmt): pass
+class DecStmt(VariableStmt): pass
+
+class IfStmt(Stmt):
+  def __init__(self, condition, true, false=None):
+    assert isinstance(condition, Exp)
+    assert isinstance(true, Stmt)
+    assert false == None or isinstance(false, Stmt)
+    self.condition = condition
+    self.true      = true
+    self.false     = false
+
+class CaseStmt(Stmt):
+  def __init__(self, expression, cases, consequences):
+    if len(cases) != len(consequences):
+      raise AttributeError, "Cases and consequences don't match."
+    assert isinstance(expression, Exp)
+    self.expression   = expression
+    self.cases        = TypedList(FunctionCallExp, cases)
+    self.consequences = TypedList(Stmt, consequences)
+
+class ReturnStmt(Stmt):
+  def __init__(self, expression=None):
+    assert expression == None or isinstance(expression, Exp)
+    self.expression = expression
+
+# EXPRESSIONS
+
+@nohandling
+class Exp(Visitable): pass
+
+@nohandling
+class LiteralExp(Exp): pass
+
+class BooleanLiteralExp(LiteralExp):
+  def __init__(self, value):
+    if isinstance(value, bool):
+      self.value = value
+    elif isinstance(value, str) or isinstance(value, unicode):
+      self.value = value.lower() == "true"
+    elif isinstance(value, int):
+      self.value = value != 0
+    else:
+      raise RuntimeError("Can't convert value to boolean:" + str(value))
+
+class IntegerLiteralExp(LiteralExp):
+  def __init__(self, value):
+    self.value = int(value)
+
+class FloatLiteralExp(LiteralExp):
+  def __init__(self, value):
+    self.value = float(value)
+
+class AtomLiteralExp(LiteralExp):
+  def __init__(self, name):
+    assert isidentifier(name)
+    self.name = name
+
+class ListLiteralExp(LiteralExp):
+  def __init__(self, expressions=[]):
+    self.expressions = TypedList(Exp, expressions)
+
+class ObjectLiteralExp(LiteralExp):
+  def __init__(self, properties=[]):
+    self.properties = TypedList(Property, properties)
+
+class Property(Visitable):
+  def __init__(self, name, value, type=None):
+    assert isidentifier(name)
+    assert isinstance(value, LiteralExp), "Property.value is a " + value.__class__.__name__ + " but expected a LiteralExp" 
+    assert type == None or isinstance(type, TypeExp)
+    self.name  = name
+    self.value = value
+    self.type  = type
+
+class TypeExp(Exp):
+  def __init__(self, type):
+    assert isinstance(type, TypeExp) or isidentifier(type)
+    self.type = type
+
+class ManyTypeExp(TypeExp):
+  def __init__(self, type):
+    assert isinstance(type, TypeExp)
+    self.type = type
+
+class TupleTypeExp(TypeExp):
+  def __init__(self, types=[]):
+    self.types = TypedList(TypeExp, types)
+
+class VariableExp(Exp):
+  def __init__(self, name):
+    assert isidentifier(name)
+    self.name = name
+  def handler(self):
+    return "VariableExp"
+
+class ObjectExp(VariableExp): pass
+class FunctionExp(VariableExp): pass
+
+class PropertyExp(Exp):
+  def __init__(self, obj, name):
+    assert isinstance(obj, ObjectExp) or isinstance(obj, Scope)
+    assert isidentifier(name)
+    self.obj  = obj
+    self.name = name  
+
+@nohandling
+class UnaryExp(Exp):
+  def __init__(self, operand):
+    assert isinstance(operand, Exp)
+    self.operand = operand
+  def operator(self):
+    raise NotimplementedError, "Missing implementation for operator(self))" + \
+                               " on " + self.__class__.__name__
+  def handler(self):
+    return "UnaryExp"
+
+@nohandling
+class BinaryExp(Exp):
+  def __init__(self, left, right):
+    assert isinstance(left,  Exp)
+    assert isinstance(right, Exp)
+    self.left  = left
+    self.right = right
+  def operator(self):
+    raise NotimplementedError, "Missing implementation for operator(self))" + \
+                               " on " + self.__class__.__name__
+  def handler(self):
+    return "BinaryExp"
+
+class AndExp(BinaryExp):
+  def operator(self): return "and"
+
+class OrExp(BinaryExp):
+  def operator(self): return "or"
+
+class EqualsExp(BinaryExp):
+  def operator(self): return "=="
+
+class NotEqualsExp(BinaryExp):
+  def operator(self): return "!="
+
+class LTExp(BinaryExp):
+  def operator(self): return "<"
+
+class LTEQExp(BinaryExp):
+  def operator(self): return "<="
+
+class GTExp(BinaryExp):
+  def operator(self): return ">"
+
+class GTEQExp(BinaryExp):
+  def operator(self): return ">="
+
+class PlusExp(BinaryExp):
+  def operator(self): return "+"
+
+class MinusExp(BinaryExp):
+  def operator(self): return "-"
+
+class MultExp(BinaryExp):
+  def operator(self): return "*"
+
+class DivExp(BinaryExp):
+  def operator(self): return "/"
+
+class ModuloExp(BinaryExp):
+  def operator(self): return "%"
+
+class NotExp(UnaryExp):
+  def operator(self): return "!"
+
+class FunctionCallExp(Exp, Stmt):
+  def __init__(self, function, arguments=[]):
+    assert isinstance(function, FunctionExp)
+    self.function  = function
+    self.arguments = TypedList(Exp, arguments)
+
+class MethodCallExp(Exp, Stmt):
+  def __init__(self, obj, method, arguments=[]):
+    assert isinstance(obj, ObjectExp)
+    assert isidentifier(method)
+    self.object    = obj
+    self.method    = method
+    self.arguments = TypedList(Exp, arguments)
+
+class AnythingExp(Exp): pass
+
+class MatchExp(Exp):
+  def __init__(self, operator, operand=None):
+    assert isinstance(operator, AnythingExp) \
+       or operator in [ "<", "<=", ">", ">=", "==", "!=", "!" ], \
+         "MatchExp.operator got " + operator
+    assert operand == None or isinstance(operand, Exp)
+    self.operator = operator
+    self.operand  = operand
+
+# VISITOR
+
+@visitor_for([Visitable])
+class SemanticVisitor(): pass

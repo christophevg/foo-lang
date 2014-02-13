@@ -14,8 +14,9 @@ import argparse
 from antlr3 import RecognitionException
 import antlr3.extras
 
-from foo_lang           import api
-from foo_lang.generator import build
+from foo_lang                 import api
+from foo_lang.generator       import build
+from foo_lang.semantic.dumper import Dumper
 
 def load(args):
   if verbose: print "foo: loading sources into model"
@@ -33,7 +34,7 @@ def indent_ast(tree, level=0):
 
 def dump_foo(args):
   if args.verbose: print "foo: generating FOO"
-  print load(args.sources)
+  print load(args.sources).accept(Dumper())
 
 def dump_dot(args):
   if args.verbose: print "foo: generating DOT"
