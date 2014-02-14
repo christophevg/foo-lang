@@ -45,7 +45,7 @@ def parse(string, noprint=False):
       print "  info   :", e.approximateLineInfo
       raise RuntimeError("Failed to parse")
     else:
-      raise e
+      raise
 
 def load(string, model=None):
   """
