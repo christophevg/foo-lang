@@ -94,7 +94,8 @@ class TypedList(Visitable):
 class Constant(Visitable):
   def __init__(self, identifier, value, type=None):
     if type is None: type = UnknownType()
-    assert isinstance(identifier, Identifier)
+    assert isinstance(identifier, Identifier), \
+           "Constant's identifier (name) should be an identifier"
     assert isinstance(type, TypeExp)
     assert isinstance(value, LiteralExp), \
            "Constant.value is a " + value.__class__.__name__ + \
@@ -294,7 +295,8 @@ class Property(Visitable):
 
 class TypeExp(Exp):
   def __init__(self, identifier):
-    assert isinstance(identifier, Identifier)
+    assert isinstance(identifier, Identifier), \
+      "TypeExp's identifier (type) should be an identifier"
     self.identifier = identifier
   def get_type(self): return self.identifier.name
   type = property(get_type)
