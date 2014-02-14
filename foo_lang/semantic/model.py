@@ -67,7 +67,7 @@ class NamedTypedOrderedDict(Visitable):
     self.type    = type
   def __iter__(self):
     return iter(self.objects.values())
-  def __in__(self, key):
+  def __contains__(self, key):
     return key in self.objects
   def append(self, obj):
     assert isinstance(obj, self.type)
