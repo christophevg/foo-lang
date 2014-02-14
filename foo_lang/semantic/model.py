@@ -60,6 +60,8 @@ class NamedTypedOrderedDict(Visitable):
     self.type    = type
   def __iter__(self):
     return iter(self.objects.values())
+  def __in__(self, key):
+    return key in self.objects
   def append(self, obj):
     assert isinstance(obj, self.type)
     self.objects[obj.name] = obj
@@ -159,12 +161,12 @@ class Parameter(Visitable):
     assert type == None or isinstance(type, TypeExp)
     self.name = name
     self._type = type
-  def get_type():
+  def get_type(self):
     return self._type
-  def set_type(type):
+  def set_type(self, type):
     assert self._type == None or self._type == type
     self._type = type
-  def del_type():
+  def del_type(self):
     del self._type
   type = property(get_type, set_type, del_type)
 
@@ -288,8 +290,6 @@ class VariableExp(Exp):
   def __init__(self, name):
     assert isidentifier(name)
     self.name = name
-  def handler(self):
-    return "VariableExp"
 
 class ObjectExp(VariableExp): pass
 class FunctionExp(VariableExp): pass

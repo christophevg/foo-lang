@@ -195,6 +195,12 @@ class Dumper(SemanticVisitor):
 
   def handle_VariableExp(self, var):
     return var.name
+
+  def handle_FunctionExp(self, var):
+    return var.name
+
+  def handle_ObjectExp(self, var):
+    return var.name
   
   def handle_PropertyExp(self, prop):
     return prop.obj.accept(self) + "." + prop.name
