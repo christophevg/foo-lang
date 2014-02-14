@@ -94,6 +94,9 @@ class SemanticHandler(SemanticVisitor):
   def handle_Extension(self, extension):
     self.handle('Extension', extension)
 
+    extension.domain.accept(self)
+    extension.extension.accept(self)
+
   def handle_Every(self, execution):
     self.handle('Every', execution)
     execution.interval.accept(self)
@@ -196,11 +199,11 @@ class SemanticHandler(SemanticVisitor):
     prop.value.accept(self)
 
   def handle_TypeExp(self, type):
-    self.handle('TypeExp', exp)
+    self.handle('TypeExp', type)
 
   def handle_ManyTypeExp(self, many):
     self.handle('ManyTypeExp', many)
-    many.type.accept(self)
+    many.subtype.accept(self)
     
   def handle_TupleTypeExp(self, tuple):
     self.handle('TupleTypeExp', tuple)

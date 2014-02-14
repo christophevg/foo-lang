@@ -10,7 +10,7 @@ class Checker(SemanticChecker):
     self.assertIsNotNone( param.type, "parameter type is None", param.name )
   
   def check_Property(self, prop):
-    self.assertIsNotNone( prop.typem, "property type is None", prop.name )
+    self.assertIsNotNone( prop.type, "property type is None", prop.name )
 
   def check_Scope(self, scope):
     self.assertIsNotNone( scope.scope, "scope's scope is None")
