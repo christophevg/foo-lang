@@ -21,10 +21,10 @@ class Visitable(object):
       print visitor.__class__.__name__, "doesn't provide", method_name, \
             "(", e,")"
       raise
-    except:
-      print visitor.__class__.__name__, ": Unexpected exception in", \
-            method_name, ":", sys.exc_info()[1]
-      raise
+    # except:
+    #   print visitor.__class__.__name__, ": Unexpected exception in", \
+    #         method_name, ":", sys.exc_info()[1]
+    #   raise
 
 class Visitor(object):
   """
