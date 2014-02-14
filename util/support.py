@@ -18,7 +18,7 @@ class warn():
       if warn.first:
         print("", file=sys.stderr)
         warn.first = False
-      print( "WARNING: " + str(parent.text) +". Be careful ;-)",
+      print( "WARNING: " + self.__class__.__name__ + ": " + str(parent.text),
              end='\n', file=sys.stderr)
       return method(self, *args)
     return wrapped
