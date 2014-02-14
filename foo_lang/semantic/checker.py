@@ -1,11 +1,13 @@
 # checker.py
-# a semantic model-checker, validating a model, typically run after inferrer
+# a semantic model-checker, validating a model, typically run after Inferrer
 # author: Christophe VG
 
 from foo_lang.semantic.handler import SemanticChecker
 from foo_lang.semantic.model import UnknownType
 
 class Checker(SemanticChecker):
+
+  # Unknown Types (these should be fixed by the Inferrer)
 
   def check_Parameter(self, param):
     self.assertNotIsInstance( param.type, UnknownType, \
@@ -15,8 +17,20 @@ class Checker(SemanticChecker):
     self.assertNotIsInstance( prop.type, UnknownType, \
                               "property type is Unknown", prop.name )
 
+  def check_Constant(self, constant):
+    self.assertNotIsInstance( constant.type, UnknownType, \
+                              "constant type is Unknown", constant.name )
+
+  def check_FunctionDecl(self, function):
+    self.assertNotIsInstance( function.type, UnknownType, \
+                              "function return type is Unknown", function.name )
+
+  # Optional attributes that seem to be missing
+
   def check_Scope(self, scope):
     self.assertIsNotNone( scope.scope, "scope's scope is None" )
+
+  # Definitions
 
   def check_FunctionExp(self, function):
     """
