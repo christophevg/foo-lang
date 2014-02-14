@@ -258,32 +258,44 @@ class SemanticHandler(SemanticVisitor):
 
 class SemanticChecker(SemanticHandler):
   def __init__(self, model):
-    self.model = model
+    self.model  = model
     self.prefix = "check_"
+    self.name   = "foo-" + self.__class__.__name__.lower()
 
   def check(self):
-    print "foo-" + self.__class__.__name__.lower() + ": processing model"
+    print self.name + ": processing model"
     self.start();
     self.model.accept(self)
     self.stop()
 
   def start(self):
     self.fails = 0
+    self.successes = 0
 
   def stop(self):
     self.report()
 
   def report(self):
     print "-" * 79
-    print "foo-" + self.__class__.__name__.lower() + ": result: " + \
-      ( "SUCCESS - model is valid" if self.fails == 0 \
-        else "FAILURES:" + str(self.fails) )
+    self.log("results of run",
+            ( "SUCCESS - model is valid" if self.fails == 0 \
+              else "FAILURES : " + str(self.fails)),
+            "SUCCESSES: " + str(self.successes))
     print "-" * 79
 
   def fail(self, msg, *args):
     self.fails += 1
-    print "  failure:", msg, ":", str(*args)
-    print "           " + " > ".join(reversed(self.trace()))
+    self.log("failure: " + msg + " : " + str(*args),
+             " > ".join(reversed(self.trace())))
+
+  def success(self, msg, *args):
+    self.successes += 1
+    self.log("success: " + msg + " : " + " ".join([str(arg) for arg in args]))
+
+  def log(self, msg1, *msgs):
+    print "foo-" + self.__class__.__name__.lower() + ": " + msg1
+    for msg in msgs:
+      print " " * len(self.name) + "  " + msg
 
   # ASSERTIONS HELPERS
 
