@@ -31,6 +31,9 @@ class Domain(Visitable):
   def handler(self):
     return "Domain"
 
+  def get_function(self, function_name):
+    return None
+
 @nohandling
 class Scope(Visitable):
   def __init__(self, domain):

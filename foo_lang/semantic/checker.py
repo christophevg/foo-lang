@@ -3,7 +3,7 @@
 # author: Christophe VG
 
 from foo_lang.semantic.handler import SemanticChecker
-from foo_lang.semantic.model import UnknownType
+from foo_lang.semantic.model import UnknownType, ExecutionStrategy, Scope, Module
 
 class Checker(SemanticChecker):
 
@@ -37,9 +37,22 @@ class Checker(SemanticChecker):
     Every expressed function (read: name), should be known. It can be:
     - in an External
     - in a FunctionDecl
+    - some special cases
     """
     module = self.stack[1]
     if function.name in module.externals: return
     if function.name in module.functions: return
-    
-    self.fail("FunctionExp has no definition", function.name)
+
+    parents = list(reversed(self.stack))
+
+    # special case 1: function is handler for and ExecutionStrategy
+    # example: Model > Module(heartbeat) > When(receive) > FunctionExp(receive)
+    parent = parents[1]
+    if isinstance(parent, ExecutionStrategy):
+      if isinstance(parent.scope, Scope): domain = parent.scope.domain
+      else: domain = parent.scope
+      if domain.get_function(function.name): return
+
+    # don't know where to look anymore
+    self.fail("FunctionExp has no definition. Did you miss an import?", \
+              function.name)

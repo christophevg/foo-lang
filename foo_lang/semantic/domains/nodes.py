@@ -11,6 +11,15 @@ class Nodes(Domain):
       "*"    : AllNodes(self),
       "self" : OwnNode(self)
     }
+
+  def get_function(self, name):
+    try:
+      return {
+        'receive'  : { type: 'void' },
+        'transmit' : { type: 'void' }
+      }[name]
+    except KeyError: pass
+    return None
   
 class AllNodes(Scope):
   def __init__(self, domain):
