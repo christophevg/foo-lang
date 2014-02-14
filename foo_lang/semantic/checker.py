@@ -38,8 +38,8 @@ class Checker(SemanticChecker):
     - in an External
     - in a FunctionDecl
     """
-    for module in self.model.modules.values():
-      if function.name in module.externals: return
-      if function.name in module.functions: return
+    module = self.stack[1]
+    if function.name in module.externals: return
+    if function.name in module.functions: return
     
     self.fail("FunctionExp has no definition", function.name)
