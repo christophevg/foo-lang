@@ -18,65 +18,69 @@ class TestStatements(unittest.TestCase):
     self.assertEqual(dump(stmt), "{ }")
 
   def test_assign_stmt(self):
-    stmt = AssignStmt(VariableExp("x"), IntegerLiteralExp("123"))
+    stmt = AssignStmt(VariableExp(Identifier("x")), IntegerLiteralExp("123"))
     self.assertEqual(dump(stmt), "x = 123")
 
   def test_add_stmt(self):
-    stmt = AddStmt(VariableExp("x"), IntegerLiteralExp("123"))
+    stmt = AddStmt(VariableExp(Identifier("x")), IntegerLiteralExp("123"))
     self.assertEqual(dump(stmt), "x += 123")
 
   def test_sub_stmt(self):
-    stmt = SubStmt(VariableExp("x"), IntegerLiteralExp("123"))
+    stmt = SubStmt(VariableExp(Identifier("x")), IntegerLiteralExp("123"))
     self.assertEqual(dump(stmt), "x -= 123")
 
   def test_inc_stmt(self):
-    stmt = IncStmt(VariableExp("x"))
+    stmt = IncStmt(VariableExp(Identifier("x")))
     self.assertEqual(dump(stmt), "x++")
 
   def test_dec_stmt(self):
-    stmt = DecStmt(VariableExp("x"))
+    stmt = DecStmt(VariableExp(Identifier("x")))
     self.assertEqual(dump(stmt), "x--")
 
   def test_if_single_stmt(self):
-    stmt = IfStmt(BooleanLiteralExp("true"), IncStmt(VariableExp("x")))
+    stmt = IfStmt(BooleanLiteralExp("true"), \
+                  IncStmt(VariableExp(Identifier("x"))))
     self.assertEqual(dump(stmt), "if( true ) x++")
 
   def test_if_block_stmt(self):
     stmt = IfStmt(BooleanLiteralExp("true"), \
-                  BlockStmt([IncStmt(VariableExp("x")),
-                             IncStmt(VariableExp("y"))]))
+                  BlockStmt([IncStmt(VariableExp(Identifier("x"))),
+                             IncStmt(VariableExp(Identifier("y")))]))
     self.assertEqual(dump(stmt), "if( true ) {\n  x++\n  y++\n}")
 
   def test_if_else_stmt(self):
     stmt = IfStmt(BooleanLiteralExp("true"), \
-                  IncStmt(VariableExp("x")), \
-                  DecStmt(VariableExp("x")))
+                  IncStmt(VariableExp(Identifier("x"))), \
+                  DecStmt(VariableExp(Identifier("x"))))
     self.assertEqual(dump(stmt), "if( true ) x++ else x--")
 
   def test_if_else_block_stmt(self):
     stmt = IfStmt(BooleanLiteralExp("true"), \
-                  BlockStmt([IncStmt(VariableExp("x")),
-                             IncStmt(VariableExp("y"))]),\
-                  BlockStmt([DecStmt(VariableExp("x")),
-                             DecStmt(VariableExp("y"))]))
+                  BlockStmt([IncStmt(VariableExp(Identifier("x"))),
+                             IncStmt(VariableExp(Identifier("y")))]),\
+                  BlockStmt([DecStmt(VariableExp(Identifier("x"))),
+                             DecStmt(VariableExp(Identifier("y")))]))
     self.assertEqual(dump(stmt), "if( true ) {\n  x++\n  y++\n} else {\n  x--\n  y--\n}")
 
   def test_bad_case_stmt(self):
     def bad():
-      CaseStmt(VariableExp("something"), \
-               [FunctionCallExp(FunctionExp("has"), [VariableExp("x")])], [])
+      CaseStmt(VariableExp(Identifier("something")), \
+               [FunctionCallExp(FunctionExp(Identifier("has")), 
+                 [VariableExp(Identifier("x"))])], [])
     self.assertRaises(AttributeError, bad)
 
   def test_case_stmt(self):
-    stmt = CaseStmt(VariableExp("something"), \
-                   [FunctionCallExp(FunctionExp("has"), [VariableExp("x")])], \
-                   [IncStmt(VariableExp("x"))])
+    stmt = CaseStmt(VariableExp(Identifier("something")), \
+                   [FunctionCallExp(FunctionExp(Identifier("has")), 
+                    [VariableExp(Identifier("x"))])], \
+                   [IncStmt(VariableExp(Identifier("x")))])
     self.assertEqual(dump(stmt), "case something {\n  has(x) x++\n}")
 
   def test_case_block_stmt(self):
-    stmt = CaseStmt(VariableExp("something"), \
-                   [FunctionCallExp(FunctionExp("has"), [VariableExp("x")])], \
-                   [BlockStmt([IncStmt(VariableExp("x"))])])
+    stmt = CaseStmt(VariableExp(Identifier("something")), \
+                   [FunctionCallExp(FunctionExp(Identifier("has")),
+                     [VariableExp(Identifier("x"))])], \
+                   [BlockStmt([IncStmt(VariableExp(Identifier("x")))])])
     self.assertEqual(dump(stmt), "case something {\n  has(x) {\n    x++\n  }\n}")
 
   def test_return_stmt(self):
@@ -84,7 +88,7 @@ class TestStatements(unittest.TestCase):
     self.assertEqual(dump(stmt), "return")
 
   def test_return_stmt_with_value(self):
-    stmt = ReturnStmt(VariableExp("something"))
+    stmt = ReturnStmt(VariableExp(Identifier("something")))
     self.assertEqual(dump(stmt), "return something")
 
 if __name__ == '__main__':

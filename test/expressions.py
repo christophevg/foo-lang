@@ -70,21 +70,23 @@ class TestExpressions(unittest.TestCase):
     self.assertEqual(dump(exp), "! true")
 
   def test_function_call_exp(self):
-    exp = FunctionCallExp(FunctionExp("test_function"),
-                          [IntegerLiteralExp("1"), VariableExp("var_name")])
+    exp = FunctionCallExp(FunctionExp(Identifier("test_function")),
+                          [IntegerLiteralExp("1"), \
+                           VariableExp(Identifier("var_name"))])
     self.assertEqual(dump(exp), "test_function(1, var_name)")
 
   def test_method_call_exp(self):
-    exp = MethodCallExp(ObjectExp("test_object"), "test_function", \
-                               [IntegerLiteralExp("1"),
-                                VariableExp("var_name")])
+    exp = MethodCallExp(ObjectExp(Identifier("test_object")), \
+                        Identifier("test_function"), \
+                        [IntegerLiteralExp("1"),
+                         VariableExp(Identifier("var_name"))])
     self.assertEqual(dump(exp), "test_object.test_function(1, var_name)")
 
   def test_complex_expression(self):
     exp = AndExp( \
             OrExp( \
-              MethodCallExp(ObjectExp("this"), "do", \
-                           [ NotExp( FunctionCallExp(FunctionExp("work")))]),\
+              MethodCallExp(ObjectExp(Identifier("this")), Identifier("do"), \
+               [ NotExp( FunctionCallExp(FunctionExp(Identifier("work"))))]),\
               GTEQExp(IntegerLiteralExp("1"), \
                       MinusExp(IntegerLiteralExp("5"), \
                                IntegerLiteralExp("6"))) \
@@ -125,19 +127,21 @@ class TestExpressions(unittest.TestCase):
     self.assertEqual(dump(exp), "789.34")
 
   def test_type_exp(self):
-    exp = TypeExp("test")
+    exp = TypeExp(Identifier("test"))
     self.assertEqual(dump(exp), "test")
 
   def test_many_type_exp(self):
-    exp = ManyTypeExp(TypeExp("test"))
+    exp = ManyTypeExp(TypeExp(Identifier("test")))
     self.assertEqual(dump(exp), "test*")
 
   def test_tuple_type_exp(self):
-    exp = TupleTypeExp([TypeExp("test1"), TypeExp("test2")])
+    exp = TupleTypeExp([TypeExp(Identifier("test1")), \
+                        TypeExp(Identifier("test2"))])
     self.assertEqual(dump(exp), "[test1,test2]")
 
   def test_complex_type(self):
-    exp = ManyTypeExp(TupleTypeExp([ManyTypeExp(TypeExp("many")),TypeExp("single")]))
+    exp = ManyTypeExp(TupleTypeExp([ManyTypeExp(TypeExp(Identifier("many"))),\
+                                                TypeExp(Identifier("single"))]))
     self.assertEqual(dump(exp), "[many*,single]*")
 
   def test_anything_exp(self):
@@ -145,7 +149,7 @@ class TestExpressions(unittest.TestCase):
     self.assertEqual(dump(exp), "_")
 
   def test_match_exp(self):
-    exp = MatchExp("<", FunctionCallExp(FunctionExp("biggest")))
+    exp = MatchExp("<", FunctionCallExp(FunctionExp(Identifier("biggest"))))
     self.assertEqual(dump(exp), "< biggest()")
 
 if __name__ == '__main__':

@@ -13,12 +13,12 @@ options {
 
 // a few virtual tokens, used as identifying node
 tokens {  // must be declared here/before use, not with other real tokens below
-  ROOT; MODULE; CONST; EXTERNAL; OBJECT_LITERAL; OBJECT_REF; FUNC_REF;
-  FUNC_DECL; ANON_FUNC_DECL; FUNC_CALL; METHOD_CALL; LIST_LITERAL;
-  PROPERTY_LITERAL; PROPERTY_EXP; IMPORT; EXTEND; IF; BLOCK; VAR_EXP;
-  ANNOTATION; ANNOTATED; INC; DEC; APPLY; ON; ATOM_LITERAL; CASES; CASE;
-  TYPE_EXP; MANY_TYPE_EXP; TUPLE_TYPE_EXP; VALUE; DOMAIN; BOOLEAN_LITERAL; INTEGER_LITERAL;
-  FLOAT_LITERAL; RETURN; MATCH_EXP; ANYTHING; PARAMS; ARGS;
+  ANNOTATED; ANNOTATION; ANON_FUNC_DECL; ANYTHING; APPLY; ARGS; ATOM_LITERAL;
+  BLOCK; BOOLEAN_LITERAL; CASE; CASES; CONST; DEC; DOMAIN; EXTEND; EXTERNAL;
+  FLOAT_LITERAL; FUNC_CALL; FUNC_DECL; FUNC_REF; IDENTIFIER; IF; IMPORT; INC;
+  INTEGER_LITERAL; LIST_LITERAL; MANY_TYPE_EXP; MATCH_EXP; METHOD_CALL; MODULE;
+  OBJECT_LITERAL; OBJECT_REF; ON; PARAMS; PROPERTY_EXP; PROPERTY_LITERAL;
+  RETURN; ROOT; TUPLE_TYPE_EXP; TYPE_EXP; VALUE; VAR_EXP;
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -281,19 +281,27 @@ type
   | tuple_type '*' -> ^(MANY_TYPE_EXP tuple_type)
   | tuple_type     -> tuple_type
   ;
-basic_type
-  : t='byte'      -> ^(TYPE_EXP $t)
-  | t='integer'   -> ^(TYPE_EXP $t)
-  | t='float'     -> ^(TYPE_EXP $t)
-  | t='boolean'   -> ^(TYPE_EXP $t)
-  | t='timestamp' -> ^(TYPE_EXP $t)
+basic_type: type_identifier -> ^(TYPE_EXP type_identifier);
+type_identifier
+  : t='byte'      -> ^(IDENTIFIER $t)
+  | t='integer'   -> ^(IDENTIFIER $t)
+  | t='float'     -> ^(IDENTIFIER $t)
+  | t='boolean'   -> ^(IDENTIFIER $t)
+  | t='timestamp' -> ^(IDENTIFIER $t)
   ;
 tuple_type : '[' t+=type (COMMA t+=type)* ']' -> ^(TUPLE_TYPE_EXP $t+);
 
 // to avoid some keywords to be excluded from being an identifier, we add them
 // again here.
 // TODO: implement error reporting when the source contains a reserved keyword
-identifier: IDENTIFIER | 'from' | 'import' | 'with' | 'use' | 'extend';
+identifier
+  : id=ID       -> ^(IDENTIFIER $id)
+  | id='from'   -> ^(IDENTIFIER $id)
+  | id='import' -> ^(IDENTIFIER $id)
+  | id='with'   -> ^(IDENTIFIER $id)
+  | id='use'    -> ^(IDENTIFIER $id)
+  | id='extend' -> ^(IDENTIFIER $id)
+  ;
 
 // ATOMIC FRAGMENTS aka TOKENS ;-)
 
@@ -330,7 +338,7 @@ DIV: '/';
 MOD: '%';
 
 // all that remains can be an identifier
-IDENTIFIER : ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
+ID : ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
 
 // WHITESPACE and COMMENTS
 

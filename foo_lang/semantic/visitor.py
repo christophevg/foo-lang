@@ -5,8 +5,10 @@
 # Note: trying to create a tree grammar to do this seemed harder in the end
 
 import sys
+import traceback
 
-from foo_lang.semantic.model       import *     # too many to import explicitly
+from util.check              import isidentifier
+from foo_lang.semantic.model import *     # too many to import explicitly
 
 class Visitor():
   def __init__(self, model):
@@ -77,9 +79,9 @@ class Visitor():
                                                         IntegerLiteralExp, t),
       "FLOAT_LITERAL"   : lambda t: self.handle_literal("FLOAT_LITERAL", \
                                                         FloatLiteralExp, t),
-      "ATOM_LITERAL"    : lambda t: self.handle_literal("ATOM_LITERAL", \
-                                                        AtomLiteralExp, t),
-      "LIST_LITERAL"    : self.handle_list_literal
+      "ATOM_LITERAL"    : self.handle_atom_literal,
+      "LIST_LITERAL"    : self.handle_list_literal,
+      "IDENTIFIER"      : self.handle_identifier
   }
 
   # visiting an unknown tree, using the dispatch to get to specialized handler
@@ -87,10 +89,15 @@ class Visitor():
     try:
       return self.dispatch[tree.text](tree)
     except KeyError as e:
-      print "TODO: handle", e
-      pass
+      print "foo-ast-visitor: missing handler for", e
 
   # HANDLERS
+
+  def handle_identifier(self, tree):
+    assert tree.text == "IDENTIFIER"
+    name = tree.getChildren()[0].text
+    assert isidentifier(name), "bad identifier name " + name
+    return Identifier(name)
 
   def handle_root(self, tree):
     assert tree.text == "ROOT"
@@ -101,10 +108,10 @@ class Visitor():
   def handle_module(self, tree):
     assert tree.text == "MODULE"
     children = tree.getChildren()
-    name     = children[0].text
+    name     = self.visit(children[0])
     module   = Module(name)
-    self.model.modules[name] = module
-    self.current_module      = module
+    self.model.modules[name.name] = module
+    self.current_module           = module
     for index in range(1,len(children)):
       self.visit(children[index])
     return module
@@ -112,7 +119,7 @@ class Visitor():
   def handle_constant(self, tree):
     assert tree.text == "CONST"
     children = tree.getChildren()
-    name     = children[0].text
+    name     = self.visit(children[0])
     if len(children) > 2:
       type   = self.visit(children[1])
       value  = self.visit(children[2])
@@ -135,9 +142,9 @@ class Visitor():
   def handle_import(self, tree):
     assert tree.text == "IMPORT"
     children = tree.getChildren()
-    module   = children[0].text
-    function = children[1].text
-    self.current_module.externals[function] = module
+    module   = self.visit(children[0])
+    function = self.visit(children[1])
+    self.current_module.externals[function.name] = module.name
     return None
   
   def handle_annotated(self, tree):
@@ -154,7 +161,7 @@ class Visitor():
     children = tree.getChildren()
     return {
       'every': ['Every', [self.handle_variable_exp(children[1].getChildren()[0])]]
-    }[children[0].text]
+    }[children[0].getChildren()[0].text]  # FIXME: ugly with ID in between
 
   # two executions are supported currently:
   # 1. application of function to scope
@@ -168,13 +175,16 @@ class Visitor():
   def handle_application(self, tree):
     assert tree.text == "APPLY"
     children = tree.getChildren()
-    scope    = self.as_scope(self.visit(children[0]))
+    tmp      = self.visit(children[0])
+    assert tmp != None, children[0]
+    scope    = self.as_scope(tmp)
     function = self.visit(children[1])
     return [scope, function]
 
   def handle_domain(self, tree):
     assert tree.text == "DOMAIN"
-    return self.model.domains[tree.getChildren()[0].text]
+    domain = self.visit(tree.getChildren()[0])
+    return self.model.domains[domain.name]
 
   def handle_anon_func_decl(self, tree):
     assert tree.text == "ANON_FUNC_DECL"
@@ -188,17 +198,17 @@ class Visitor():
   def handle_func_decl(self, tree):
     assert tree.text == "FUNC_DECL"
     children   = tree.getChildren()
-    name       = children[0].text
+    name       = self.visit(children[0])
     parameters = self.handle_parameters(children[1])
     body       = self.visit(children[2])
-    function   = FunctionDecl(body, name=name, parameters=parameters)
+    function   = FunctionDecl(body, identifier=name, parameters=parameters)
     self.current_module.functions.append(function)
     return function
 
   def handle_parameters(self, tree):
     assert tree.text == "PARAMS"
     parameters = tree.getChildren()
-    return [Parameter(parameter.text) for parameter in parameters]
+    return [Parameter(self.visit(parameter)) for parameter in parameters]
 
   def handle_event_handler_decl(self, tree):
     assert tree.text == "ON"
@@ -248,7 +258,7 @@ class Visitor():
   def handle_case(self, tree):
     assert tree.text == "CASE"
     children       = tree.getChildren()
-    function_name  = children[0].text
+    function_name  = self.visit(children[0])
     if len(children) > 2:
       arguments = self.handle_arguments(children[1])
       function  = FunctionCallExp(FunctionExp(function_name), arguments)
@@ -283,11 +293,11 @@ class Visitor():
 
   def handle_object_ref(self, tree):
     assert tree.text == "OBJECT_REF"
-    return ObjectExp(tree.getChildren()[0].text)
+    return ObjectExp(self.visit(tree.getChildren()[0]))
 
   def handle_function_ref(self, tree):
     assert tree.text == "FUNC_REF"
-    return FunctionExp(tree.getChildren()[0].text)
+    return FunctionExp(self.visit(tree.getChildren()[0]))
 
   # EXPRESSIONS
 
@@ -295,10 +305,10 @@ class Visitor():
     assert tree.text == "PROPERTY_EXP"
     children = tree.getChildren()
     obj      = self.visit(children[0])
-    prop     = children[1].text
+    prop     = self.visit(children[1])
     # TODO: make more generic
     if isinstance(obj, Domain):
-      return obj.get_property(prop)
+      return obj.get_property(prop.name)
     else:
       return PropertyExp(obj, prop)
 
@@ -314,15 +324,12 @@ class Visitor():
 
   def handle_variable_exp(self, tree):
     assert tree.text == "VAR_EXP"
-    return VariableExp(tree.getChildren()[0].text)
+    return VariableExp(self.visit(tree.getChildren()[0]))
 
   def handle_type_exp(self, tree):
     assert tree.text == "TYPE_EXP"
     child = tree.getChildren()[0]
-    if len(child.getChildren()) > 0:
-      return TypeExp(self.visit(child))
-    else:
-      return TypeExp(child.text)
+    return TypeExp(self.visit(child))
 
   def handle_many_type_exp(self, tree):
     assert tree.text == "MANY_TYPE_EXP"
@@ -352,7 +359,7 @@ class Visitor():
   def handle_function_call(self, tree):
     assert tree.text == "FUNC_CALL"
     children  = tree.getChildren()
-    function  = children[0].text
+    function  = self.visit(children[0])
     if len(children) > 1:
       arguments = self.handle_arguments(children[1])
       return FunctionCallExp(FunctionExp(function), arguments)
@@ -363,7 +370,7 @@ class Visitor():
     assert tree.text == "METHOD_CALL"
     children = tree.getChildren()
     obj      = self.visit(children[0])
-    method   = children[1].text
+    method   = self.visit(children[1])
     if len(children) > 2:
       arguments = self.handle_arguments(children[2])
       return MethodCallExp(obj, method, arguments)
@@ -381,6 +388,10 @@ class Visitor():
     assert tree.text == text
     return constructor(tree.getChildren()[0].text)
 
+  def handle_atom_literal(self, tree):
+    assert tree.text == "ATOM_LITERAL"
+    return AtomLiteralExp(self.visit(tree.getChildren()[0]))
+
   def handle_list_literal(self, tree):
     assert tree.text == "LIST_LITERAL"
     children = tree.getChildren()
@@ -396,7 +407,7 @@ class Visitor():
   def handle_property_literal(self, tree):
     assert tree.text == "PROPERTY_LITERAL"
     children = tree.getChildren()
-    name     = children[0].text
+    name     = self.visit(children[0])
     if len(children) > 2:
       type   = self.visit(children[1])
       value  = self.visit(children[2])

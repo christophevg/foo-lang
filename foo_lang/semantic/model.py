@@ -5,7 +5,12 @@
 from collections import OrderedDict
 
 from util.visitor import Visitable, visitor_for, nohandling
-from util.check   import isstring, isidentifier
+from util.check   import isidentifier
+
+class Identifier(Visitable):
+  def __init__(self, name):
+    assert isidentifier(name), "bad identifier name " + str(name)
+    self.name = name
 
 class Model(Visitable):
   """
@@ -41,10 +46,10 @@ class Module(Visitable):
   Modules match input files. Each module contains all related functions and
   configuration regarding an aspect of the implementation.
   """
-  def __init__(self, name):
-    assert isidentifier(name)
+  def __init__(self, identifier):
+    assert isinstance(identifier, Identifier)
 
-    self.name       = name
+    self.identifier = identifier
     self.constants  = NamedTypedOrderedDict(Constant)
     self.externals  = OrderedDict()     # { function : library }
     self.extensions = TypedList(Extension)
@@ -52,6 +57,8 @@ class Module(Visitable):
 
     # functions are part of a module, but are linked from ExecutionStrategies
     self.functions  = NamedTypedOrderedDict(FunctionDecl)
+  def get_name(self): return self.identifier.name
+  name = property(get_name)
 
 @nohandling
 class NamedTypedOrderedDict(Visitable):
@@ -85,15 +92,17 @@ class TypedList(Visitable):
     return len(self.objects)
 
 class Constant(Visitable):
-  def __init__(self, name, value, type=None):
-    assert isidentifier(name)
+  def __init__(self, identifier, value, type=None):
+    assert isinstance(identifier, Identifier)
     assert type == None or isinstance(type, TypeExp)
     assert isinstance(value, LiteralExp), \
            "Constant.value is a " + value.__class__.__name__ + \
            " but exptected a LiteralExp"
-    self.name  = name
-    self.type  = type
-    self.value = value
+    self.identifier = identifier
+    self.type       = type
+    self.value      = value
+  def get_name(self): return self.identifier.name
+  name = property(get_name)
 
 class Extension(Visitable):
   def __init__(self, domain, extension):
@@ -143,24 +152,26 @@ class When(ExecutionStrategy):
 
 class FunctionDecl(Visitable):
   anonymous = 0
-  def __init__(self, body, name=None, parameters=[], type=None):
-    if name == None:
-      name = "anonymous" + str(FunctionDecl.anonymous)
+  def __init__(self, body, identifier=None, parameters=[], type=None):
+    if identifier == None:
+      identifier = Identifier("anonymous" + str(FunctionDecl.anonymous))
       FunctionDecl.anonymous += 1
-    assert isidentifier(name)
+    assert isinstance(identifier, Identifier)
     assert isinstance(body, Stmt)
     assert type == None or isinstance(type, TypeExp)
-    self.name       = name
+    self.identifier = identifier
     self.parameters = TypedList(Parameter, parameters)
     self.body       = body
     self.type       = type
+  def get_name(self): return self.identifier.name
+  name = property(get_name)
 
 class Parameter(Visitable):
-  def __init__(self, name, type=None):
-    assert isidentifier(name)
+  def __init__(self, identifier, type=None):
+    assert isinstance(identifier, Identifier)
     assert type == None or isinstance(type, TypeExp)
-    self.name = name
-    self._type = type
+    self.identifier = identifier
+    self._type      = type
   def get_type(self):
     return self._type
   def set_type(self, type):
@@ -169,6 +180,8 @@ class Parameter(Visitable):
   def del_type(self):
     del self._type
   type = property(get_type, set_type, del_type)
+  def get_name(self): return self.identifier.name
+  name = property(get_name)
 
 # STATEMENTS
 
@@ -251,9 +264,11 @@ class FloatLiteralExp(LiteralExp):
     self.value = float(value)
 
 class AtomLiteralExp(LiteralExp):
-  def __init__(self, name):
-    assert isidentifier(name)
-    self.name = name
+  def __init__(self, identifier):
+    assert isinstance(identifier, Identifier)
+    self.identifier = identifier
+  def get_name(self): return self.identifier.name
+  name = property(get_name)
 
 class ListLiteralExp(LiteralExp):
   def __init__(self, expressions=[]):
@@ -264,42 +279,50 @@ class ObjectLiteralExp(LiteralExp):
     self.properties = TypedList(Property, properties)
 
 class Property(Visitable):
-  def __init__(self, name, value, type=None):
-    assert isidentifier(name)
+  def __init__(self, identifier, value, type=None):
+    assert isinstance(identifier, Identifier)
     assert isinstance(value, LiteralExp), "Property.value is a " + value.__class__.__name__ + " but expected a LiteralExp" 
     assert type == None or isinstance(type, TypeExp)
-    self.name  = name
-    self.value = value
-    self.type  = type
+    self.identifier = identifier
+    self.value      = value
+    self.type       = type
+  def get_name(self): return self.identifier.name
+  name = property(get_name)
 
 class TypeExp(Exp):
-  def __init__(self, type):
-    assert isinstance(type, TypeExp) or isidentifier(type)
-    self.type = type
+  def __init__(self, identifier):
+    assert isinstance(identifier, Identifier)
+    self.identifier = identifier
+  def get_type(self): return self.identifier.name
+  type = property(get_type)
 
 class ManyTypeExp(TypeExp):
-  def __init__(self, type):
-    assert isinstance(type, TypeExp)
-    self.type = type
+  def __init__(self, subtype):
+    assert isinstance(subtype, TypeExp)
+    self.subtype = subtype
 
 class TupleTypeExp(TypeExp):
   def __init__(self, types=[]):
     self.types = TypedList(TypeExp, types)
 
 class VariableExp(Exp):
-  def __init__(self, name):
-    assert isidentifier(name)
-    self.name = name
+  def __init__(self, identifier):
+    assert isinstance(identifier, Identifier)
+    self.identifier = identifier
+  def get_name(self): return self.identifier.name
+  name = property(get_name)
 
 class ObjectExp(VariableExp): pass
 class FunctionExp(VariableExp): pass
 
 class PropertyExp(Exp):
-  def __init__(self, obj, name):
+  def __init__(self, obj, identifier):
     assert isinstance(obj, ObjectExp) or isinstance(obj, Scope)
-    assert isidentifier(name)
-    self.obj  = obj
-    self.name = name  
+    assert isinstance(identifier, Identifier)
+    self.obj        = obj
+    self.identifier = identifier
+  def get_name(self): return self.identifier.name
+  name = property(get_name)
 
 @nohandling
 class UnaryExp(Exp):
@@ -374,12 +397,14 @@ class FunctionCallExp(Exp, Stmt):
     self.arguments = TypedList(Exp, arguments)
 
 class MethodCallExp(Exp, Stmt):
-  def __init__(self, obj, method, arguments=[]):
+  def __init__(self, obj, identifier, arguments=[]):
     assert isinstance(obj, ObjectExp)
-    assert isidentifier(method)
-    self.object    = obj
-    self.method    = method
-    self.arguments = TypedList(Exp, arguments)
+    assert isinstance(identifier, Identifier)
+    self.object     = obj
+    self.identifier = identifier
+    self.arguments  = TypedList(Exp, arguments)
+  def get_name(self): return self.identifier.name
+  name = property(get_name)
 
 class AnythingExp(Exp): pass
 

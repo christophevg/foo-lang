@@ -25,7 +25,8 @@ class TestModel(unittest.TestCase):
 
   # OBJECTS AND PROPERTIES
   def test_property(self):
-    prop = Property("name", value=IntegerLiteralExp("123"), type=TypeExp("type"))
+    prop = Property(Identifier("name"), value=IntegerLiteralExp("123"), \
+                    type=TypeExp(Identifier("type")))
     self.assertEqual(dump(prop), "name : type = 123")
   
   def test_empty_object(self):
@@ -35,9 +36,10 @@ class TestModel(unittest.TestCase):
   def create_object_with_properties(self, amount=2):
     obj = ObjectLiteralExp()
     for index in range(amount):
-      obj.properties.append(Property("name"  + str(index), \
-                                     type=TypeExp("type"  + str(index)), \
-                                     value=IntegerLiteralExp(str(index))))
+      obj.properties.append(\
+        Property(Identifier("name" + str(index)), \
+                 type=TypeExp(Identifier("type" + str(index))), \
+                 value=IntegerLiteralExp(str(index))))
     return obj
 
   def test_object_with_properties(self):
@@ -47,11 +49,12 @@ class TestModel(unittest.TestCase):
 
   # CONST SUPPORT
   def test_const(self):
-    const = Constant("name", value=IntegerLiteralExp("123"), type=TypeExp("type"))
+    const = Constant(Identifier("name"), value=IntegerLiteralExp("123"), \
+                     type=TypeExp(Identifier("type")))
     self.assertEqual(dump(const), "const name : type = 123")
 
   def test_const_with_unknown_type(self):
-    const = Constant("name", value=IntegerLiteralExp("123"))
+    const = Constant(Identifier("name"), value=IntegerLiteralExp("123"))
     self.assertEqual(dump(const), "const name = 123")
 
   # EXTENSIONS
@@ -62,15 +65,16 @@ class TestModel(unittest.TestCase):
 
   # MODULE SUPPORT
   def test_empty_module(self):
-     module = Module("name")
+     module = Module(Identifier("name"))
      self.assertEqual(dump(module), "module name\n")
 
   def create_module_with_constants(self, name, amount=2):
-    module = Module(name)
+    module = Module(Identifier(name))
     for index in range(amount):
-      module.constants.append(Constant("name"  + str(index), \
-                                       type=TypeExp("type"  + str(index)), \
-                                       value=IntegerLiteralExp(str(index))))
+      module.constants.append(\
+        Constant(Identifier("name"  + str(index)), \
+                            type=TypeExp(Identifier("type"  + str(index))), \
+                            value=IntegerLiteralExp(str(index))))
     return module
 
   def test_module_with_constants(self):
@@ -81,7 +85,7 @@ class TestModel(unittest.TestCase):
 
   def create_module_with_extension(self, name, domain, obj):
     ext = Extension(domain, obj)
-    module = Module(name)
+    module = Module(Identifier(name))
     module.extensions.append(ext)
     return module
 
@@ -92,7 +96,7 @@ class TestModel(unittest.TestCase):
                                   "extend nodes with " + dump(obj) + "\n")
     
   def test_module_with_imports(self):
-    module = Module("moduleName")
+    module = Module(Identifier("moduleName"))
     module.externals["function1"] = "module1"
     module.externals["function2"] = "module2"
     module.externals["function1"] = "module3"   # simple overriding principle
@@ -102,9 +106,12 @@ class TestModel(unittest.TestCase):
 
   # FUNCTIONS
   def create_function(self, name=None):
-    return FunctionDecl(BlockStmt([IncStmt(VariableExp("x")),
-                                   IncStmt(VariableExp("y"))]),
-                        name=name, parameters=[Parameter("x"),Parameter("y")])
+    if not name == None:
+      name = Identifier(name)
+    return FunctionDecl(BlockStmt([IncStmt(VariableExp(Identifier("x"))),
+                                   IncStmt(VariableExp(Identifier("y")))]),
+                        identifier=name, parameters=[Parameter(Identifier("x")),
+                                  Parameter(Identifier("y"))])
 
   def test_function(self):
     function = self.create_function("name")
@@ -126,7 +133,8 @@ class TestModel(unittest.TestCase):
   # EXECUTION STRATEGIES
   def test_every_strategy(self):
     function = self.create_function("name")
-    strategy = Every(AllNodes(Nodes()), function, VariableExp("interval"))
+    strategy = Every(AllNodes(Nodes()), function, \
+                     VariableExp(Identifier("interval")))
     self.assertEqual(dump(strategy), "@every(interval)\n" + \
                                     "with nodes do " + dump(function))
 

@@ -21,6 +21,9 @@ class Dumper(SemanticVisitor):
   def dec_indent(self):
     self.indent_level -= 1
 
+  def handle_Identifier(self, id):
+    return id.name
+
   @indent
   def handle_Model(self, model):
     string = ""
@@ -38,7 +41,7 @@ class Dumper(SemanticVisitor):
 
   @indent
   def handle_Module(self, module):
-    string = "module " + module.name + "\n";
+    string = "module " + module.identifier.accept(self) + "\n";
 
     for constant in module.constants:
       string += constant.accept(self) + "\n"
@@ -56,7 +59,7 @@ class Dumper(SemanticVisitor):
 
   @indent
   def handle_Constant(self, constant):
-    return "const " + constant.name \
+    return "const " + constant.identifier.accept(self) \
            + ((" : " + constant.type.accept(self)) if constant.type != None else "") \
            + " = " + constant.value.accept(self)
 
@@ -79,16 +82,16 @@ class Dumper(SemanticVisitor):
 
   @indent
   def handle_FunctionDecl(self, function):
-    string = "function"
-    if function.name[0:9] != "anonymous":
-      string += " " + function.name
-    string +=  "(" + ", ".join([ param.accept(self) 
+    name = "" if function.name[0:9] == "anonymous" \
+              else " " + function.identifier.accept(self)
+    string = "function" + name + \
+             "(" + ", ".join([ param.accept(self) 
                                    for param in function.parameters]) + ") " + \
                function.body.accept(self).lstrip()
     return string
 
   def handle_Parameter(self, parameter):
-    return parameter.name
+    return parameter.identifier.accept(self)
 
   # STATEMENTS
 
@@ -163,7 +166,7 @@ class Dumper(SemanticVisitor):
     return str(exp.value)
   
   def handle_AtomLiteralExp(self, atom):
-    return "#" + atom.name
+    return "#" + atom.identifier.accept(self)
 
   def handle_ListLiteralExp(self, lst):
     return "[" + ",".join([exp.accept(self) for exp in lst.expressions]) + "]"
@@ -180,30 +183,30 @@ class Dumper(SemanticVisitor):
 
   @indent
   def handle_Property(self, prop):
-    return prop.name + \
+    return prop.identifier.accept(self) + \
            ((" : " + prop.type.accept(self)) if prop.type != None else "") + \
            " = " + prop.value.accept(self)
 
   def handle_TypeExp(self, type):
-    return type.type
+    return type.identifier.accept(self)
 
   def handle_ManyTypeExp(self, many):
-    return many.type.accept(self) + "*"
+    return many.subtype.accept(self) + "*"
     
   def handle_TupleTypeExp(self, tuple):
     return "[" + ",".join([type.accept(self) for type in tuple.types]) + "]"
 
   def handle_VariableExp(self, var):
-    return var.name
+    return var.identifier.accept(self)
 
   def handle_FunctionExp(self, var):
-    return var.name
+    return var.identifier.accept(self)
 
   def handle_ObjectExp(self, var):
-    return var.name
+    return var.identifier.accept(self)
   
   def handle_PropertyExp(self, prop):
-    return prop.obj.accept(self) + "." + prop.name
+    return prop.obj.accept(self) + "." + prop.identifier.accept(self)
 
   def handle_UnaryExp(self, exp):
     return exp.operator() + " " + exp.operand.accept(self)
@@ -219,7 +222,7 @@ class Dumper(SemanticVisitor):
 
   @indent
   def handle_MethodCallExp(self, exp):
-    return exp.object.accept(self) + "." + exp.method + \
+    return exp.object.accept(self) + "." + exp.identifier.accept(self) + \
            "(" + ", ".join([arg.accept(self) for arg in exp.arguments]) + ")"
 
   def handle_AnythingExp(self, exp):
