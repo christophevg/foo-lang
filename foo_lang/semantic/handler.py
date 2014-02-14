@@ -10,11 +10,24 @@ from util.check   import isstring
 from foo_lang.semantic.model  import SemanticVisitor
 from foo_lang.semantic.dumper import Dumper
 
+def stacked(method):
+  """
+  Decorator for methods to keep track of their execution using a stack.
+  """
+  obj_name = method.__name__[7:]
+  def wrapped(self, obj):
+    self.start_handling(obj_name, obj)
+    method(self, obj)
+    self.stop_handling()
+  return wrapped
+
 class SemanticHandler(SemanticVisitor):
   def __init__(self):
     self.prefix = None
+    self._stack = []
 
-  def handle(self, part_name, part):
+  def start_handling(self, part_name, part):
+    self._stack.append(part)
     if self.prefix != None and self.prefix != "handle_":
       try:
         method = getattr(self, self.prefix + part_name)
@@ -24,61 +37,27 @@ class SemanticHandler(SemanticVisitor):
         # print "not handling", part_name
         pass
 
-  def trace(self):
-    """
-    Inspects the stack to build a semantic trace to the current point in the
-    visiting process.
-    """
-    config = {
-               'FunctionDecl'    : [ 'function',  'name'       ],
-               'FunctionCallExp' : [ 'exp',       'function'   ],
-               'CaseStmt'        : [ 'stmt',      'expression' ],
-               'Every'           : [ 'execution', 'interval'   ],
-               'When'            : [ 'execution', 'event'      ],
-               'Module'          : [ 'module',    'name'       ],
-               'Model'           : False,
-               'BlockStmt'       : False
-             }
-    skip_self = True
-    trace = []
-    for frame in inspect.stack():
-      if frame[3][0:7] == "handle_":
-        if skip_self: skip_self = False
-        else:
-          parent = frame[3][7:]
-          # print "parent=", parent
-          if parent in config:
-            if config[parent]:
-              # print "  config=", config[parent][0], config[parent][1]
-              local = frame[0].f_locals[config[parent][0]]
-              # print "  local=", local
-              if config[parent][1] is None:
-                attrib = ""
-              else:
-                attrib = getattr(local, config[parent][1])
-              # print "  attrib", attrib
-              if isinstance(attrib, Visitable):
-                attrib = attrib.accept(Dumper())
-              trace.append(parent + "(" + attrib + ")")
-          else:
-            print "in", parent, frame[0].f_locals
-    return trace
+  def stop_handling(self):
+    self._stack.pop()
+  
+  def get_stack(self): return self._stack
+  stack = property(get_stack)
 
   # HANDLERS IMPLEMENTING VISITOR and adding a handle call
 
+  @stacked
   def handle_Model(self, model):
-    self.handle('Model', model)
     for module in model.modules.values():
       module.accept(self)
 
-  def handle_Domain(self, domain):
-    self.handle('Domain', domain)
+  @stacked
+  def handle_Domain(self, domain): pass
     
-  def handle_Scope(self, scope):
-    self.handle('Scope', scope)
+  @stacked
+  def handle_Scope(self, scope): pass
 
+  @stacked
   def handle_Module(self, module):
-    self.handle('Module', module)
     for constant in module.constants:
       constant.accept(self)
     
@@ -88,167 +67,165 @@ class SemanticHandler(SemanticVisitor):
     for execution in module.executions:
       execution.accept(self)
 
-  def handle_Constant(self, constant):
-    self.handle('Constant', constant)
+  @stacked
+  def handle_Constant(self, constant): pass
 
+  @stacked
   def handle_Extension(self, extension):
-    self.handle('Extension', extension)
-
     extension.domain.accept(self)
     extension.extension.accept(self)
 
+  @stacked
   def handle_Every(self, execution):
-    self.handle('Every', execution)
     execution.interval.accept(self)
     execution.scope.accept(self)
     execution.executed.accept(self)
 
+  @stacked
   def handle_When(self, execution):
-    self.handle('When', execution)
     execution.scope.accept(self)
     execution.event.accept(self)
     execution.executed.accept(self)
 
+  @stacked
   def handle_FunctionDecl(self, function):
-    self.handle('FunctionDecl', function)
     for param in function.parameters:
       param.accept(self)
-
     function.body.accept(self)
 
-  def handle_Parameter(self, parameter):
-    self.handle('Parameter', parameter)
+  @stacked
+  def handle_Parameter(self, parameter): pass
 
   # STATEMENTS
 
+  @stacked
   def handle_BlockStmt(self, block):
-    self.handle('BlockStmt', 'block')
     for statement in block.statements:
       statement.accept(self)
 
+  @stacked
   def handle_AssignStmt(self, stmt):
-    self.handle('AssignStmt', stmt)
     stmt.variable.accept(self)
     stmt.value.accept(self)
 
+  @stacked
   def handle_AddStmt(self, stmt):
-    self.handle('AddStmt', stmt)
     stmt.variable.accept(self)
     stmt.value.accept(self)
   
+  @stacked
   def handle_SubStmt(self, stmt):
-    self.handle('SubStmt', stmt)
     stmt.variable.accept(self)
     stmt.value.accept(self)
 
+  @stacked
   def handle_IncStmt(self, stmt):
-    self.handle('IncStmt', stmt)
     stmt.variable.accept(self)
 
+  @stacked
   def handle_DecStmt(self, stmt):
-    self.handle('DecStmt', stmt)
     stmt.variable.accept(self)
 
+  @stacked
   def handle_IfStmt(self, stmt):
-    self.handle('IfStmt', stmt)
     stmt.condition.accept(self)
     stmt.true.accept(self)
     if stmt.false != None:
       stmt.false.accept(self)
 
+  @stacked
   def handle_CaseStmt(self, stmt):
-    self.handle('CaseStmt', stmt)
     stmt.expression.accept(self)
     for case, consequence in zip(stmt.cases, stmt.consequences):
       case.accept(self)
       consequence.accept(self)
 
+  @stacked
   def handle_ReturnStmt(self, stmt):
-    self.handle('ReturnStmt', stmt)
     if stmt.expression != None:
       stmt.expression.accept(self)
     
   # EXPRESSIONS
   
-  def handle_BooleanLiteralExp(self, exp):
-    self.handle('BooleanLiteralExp', exp)
+  @stacked
+  def handle_BooleanLiteralExp(self, exp): pass
     
-  def handle_IntegerLiteralExp(self, exp):
-    self.handle('IntergerLiteralExp', exp)
+  @stacked
+  def handle_IntegerLiteralExp(self, exp): pass
 
-  def handle_FloatLiteralExp(self, exp):
-    self.handle('FloatLiteralExp', exp)
+  @stacked
+  def handle_FloatLiteralExp(self, exp): pass
 
-  def handle_AtomLiteralExp(self, atom):
-    self.handle('AtomLiteralExp', atom)
+  @stacked
+  def handle_AtomLiteralExp(self, atom): pass
 
+  @stacked
   def handle_ListLiteralExp(self, lst):
-    self.handle('ListLiteralExp', lst)
     for exp in lst.expressions:
       exp.accept(self) 
 
+  @stacked
   def handle_ObjectLiteralExp(self, obj):
-    self.handle('ObjectLiteralExp', obj)
     for prop in obj.properties:
       prop.accept(self)
 
+  @stacked
   def handle_Property(self, prop):
-    self.handle('Property', prop)
     if prop.type != None:
       prop.type.accept(self)
     prop.value.accept(self)
 
-  def handle_TypeExp(self, type):
-    self.handle('TypeExp', type)
+  @stacked
+  def handle_TypeExp(self, type): pass
 
+  @stacked
   def handle_ManyTypeExp(self, many):
-    self.handle('ManyTypeExp', many)
     many.subtype.accept(self)
     
+  @stacked
   def handle_TupleTypeExp(self, tuple):
-    self.handle('TupleTypeExp', tuple)
     for type in tuple.types:
       type.accept(self)
 
-  def handle_VariableExp(self, var):
-    self.handle('VariableExp', var)
+  @stacked
+  def handle_VariableExp(self, var): pass
   
+  @stacked
   def handle_PropertyExp(self, prop):
-    self.handle('PropertyExp', prop)
     prop.obj.accept(self)
 
+  @stacked
   def handle_UnaryExp(self, exp):
-    self.handle('UnaryExp', exp)
     exp.operand.accept(self)
 
+  @stacked
   def handle_BinaryExp(self, exp):
-    self.handle('BinaryExp', exp)
     exp.left.accept(self)
     exp.right.accept(self)
 
+  @stacked
   def handle_FunctionCallExp(self, exp):
-    self.handle('FunctionCallExp', exp)
     exp.function.accept(self)
     for arg in exp.arguments:
       arg.accept(self)
 
-  def handle_FunctionExp(self, exp):
-    self.handle('FunctionExp', exp)
+  @stacked
+  def handle_FunctionExp(self, exp): pass
 
-  def handle_ObjectExp(self, exp):
-    self.handle('ObjectExp', exp)
+  @stacked
+  def handle_ObjectExp(self, exp): pass
 
+  @stacked
   def handle_MethodCallExp(self, exp):
-    self.handle('MethodCallExp', exp)
     exp.object.accept(self)
     for arg in exp.arguments:
       arg.accept(self)
 
-  def handle_AnythingExp(self, exp):
-    self.handle('AnythingExp', exp)
+  @stacked
+  def handle_AnythingExp(self, exp): pass
 
+  @stacked
   def handle_MatchExp(self, exp):
-    self.handle('MatchExp', exp)
     if not isstring(exp.operator):
       exp.operator.accept(self)
     if exp.operand != None:
@@ -258,6 +235,7 @@ class SemanticHandler(SemanticVisitor):
 
 class SemanticChecker(SemanticHandler):
   def __init__(self, model):
+    super(SemanticChecker, self).__init__()
     self.model  = model
     self.prefix = "check_"
     self.name   = "foo-" + self.__class__.__name__.lower()
@@ -286,7 +264,30 @@ class SemanticChecker(SemanticHandler):
   def fail(self, msg, *args):
     self.fails += 1
     self.log("failure: " + msg + " : " + str(*args),
-             " > ".join(reversed(self.trace())))
+             "stack: " + " > ".join([self.show(obj) for obj in self._stack]))
+
+  def show(self, obj):
+    name   = obj.__class__.__name__
+    attrib = False
+    try:
+      attrib = {
+                 'FunctionDecl'    : 'name',
+                 'FunctionExp'     : 'name',
+                 'FunctionCallExp' : 'function',
+                 'CaseStmt'        : 'expression',
+                 'Every'           : 'interval',
+                 'When'            : 'event',
+                 'Module'          : 'name',
+               }[name]
+    except KeyError: pass
+
+    if attrib != False:
+      attrib = getattr(obj, attrib)
+      if isinstance(attrib, Visitable):
+        attrib = attrib.accept(Dumper())
+      return name + "(" + attrib + ")"
+    else:
+      return name
 
   def success(self, msg, *args):
     self.successes += 1
