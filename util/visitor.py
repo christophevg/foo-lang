@@ -17,7 +17,7 @@ class Visitable(object):
     method_name = "handle_" + class_name
     try:
       return getattr(visitor, method_name)(self)
-    except AttributeError:
+    except AttributeError, e:
       print visitor.__class__.__name__, "doesn't provide", method_name, \
             "(", e,")"
       raise
