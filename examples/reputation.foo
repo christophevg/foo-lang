@@ -15,7 +15,7 @@ module reputation
 const forward_timeout             = 1000
 const validation_interval         = 5000
 const max_fail_count              =    3
-const aging_weight        : float = 0.98  // factor to age reputation
+const aging_weight                = 0.98  // factor to age reputation
 const indirect_threshold  : float = 0.9   // lower limit for including indirect
 
 extend nodes with {
