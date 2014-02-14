@@ -278,6 +278,7 @@ class SemanticChecker(SemanticHandler):
                  'Every'           : 'interval',
                  'When'            : 'event',
                  'Module'          : 'name',
+                 'Parameter'       : 'name'
                }[name]
     except KeyError: pass
 
