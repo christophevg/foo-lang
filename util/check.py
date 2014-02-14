@@ -5,15 +5,6 @@
 import re
 identifier = re.compile(r"^[^\d\W]\w*\Z")
 
-def islistof(alist, type):
-  """
-  Checks that all items in a list are of the given type.
-  """
-  assert isinstance(alist, list)
-  for item in alist:
-    if not isinstance(item, type): return False
-  return True
-
 def isstring(candidate):
   """
   Asserts that a given candidate is a string, both "normal" or unicode.
