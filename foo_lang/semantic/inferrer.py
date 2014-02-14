@@ -41,7 +41,7 @@ class Inferrer(SemanticChecker):
 
     try:
       function.body.accept(ReturnDetector())
-      self.success("found no return stmt in function body.", \
+      self.success("Found no return stmt in function body.", \
                    "Inferring return type to 'void'.")
       function.type = TypeExp(Identifier("void"))
     except ReturnDetectedException:
