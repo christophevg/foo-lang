@@ -17,12 +17,13 @@ class Visitable(object):
     method_name = "handle_" + class_name
     try:
       return getattr(visitor, method_name)(self)
-    except AttributeError, e:
+    except AttributeError:
       print visitor.__class__.__name__, "doesn't provide", method_name, \
             "(", e,")"
-      raise e
+      raise
     except:
-      print "Unexpected exception in", method_name, ":", sys.exc_info()[1]
+      print visitor.__class__.__name__, ": Unexpected exception in", \
+            method_name, ":", sys.exc_info()[1]
       raise
 
 class Visitor(object):
@@ -67,7 +68,7 @@ class visitor_for(object):
     # dynamically adding all Stmt subclasses tot the visitor
     def NotImplemented(name):
       def dummy(self, *args):
-        print name + " is not implemented in " + self.__class__.__name__
+        print self.__class__.__name__, ": missing implementation for", name
       return dummy
 
     for name, clazz in classes:

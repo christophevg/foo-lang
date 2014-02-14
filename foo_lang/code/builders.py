@@ -36,7 +36,7 @@ class EventLoop(Builder):
     return WhileDoStmt(BooleanLiteral(True), self.body)
 
 def Function(name, type=None, params={}, body=None):
-  if type != None: type = TypeExp(Identifier(type))
+  type = UnknownType() if type == None else TypeExp(Identifier(type))
   parameters = [ ParameterDecl(Identifier(name),TypeExp(Identifier(type)))
                    for name, type in params.items() ]
   return FunctionDecl( Identifier(name), type=type, parameters=parameters,

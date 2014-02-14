@@ -3,17 +3,20 @@
 # author: Christophe VG
 
 from foo_lang.semantic.handler import SemanticChecker
+from foo_lang.semantic.model import UnknownType
 
 class Checker(SemanticChecker):
 
   def check_Parameter(self, param):
-    self.assertIsNotNone( param.type, "parameter type is None", param.name )
+    self.assertNotIsInstance( param.type, UnknownType, \
+                              "parameter type is Unknown", param.name )
   
   def check_Property(self, prop):
-    self.assertIsNotNone( prop.type, "property type is None", prop.name )
+    self.assertNotIsInstance( prop.type, UnknownType, \
+                              "property type is Unknown", prop.name )
 
   def check_Scope(self, scope):
-    self.assertIsNotNone( scope.scope, "scope's scope is None")
+    self.assertIsNotNone( scope.scope, "scope's scope is None" )
 
   def check_FunctionExp(self, function):
     """

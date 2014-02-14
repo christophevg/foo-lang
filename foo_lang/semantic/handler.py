@@ -286,7 +286,12 @@ class SemanticChecker(SemanticHandler):
     print "           " + " > ".join(reversed(self.trace()))
 
   # ASSERTIONS HELPERS
+
   def assertIsNotNone(self, obj, msg, *info):
     if obj is None:
+      self.fail(msg, *info)
+
+  def assertNotIsInstance(self, obj, instance, msg, *info):
+    if isinstance(obj, instance):
       self.fail(msg, *info)
 

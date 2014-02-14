@@ -93,8 +93,9 @@ class TypedList(Visitable):
 
 class Constant(Visitable):
   def __init__(self, identifier, value, type=None):
+    if type is None: type = UnknownType()
     assert isinstance(identifier, Identifier)
-    assert type == None or isinstance(type, TypeExp)
+    assert isinstance(type, TypeExp)
     assert isinstance(value, LiteralExp), \
            "Constant.value is a " + value.__class__.__name__ + \
            " but exptected a LiteralExp"
@@ -153,12 +154,13 @@ class When(ExecutionStrategy):
 class FunctionDecl(Visitable):
   anonymous = 0
   def __init__(self, body, identifier=None, parameters=[], type=None):
-    if identifier == None:
+    if identifier is None:
       identifier = Identifier("anonymous" + str(FunctionDecl.anonymous))
       FunctionDecl.anonymous += 1
+    if type is None: type = UnknownType()
     assert isinstance(identifier, Identifier)
     assert isinstance(body, Stmt)
-    assert type == None or isinstance(type, TypeExp)
+    assert isinstance(type, TypeExp)
     self.identifier = identifier
     self.parameters = TypedList(Parameter, parameters)
     self.body       = body
@@ -168,14 +170,15 @@ class FunctionDecl(Visitable):
 
 class Parameter(Visitable):
   def __init__(self, identifier, type=None):
+    if type is None: type = UnknownType()
     assert isinstance(identifier, Identifier)
-    assert type == None or isinstance(type, TypeExp)
+    assert isinstance(type, TypeExp)
     self.identifier = identifier
     self._type      = type
   def get_type(self):
     return self._type
   def set_type(self, type):
-    assert self._type == None or self._type == type
+    assert self._type == type
     self._type = type
   def del_type(self):
     del self._type
@@ -279,10 +282,10 @@ class ObjectLiteralExp(LiteralExp):
     self.properties = TypedList(Property, properties)
 
 class Property(Visitable):
-  def __init__(self, identifier, value, type=None):
+  def __init__(self, identifier, value, type):
     assert isinstance(identifier, Identifier)
     assert isinstance(value, LiteralExp), "Property.value is a " + value.__class__.__name__ + " but expected a LiteralExp" 
-    assert type == None or isinstance(type, TypeExp)
+    assert isinstance(type, TypeExp)
     self.identifier = identifier
     self.value      = value
     self.type       = type
@@ -295,6 +298,10 @@ class TypeExp(Exp):
     self.identifier = identifier
   def get_type(self): return self.identifier.name
   type = property(get_type)
+
+class UnknownType(TypeExp):
+  def __init__(self): pass
+  def get_type(self): assert False, "Don't get type from UnknownType"
 
 class ManyTypeExp(TypeExp):
   def __init__(self, subtype):

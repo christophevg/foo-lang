@@ -27,7 +27,10 @@ class Emitter(Language):
            " " + function.body.accept(self)
 
   def handle_TypeExp(self, type):
-    return "void" if type.name == None else type.name.accept(self)
+    return type.name.accept(self)
+
+  def handle_UnknownType(self, type):
+    return "void"
 
   def handle_EmptyStmt(self, stmt):
     return "{}"

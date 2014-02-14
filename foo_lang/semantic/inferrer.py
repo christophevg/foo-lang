@@ -10,8 +10,7 @@ class Inferrer(SemanticChecker):
     self.prefix = "infer_"
     self.check()
 
-  def infer_applications(self):
-    print "  - function parameter types from applications"
-
-  def infer_handlers(self):
-    print "  - function parameter types from handlers"
+  def infer_FunctionDecl(self, function):
+    for parameter in function.parameters:
+      if parameter.type == None:
+        pass

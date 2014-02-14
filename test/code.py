@@ -31,10 +31,11 @@ class TestCode(unittest.TestCase):
                       "/* multi-line\ncomment */\nvoid fname(void) {}" )
 
   def test_full_function_decl(self):
-    program = FunctionDecl( Identifier("fname"),
-                            [ ParameterDecl(Identifier("param1"), TypeExp(Identifier("type1"))),
-                              ParameterDecl(Identifier("param2"), TypeExp(Identifier("type2"))) ],
-                            BlockStmt([IncStmt(SimpleVariableExp(Identifier("type")))]))
+    program = FunctionDecl( \
+      Identifier("fname"),
+      [ ParameterDecl(Identifier("param1"), TypeExp(Identifier("type1"))),
+        ParameterDecl(Identifier("param2"), TypeExp(Identifier("type2"))) ],
+      BlockStmt([IncStmt(SimpleVariableExp(Identifier("type")))]))
     self.assertEqual( program.accept(Emitter()),
                       "void fname(type1 param1, type2 param2) {\ntype++;\n}" )
 

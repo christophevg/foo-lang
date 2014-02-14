@@ -110,8 +110,9 @@ class TestModel(unittest.TestCase):
       name = Identifier(name)
     return FunctionDecl(BlockStmt([IncStmt(VariableExp(Identifier("x"))),
                                    IncStmt(VariableExp(Identifier("y")))]),
-                        identifier=name, parameters=[Parameter(Identifier("x")),
-                                  Parameter(Identifier("y"))])
+                        identifier=name, \
+                        parameters=[Parameter(Identifier("x")),
+                                    Parameter(Identifier("y"))])
 
   def test_function(self):
     function = self.create_function("name")

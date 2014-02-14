@@ -3,7 +3,7 @@
 # author: Christophe VG
 
 from util.check              import isstring
-from foo_lang.semantic.model import SemanticVisitor
+from foo_lang.semantic.model import SemanticVisitor, UnknownType
 
 # Helper decorator for indenting foo-syntax
 def indent(method):
@@ -60,7 +60,8 @@ class Dumper(SemanticVisitor):
   @indent
   def handle_Constant(self, constant):
     return "const " + constant.identifier.accept(self) \
-           + ((" : " + constant.type.accept(self)) if constant.type != None else "") \
+           + ((" : " + constant.type.accept(self)) \
+             if not isinstance(constant.type, UnknownType) else "") \
            + " = " + constant.value.accept(self)
 
   @indent
@@ -184,11 +185,15 @@ class Dumper(SemanticVisitor):
   @indent
   def handle_Property(self, prop):
     return prop.identifier.accept(self) + \
-           ((" : " + prop.type.accept(self)) if prop.type != None else "") + \
+           ((" : " + prop.type.accept(self)) \
+             if not isinstance(prop.type, UnknownType) else "") + \
            " = " + prop.value.accept(self)
 
   def handle_TypeExp(self, type):
     return type.identifier.accept(self)
+  
+  def handle_UnknownType(self, type):
+    assert False, "Dumper: Don't handle UnknowType"
 
   def handle_ManyTypeExp(self, many):
     return many.subtype.accept(self) + "*"

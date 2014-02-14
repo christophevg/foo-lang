@@ -18,7 +18,7 @@ tokens {  // must be declared here/before use, not with other real tokens below
   FLOAT_LITERAL; FUNC_CALL; FUNC_DECL; FUNC_REF; IDENTIFIER; IF; IMPORT; INC;
   INTEGER_LITERAL; LIST_LITERAL; MANY_TYPE_EXP; MATCH_EXP; METHOD_CALL; MODULE;
   OBJECT_LITERAL; OBJECT_REF; ON; PARAMS; PROPERTY_EXP; PROPERTY_LITERAL;
-  RETURN; ROOT; TUPLE_TYPE_EXP; TYPE_EXP; VALUE; VAR_EXP;
+  RETURN; ROOT; TUPLE_TYPE_EXP; TYPE_EXP; UNKNOWN_TYPE; VALUE; VAR_EXP;
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -256,9 +256,11 @@ object_literal: LBRACE (property_literal_list)? RBRACE
 property_literal_list: property_literal (property_literal)*;
 property_literal: name_type_value -> ^(PROPERTY_LITERAL name_type_value);
 
-name_type_value
-  : identifier COLON! type ASSIGN! literal
-  | identifier ASSIGN! literal
+name_type_value: identifier optional_type ASSIGN! literal;
+
+optional_type
+  : COLON type -> type
+  |            -> ^(UNKNOWN_TYPE)
   ;
 
 atom : '#' identifier -> ^(ATOM_LITERAL identifier);
@@ -273,7 +275,8 @@ comparator: LT | LTEQ | GT | GTEQ | EQUALS | NOTEQUALS | NOT;
 
 list_literal 
   : LBRACKET RBRACKET -> ^(LIST_LITERAL)
-  | LBRACKET i+=expression (COMMA i+=expression)* RBRACKET -> ^(LIST_LITERAL $i+);
+  | LBRACKET i+=expression (COMMA i+=expression)* RBRACKET -> ^(LIST_LITERAL $i+)
+  ;
 
 type
   : basic_type '*' -> ^(MANY_TYPE_EXP basic_type)

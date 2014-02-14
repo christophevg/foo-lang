@@ -37,15 +37,11 @@ class Declaration(Instruction): pass
 
 class FunctionDecl(Declaration):
   def __init__(self, name, parameters=[], body=None, type=None):
+    if body is None: body = BlockStmt()
+    if type is None: type = UnknownType()
     assert isinstance(name, Identifier)
-    if body == None:
-      body = BlockStmt()
-    else:
-      assert isinstance(body, Stmt)
-    if type == None:
-      type = TypeExp(None)
-    else:
-      assert isinstance(type, TypeExp)
+    assert isinstance(body, Stmt)
+    assert isinstance(type, TypeExp)
     self.name       = name
     self.parameters = ParameterList(parameters)
     self.body       = body
@@ -296,9 +292,12 @@ class AtomLiteral(LiteralExp):
     self.name = name
 
 class TypeExp(Expression):
-  def __init__(self, name=None):
-    assert name == None or isinstance(name, Identifier)
+  def __init__(self, name):
+    assert isinstance(name, Identifier)
     self.name = name
+
+class UnknownType(TypeExp):
+  def __init__(self): pass
 
 # VISITOR FOR INSTRUCTIONS
 

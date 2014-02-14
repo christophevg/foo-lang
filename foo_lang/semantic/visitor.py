@@ -51,6 +51,7 @@ class Visitor():
       "MATCH_EXP"       : self.handle_match_exp,
       "VAR_EXP"         : self.handle_variable_exp,
       "TYPE_EXP"        : self.handle_type_exp,
+      "UNKNOWN_TYPE"    : self.handle_unknown_type,
       "MANY_TYPE_EXP"   : self.handle_many_type_exp,
       "TUPLE_TYPE_EXP"  : self.handle_tuple_type_exp,
 
@@ -103,7 +104,6 @@ class Visitor():
     assert tree.text == "ROOT"
     for child in tree.getChildren():
       self.visit(child)
-    return None
 
   def handle_module(self, tree):
     assert tree.text == "MODULE"
@@ -120,12 +120,8 @@ class Visitor():
     assert tree.text == "CONST"
     children = tree.getChildren()
     name     = self.visit(children[0])
-    if len(children) > 2:
-      type   = self.visit(children[1])
-      value  = self.visit(children[2])
-    else:
-      type   = None
-      value  = self.visit(children[1])
+    type   = self.visit(children[1])
+    value  = self.visit(children[2])
     constant = Constant(name, value, type)
     self.current_module.constants.append(constant)
     return constant
@@ -145,7 +141,6 @@ class Visitor():
     module   = self.visit(children[0])
     function = self.visit(children[1])
     self.current_module.externals[function.name] = module.name
-    return None
   
   def handle_annotated(self, tree):
     assert tree.text == "ANNOTATED"
@@ -154,7 +149,6 @@ class Visitor():
     [scope, function]       = self.handle_annotated_execution(children[1])
 
     self.add_execution(annotation, scope, function, arguments)
-    return None
 
   def handle_annotation(self, tree):
     assert tree.text == "ANNOTATION"
@@ -175,9 +169,7 @@ class Visitor():
   def handle_application(self, tree):
     assert tree.text == "APPLY"
     children = tree.getChildren()
-    tmp      = self.visit(children[0])
-    assert tmp != None, children[0]
-    scope    = self.as_scope(tmp)
+    scope    = self.as_scope(self.visit(children[0]))
     function = self.visit(children[1])
     return [scope, function]
 
@@ -331,6 +323,10 @@ class Visitor():
     child = tree.getChildren()[0]
     return TypeExp(self.visit(child))
 
+  def handle_unknown_type(self, tree):
+    assert tree.text == "UNKNOWN_TYPE"
+    return UnknownType()
+
   def handle_many_type_exp(self, tree):
     assert tree.text == "MANY_TYPE_EXP"
     type = self.visit(tree.getChildren()[0])
@@ -408,12 +404,8 @@ class Visitor():
     assert tree.text == "PROPERTY_LITERAL"
     children = tree.getChildren()
     name     = self.visit(children[0])
-    if len(children) > 2:
-      type   = self.visit(children[1])
-      value  = self.visit(children[2])
-    else:
-      type   = None
-      value  = self.visit(children[1])
+    type   = self.visit(children[1])
+    value  = self.visit(children[2])
     return Property(name, value, type)
 
   # HELPERS
