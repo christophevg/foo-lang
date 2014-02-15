@@ -2,8 +2,9 @@
 # a semantic model-checker, validating a model, typically run after Inferrer
 # author: Christophe VG
 
+from foo_lang.semantic.model   import *
 from foo_lang.semantic.handler import SemanticChecker
-from foo_lang.semantic.model import UnknownType, ExecutionStrategy, Scope, Module
+from foo_lang.semantic.typer   import Typer
 
 class Checker(SemanticChecker):
 
@@ -52,6 +53,18 @@ class Checker(SemanticChecker):
       if isinstance(parent.scope, Scope): domain = parent.scope.domain
       else: domain = parent.scope
       if domain.get_function(function.name): return
+
+    # special case 2 : 
+    # example: Model > Module(heartbeat) > When(receive) >
+    #          FunctionDecl(anonymous1) > BlockStmt > CaseStmt(payload) >
+    #          FunctionCallExp(contains) > FunctionExp(contains)
+    parent      = parents[1]
+    grandparent = parents[2]
+    if isinstance(parent, FunctionCallExp) and isinstance(grandparent, CaseStmt):
+      # function is a method on the expressed object of the CaseStmt
+      # we need to check if that object actually provides this method
+      type = Typer(self.model).given(parents[3:]).resolve(grandparent.expression)
+      if isinstance(type, ObjectExp) and function.name in type.provides: return
 
     # don't know where to look anymore
     self.fail("FunctionExp has no definition. Did you miss an import?", \

@@ -324,7 +324,11 @@ class VariableExp(Exp):
   def get_name(self): return self.identifier.name
   name = property(get_name)
 
-class ObjectExp(VariableExp): pass
+class ObjectExp(VariableExp):
+  def __init__(self, identifier):
+    super(ObjectExp, self).__init__(identifier)
+    self.provides = []
+
 class FunctionExp(VariableExp): pass
 
 class PropertyExp(Exp):
