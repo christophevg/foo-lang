@@ -17,28 +17,40 @@ PARSER=$(APP)/parser/$(APP)Parser.py
 
 LC_CTYPE=en_US.UTF-8
 
-FOO=$(PYTHON) foo.py -g
+FOO=$(PYTHON) foo.py
 
 OUTPUT=out
 
-all: clean test generate pdf coverage generate beautify show
+all: clean test infer-check # generate pdf coverage generate beautify show
 
 %.ast: %.foo parser
 	@echo "*** pasring $< and dumping AST into $@"
-	@$(FOO) ast $< > $@ || (cat $@; rm $@; false)
+	@$(FOO) -g ast $< > $@ || (cat $@; rm $@; false)
 
 %.dot: %.foo parser
 	@echo "*** creating $@ from $<"
-	@$(FOO) dot $< > $@ || (cat $@; rm $@; false)
+	@$(FOO) -g dot $< > $@ || (cat $@; rm $@; false)
 
 %.pdf: %.dot
 	@echo "*** visualizing AST of $< as PDF $@"
 	@$(DOT) -Tpdf -o $@ $<
 
+check: parser
+	@echo "*** checking model for $(SRCS)"
+	@$(FOO) --check $(SRCS)
+
+infer: parser
+	@echo "*** inferring types in model for $(SRCS)"
+	@$(FOO) --infer $(SRCS)
+
+infer-check: parser
+	@echo "*** inferring types and checking model for $(SRCS)"
+	@$(FOO) --infer --check $(SRCS)
+
 generate: parser
 	@rm -rf $(OUTPUT)
 	@echo "*** generating code for $(SRCS)"
-	@$(FOO) code -o $(OUTPUT) $(SRCS)
+	@$(FOO) -g code -o $(OUTPUT) $(SRCS)
 
 beautify:
 	@$(ASTYLE) --recursive "$(OUTPUT)/*"

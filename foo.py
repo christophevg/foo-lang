@@ -32,22 +32,23 @@ def indent_ast(tree, level=0):
     indented += indent_ast(child, level+1)
   return indented
 
-def dump_foo(args):
+def dump_foo(args, model=None):
+  if model is None: model = load(args)
   if args.verbose: print "foo: generating FOO"
-  print load(args.sources).accept(Dumper())
+  print model.accept(Dumper())
 
-def dump_dot(args):
+def dump_dot(args, model=None):
   if args.verbose: print "foo: generating DOT"
   for source in args.sources:
     print antlr3.extras.toDOT(api.parse(source.read()).tree)
 
-def dump_ast(args):
+def dump_ast(args, model=None):
   if args.verbose: print "foo: generating AST"
   for source in sources:
     print indent_ast(api.parse(source.read()).tree)
 
-def generate_code(args):
-  model     = load(args)
+def generate_code(args, model=None):
+  if model is None: model = load(args)
   generator = build.Generator(args)
   if args.verbose: print "foo: " + str(generator)
   api.generate(model, generator)
@@ -59,6 +60,10 @@ if __name__ == "__main__":
     description="Command-line tool to interact with foo-lang " +
                 "and its code generation facilities.")
   parser.add_argument("-v", "--verbose", help="output info on what's happening",
+                      action="store_true")
+  parser.add_argument("-c", "--check", help="perform model checking",
+                      action="store_true")
+  parser.add_argument("-i", "--infer", help="perform model type inferring",
                       action="store_true")
   parser.add_argument("-g", "--generate",
                       help="output format " + choice_default,
@@ -81,10 +86,15 @@ if __name__ == "__main__":
   verbose = args.verbose
   output  = args.output
 
+  model = load(args)
+
+  if args.infer: api.infer(model)
+  if args.check: api.check(model)
+
   {
-    "none": lambda x: None,
+    "none": lambda x,y: None,
     "foo" : dump_foo,
     "dot" : dump_dot,
     "ast" : dump_ast,
     "code": generate_code
-  }[args.generate](args)
+  }[args.generate](args, model)

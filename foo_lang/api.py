@@ -66,6 +66,4 @@ def infer(model):
   Inferrer(model).infer()
 
 def generate(model, generator):
-  infer(model)
-  check(model)
   generator.generate(model)
