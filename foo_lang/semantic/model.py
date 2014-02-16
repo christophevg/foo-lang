@@ -480,7 +480,8 @@ class FunctionCallExp(Exp, Stmt):
     assert isinstance(function, FunctionExp)
     self.function  = function
     self.arguments = TypedList(Exp, arguments)
-    self._type     = UnknownType()
+  def get_type(self):
+    return self.function.type
 
 class MethodCallExp(Exp, Stmt):
   def __init__(self, obj, identifier, arguments=[]):
