@@ -26,7 +26,7 @@ class TestModel(unittest.TestCase):
   # OBJECTS AND PROPERTIES
   def test_property(self):
     prop = Property(Identifier("name"), value=IntegerLiteralExp("123"), \
-                    type=TypeExp(Identifier("type")))
+                    type=ObjectType(Identifier("type")))
     self.assertEqual(dump(prop), "name : type = 123")
   
   def test_empty_object(self):
@@ -38,7 +38,7 @@ class TestModel(unittest.TestCase):
     for index in range(amount):
       obj.properties.append(\
         Property(Identifier("name" + str(index)), \
-                 type=TypeExp(Identifier("type" + str(index))), \
+                 type=ObjectType(Identifier("type" + str(index))), \
                  value=IntegerLiteralExp(str(index))))
     return obj
 
@@ -50,7 +50,7 @@ class TestModel(unittest.TestCase):
   # CONST SUPPORT
   def test_const(self):
     const = Constant(Identifier("name"), value=IntegerLiteralExp("123"), \
-                     type=TypeExp(Identifier("type")))
+                     type=ObjectType(Identifier("type")))
     self.assertEqual(dump(const), "const name : type = 123")
 
   def test_const_with_unknown_type(self):
@@ -73,7 +73,7 @@ class TestModel(unittest.TestCase):
     for index in range(amount):
       module.constants.append(\
         Constant(Identifier("name"  + str(index)), \
-                            type=TypeExp(Identifier("type"  + str(index))), \
+                            type=ObjectType(Identifier("type"  + str(index))), \
                             value=IntegerLiteralExp(str(index))))
     return module
 

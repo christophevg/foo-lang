@@ -189,19 +189,21 @@ class Dumper(SemanticVisitor):
              if not isinstance(prop.type, UnknownType) else "") + \
            " = " + prop.value.accept(self)
 
-  def handle_TypeExp(self, type):
-    return type.identifier.accept(self)
+  def handle_UnknownType(self, type): return "__unknown__"
 
-  def handle_ObjectTypeExp(self, type):
-    return type.identifier.accept(self)
+  def handle_VoidType   (self, type): return ""
+  def handle_BooleanType(self, type): return "boolean"
+  def handle_ByteType   (self, type): return "byte"
+  def handle_IntegerType(self, type): return "integer"
+  def handle_FloatType  (self, type): return "float"
+  def handle_ObjectType (self, type): return type.name
+
+  def handle_TimestampType (self, type): return "timestamp"
   
-  def handle_UnknownType(self, type):
-    assert False, "Dumper: Don't handle UnknowType"
-
-  def handle_ManyTypeExp(self, many):
+  def handle_ManyType(self, many):
     return many.subtype.accept(self) + "*"
     
-  def handle_TupleTypeExp(self, tuple):
+  def handle_TupleType(self, tuple):
     return "[" + ",".join([type.accept(self) for type in tuple.types]) + "]"
 
   def handle_VariableExp(self, var):

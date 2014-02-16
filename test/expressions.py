@@ -126,22 +126,37 @@ class TestExpressions(unittest.TestCase):
     exp = FloatLiteralExp("789.34")
     self.assertEqual(dump(exp), "789.34")
 
-  def test_type_exp(self):
-    exp = TypeExp(Identifier("test"))
-    self.assertEqual(dump(exp), "test")
+  def test_simpletype_exps(self):
+    exp = VoidType()
+    self.assertEqual(dump(exp), "")
+    exp = BooleanType()
+    self.assertEqual(dump(exp), "boolean")
+    exp = IntegerType()
+    self.assertEqual(dump(exp), "integer")
+    exp = ByteType()
+    self.assertEqual(dump(exp), "byte")
+    exp = FloatType()
+    self.assertEqual(dump(exp), "float")
+
+  def test_types_of_literals(self):
+    exp = BooleanLiteralExp("true")
+    self.assertIsInstance(exp.type, BooleanType)
+    exp = IntegerLiteralExp(123)
+    self.assertIsInstance(exp.type, IntegerType)
+    exp = FloatLiteralExp(123)
+    self.assertIsInstance(exp.type, FloatType)
 
   def test_many_type_exp(self):
-    exp = ManyTypeExp(TypeExp(Identifier("test")))
-    self.assertEqual(dump(exp), "test*")
+    exp = ManyType(IntegerType())
+    self.assertEqual(dump(exp), "integer*")
 
   def test_tuple_type_exp(self):
-    exp = TupleTypeExp([TypeExp(Identifier("test1")), \
-                        TypeExp(Identifier("test2"))])
-    self.assertEqual(dump(exp), "[test1,test2]")
+    exp = TupleType([IntegerType(), FloatType()])
+    self.assertEqual(dump(exp), "[integer,float]")
 
   def test_complex_type(self):
-    exp = ManyTypeExp(TupleTypeExp([ManyTypeExp(TypeExp(Identifier("many"))),\
-                                                TypeExp(Identifier("single"))]))
+    exp = ManyType(TupleType([ManyType(ObjectType(Identifier("many"))),\
+                                       ObjectType(Identifier("single"))]))
     self.assertEqual(dump(exp), "[many*,single]*")
 
   def test_anything_exp(self):

@@ -320,8 +320,21 @@ class Visitor():
 
   def handle_type_exp(self, tree):
     assert tree.text == "TYPE_EXP"
-    child = tree.getChildren()[0]
-    return TypeExp(self.visit(child))
+    child      = tree.getChildren()[0]
+    identifier = self.visit(child)
+    assert isinstance(identifier, Identifier)
+    try:
+      return {
+        "boolean"   : BooleanType,
+        "int"       : IntegerType,
+        "integer"   : IntegerType,
+        "byte"      : ByteType,
+        "float"     : FloatType,
+        "timestamp" : TimestampType,
+      }[identifier.name.lower()]()
+    except KeyError:
+      print "Failed to resolve simple type based on identifier", identifier.name
+    return UnknownType()
 
   def handle_unknown_type(self, tree):
     assert tree.text == "UNKNOWN_TYPE"
@@ -330,12 +343,12 @@ class Visitor():
   def handle_many_type_exp(self, tree):
     assert tree.text == "MANY_TYPE_EXP"
     type = self.visit(tree.getChildren()[0])
-    return ManyTypeExp(type)
+    return ManyType(type)
 
   def handle_tuple_type_exp(self, tree):
     assert tree.text == "TUPLE_TYPE_EXP"
     types = [self.visit(type) for type in tree.getChildren()]
-    return TupleTypeExp(types)
+    return TupleType(types)
 
   def handle_not_exp(self, tree):
     assert tree.text == "!"

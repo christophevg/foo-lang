@@ -246,13 +246,23 @@ class ReturnStmt(Stmt):
 # EXPRESSIONS
 
 @nohandling
-class Exp(Visitable): pass
+class Exp(Visitable):
+  def __init__(self):
+    self._type = UnknownType()
+  def get_type(self):
+    return self._type
+  def set_type(self, type):
+    # allow to set only to same type or better than Unknown
+    assert self._type == type or isinstance(self._type, UnknownType)
+    self._type = type
+  type = property(get_type, set_type)
 
 @nohandling
 class LiteralExp(Exp): pass
 
 class BooleanLiteralExp(LiteralExp):
   def __init__(self, value):
+    self._type = BooleanType()
     if isinstance(value, bool):
       self.value = value
     elif isinstance(value, str) or isinstance(value, unicode):
@@ -265,25 +275,30 @@ class BooleanLiteralExp(LiteralExp):
 class IntegerLiteralExp(LiteralExp):
   def __init__(self, value):
     self.value = int(value)
+    self._type = IntegerType()
 
 class FloatLiteralExp(LiteralExp):
   def __init__(self, value):
     self.value = float(value)
+    self._type = FloatType()
 
 class AtomLiteralExp(LiteralExp):
   def __init__(self, identifier):
     assert isinstance(identifier, Identifier)
     self.identifier = identifier
+    self._type = AtomType()
   def get_name(self): return self.identifier.name
   name = property(get_name)
 
 class ListLiteralExp(LiteralExp):
   def __init__(self, expressions=[]):
     self.expressions = TypedList(Exp, expressions)
+    self._type = ManyType(UnknownType())
 
 class ObjectLiteralExp(LiteralExp):
   def __init__(self, properties=[]):
     self.properties = TypedList(Property, properties)
+    self._type = ObjectType(Identifier("__literal__"))
 
 class Property(Visitable):
   def __init__(self, identifier, value, type):
@@ -296,61 +311,81 @@ class Property(Visitable):
   def get_name(self): return self.identifier.name
   name = property(get_name)
 
-class TypeExp(Exp):
-  def __init__(self, identifier):
-    assert isinstance(identifier, Identifier), \
-      "TypeExp's identifier (type) should be an identifier"
-    self.identifier = identifier
-  def get_type(self): return self.identifier.name
-  type = property(get_type)
+@nohandling
+class TypeExp(Exp): pass
 
 class UnknownType(TypeExp):
-  def __init__(self): pass
-  def get_type(self): assert False, "Don't get type from UnknownType"
+  def __init__(self):
+    self._type = None
 
-class ManyTypeExp(TypeExp):
+class VoidType(TypeExp): pass
+class AtomType(TypeExp): pass
+
+@nohandling
+class SimpleType(TypeExp): pass
+
+class BooleanType(SimpleType): pass
+
+@nohandling
+class NumericType(SimpleType): pass
+
+class ByteType(NumericType): pass
+class IntegerType(NumericType): pass
+class FloatType(NumericType): pass
+
+@nohandling
+class ComplexType(TypeExp): pass
+
+class ManyType(ComplexType):
   def __init__(self, subtype):
     assert isinstance(subtype, TypeExp)
     self.subtype = subtype
 
-class TupleTypeExp(TypeExp):
+class TupleType(ComplexType):
   def __init__(self, types=[]):
     self.types = TypedList(TypeExp, types)
 
-class ObjectTypeExp(TypeExp):
+class ObjectType(ComplexType):
   def __init__(self, identifier):
-    super(ObjectTypeExp, self).__init__(identifier)
-    self.provides = []
-  
-class ValueTypeExp(TypeExp): pass
+    assert isinstance(identifier, Identifier)
+    self.identifier = identifier
+    self.provides   = {}
+  def get_name(self): return self.identifier.name
+  name = property(get_name)
+
+# BUILD-IN object types
+
+class TimestampType(ObjectType):
+  def __init__(self):
+    super(TimestampType, self).__init__(Identifier("timestamp"))
+    self.provides = {}
 
 class VariableExp(Exp):
   def __init__(self, identifier):
     assert isinstance(identifier, Identifier)
     self.identifier = identifier
-    self._type       = None                # Inferrer typically fills this in
-  def get_type(self):
-    return self._type
-  def set_type(self, type):
-    assert self._type == type or isinstance(self._type, UnknownType)
-    self._type = type
-  type = property(get_type, set_type)
+    self._type      = UnknownType()
   def get_name(self): return self.identifier.name
   name = property(get_name)
 
 class ObjectExp(VariableExp):
   def __init__(self, identifier):
     super(ObjectExp, self).__init__(identifier)
-    self.provides = []
+  def get_type(self):
+    return ObjectType(self.identifier)
+  def set_type(self, type):
+    raise RuntimeError("can't change object type, change it's identifier.")
+  type = property(get_type, set_type)
 
 class FunctionExp(VariableExp): pass
 
-class PropertyExp(Exp):
+class PropertyExp(VariableExp):
   def __init__(self, obj, identifier):
     assert isinstance(obj, ObjectExp) or isinstance(obj, Scope)
     assert isinstance(identifier, Identifier)
     self.obj        = obj
     self.identifier = identifier
+    self._type      = UnknownType()
   def get_name(self): return self.identifier.name
   name = property(get_name)
 
@@ -359,11 +394,18 @@ class UnaryExp(Exp):
   def __init__(self, operand):
     assert isinstance(operand, Exp)
     self.operand = operand
+    self._type   = UnknownType()
   def operator(self):
     raise NotimplementedError, "Missing implementation for operator(self))" + \
                                " on " + self.__class__.__name__
   def handler(self):
     return "UnaryExp"
+
+@nohandling
+class BooleanUnaryExp(UnaryExp):
+  def __init__(self, operand):
+    super(BooleanUnaryExp, self).__init__(operand)
+    self._type = BooleanType()
 
 @nohandling
 class BinaryExp(Exp):
@@ -372,59 +414,73 @@ class BinaryExp(Exp):
     assert isinstance(right, Exp)
     self.left  = left
     self.right = right
+    self._type = UnknownType()
   def operator(self):
     raise NotimplementedError, "Missing implementation for operator(self))" + \
                                " on " + self.__class__.__name__
   def handler(self):
     return "BinaryExp"
 
-class AndExp(BinaryExp):
+@nohandling
+class BooleanBinaryExp(BinaryExp):
+  def __init__(self, left, right):
+    super(BooleanBinaryExp, self).__init__(left, right)
+    self._type = BooleanType()
+
+@nohandling
+class NumericBinaryExp(BinaryExp):
+  def __init__(self, left, right):
+    super(NumericBinaryExp, self).__init__(left, right)
+    self._type = BooleanType()
+
+class AndExp(BooleanBinaryExp):
   def operator(self): return "and"
 
-class OrExp(BinaryExp):
+class OrExp(BooleanBinaryExp):
   def operator(self): return "or"
 
-class EqualsExp(BinaryExp):
+class EqualsExp(BooleanBinaryExp):
   def operator(self): return "=="
 
-class NotEqualsExp(BinaryExp):
+class NotEqualsExp(BooleanBinaryExp):
   def operator(self): return "!="
 
-class LTExp(BinaryExp):
+class LTExp(BooleanBinaryExp):
   def operator(self): return "<"
 
-class LTEQExp(BinaryExp):
+class LTEQExp(BooleanBinaryExp):
   def operator(self): return "<="
 
-class GTExp(BinaryExp):
+class GTExp(BooleanBinaryExp):
   def operator(self): return ">"
 
-class GTEQExp(BinaryExp):
+class GTEQExp(BooleanBinaryExp):
   def operator(self): return ">="
 
-class PlusExp(BinaryExp):
+class NotExp(BooleanUnaryExp):
+  def operator(self): return "!"
+
+class PlusExp(NumericBinaryExp):
   def operator(self): return "+"
 
-class MinusExp(BinaryExp):
+class MinusExp(NumericBinaryExp):
   def operator(self): return "-"
 
-class MultExp(BinaryExp):
+class MultExp(NumericBinaryExp):
   def operator(self): return "*"
 
-class DivExp(BinaryExp):
+class DivExp(NumericBinaryExp):
   def operator(self): return "/"
 
-class ModuloExp(BinaryExp):
+class ModuloExp(NumericBinaryExp):
   def operator(self): return "%"
-
-class NotExp(UnaryExp):
-  def operator(self): return "!"
 
 class FunctionCallExp(Exp, Stmt):
   def __init__(self, function, arguments=[]):
     assert isinstance(function, FunctionExp)
     self.function  = function
     self.arguments = TypedList(Exp, arguments)
+    self._type     = UnknownType()
 
 class MethodCallExp(Exp, Stmt):
   def __init__(self, obj, identifier, arguments=[]):
@@ -433,6 +489,7 @@ class MethodCallExp(Exp, Stmt):
     self.object     = obj
     self.identifier = identifier
     self.arguments  = TypedList(Exp, arguments)
+    self._type      = UnknownType()
   def get_name(self): return self.identifier.name
   name = property(get_name)
 
@@ -446,6 +503,7 @@ class MatchExp(Exp):
     assert operand == None or isinstance(operand, Exp)
     self.operator = operator
     self.operand  = operand
+    self._type    = UnknownType()
 
 # VISITOR
 

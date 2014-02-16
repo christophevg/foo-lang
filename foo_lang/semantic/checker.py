@@ -61,8 +61,8 @@ class Checker(SemanticChecker):
     if isinstance(parent, FunctionCallExp) and isinstance(grandparent, CaseStmt):
       # function is a method on the expressed object of the CaseStmt
       # we need to check if that object actually provides this method
-      type = Typer(self.model).given(parents[2:]).resolve(grandparent.expression)
-      if isinstance(type, ObjectExp) and function.name in type.provides: return
+      if isinstance(grandparent.expression.type, ObjectType) and \
+         function.name in grandparent.expression.type.provides: return
 
     # don't know where to look anymore
     self.fail("FunctionExp has no definition. Did you miss an import?", \

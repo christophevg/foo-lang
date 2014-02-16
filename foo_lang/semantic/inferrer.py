@@ -20,15 +20,13 @@ class Inferrer(SemanticChecker):
     if isinstance(constant.type, UnknownType):
       try:
         new_type = {
-          'IntegerLiteralExp' : "int",
-          'FloatLiteralExp'   : "float",
-          'BooleanLiteralExp' : "boolean",
-          'ListLiteralExp'    : "list",
-          'ObjectLiteralExp'  : "object"
+          'IntegerLiteralExp' : IntegerType,
+          'FloatLiteralExp'   : FloatType,
+          'BooleanLiteralExp' : BooleanType
         }[constant.value.__class__.__name__]
         self.success("unknown constant type for", constant.name, \
-                     "inferred to", new_type)
-        constant.type = TypeExp(Identifier(new_type))
+                     "inferred to", new_type().accept(Dumper()))
+        constant.type = new_type()
       except KeyError:
         self.fail("Failed to infer constant type based on value of " + \
                   constant.name)
@@ -57,7 +55,7 @@ class Inferrer(SemanticChecker):
       function.body.accept(ReturnDetector())
       self.success("Found no typed return stmt in function body.", \
                    "Inferring return type to 'void'.")
-      function.type = TypeExp(Identifier("void"))
+      function.type = VoidType()
     except TypedReturnDetectedException, type:
       self.fail("Found return typed stmt in untyped function body. " + \
                 "Inferring return type to " + type)
@@ -80,7 +78,8 @@ class Inferrer(SemanticChecker):
         else:
           # case 3: it's a global function and is referenced from another 
           # function TODO (currently not in scope)
-          assert False, "Unsupported situation for FunctionDecl for Parameter"
+          self.fail("Unsupported situation for FunctionDecl for Parameter",
+                    parameter.name)
       
       # we reached this point so we found an env that can tell us the signature
       # of our function
@@ -109,10 +108,12 @@ class Inferrer(SemanticChecker):
           pass
         if not type is None:
           self.success("Found ExecutionStrategy with Scope providing info. " +
-                       "Inferring parameter type to", type.accept(Dumper()))
+                       "Inferring parameter", parameter.name, "to",
+                       type.accept(Dumper()))
           parameter.type = type
         else:
           self.fail("Couldn't extract parameter typing info from " + \
-                    "ExecutionStrategy environment.")
+                    "ExecutionStrategy environment for parameter",
+                    paramter.name)
       else:
         assert False, "Unsupported situation for FunctionDecl for Parameter"

@@ -183,14 +183,26 @@ class SemanticHandler(SemanticVisitor):
     prop.value.accept(self)
 
   @stacked
-  def handle_TypeExp(self, type): pass
+  def handle_BooleanType(self, type): pass
 
   @stacked
-  def handle_ManyTypeExp(self, many):
+  def handle_ByteType(self, type): pass
+
+  @stacked
+  def handle_IntegerType(self, type): pass
+
+  @stacked
+  def handle_FloatType(self, type): pass
+
+  @stacked
+  def handle_TimestampType(self, type): pass
+
+  @stacked
+  def handle_ManyType(self, many):
     many.subtype.accept(self)
     
   @stacked
-  def handle_TupleTypeExp(self, tuple):
+  def handle_TupleType(self, tuple):
     for type in tuple.types:
       type.accept(self)
 

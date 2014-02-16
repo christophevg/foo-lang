@@ -3,7 +3,7 @@
 
 # Nodes domain implementation
 
-from foo_lang.semantic.model import Domain, Scope, Identifier, ObjectTypeExp
+from foo_lang.semantic.model import *
 
 class Nodes(Domain):
   def __init__(self):
@@ -21,17 +21,17 @@ class NodesScope(Scope):
       # without a name, we can only return a function that is implemented on
       # one argument: node, something is performed in scope of each single node
       if name is None: return { "type": "void",
-                                "params": [ ObjectTypeExp(Identifier("node"))]}
+                                "params": [ ObjectType(Identifier("node"))]}
       return {
         "receive"  : { "type": "void",
-                       "params": [ ObjectTypeExp(Identifier("node")),
-                                   ObjectTypeExp(Identifier("node")),
-                                   ObjectTypeExp(Identifier("payload")) ] },
+                       "params": [ ObjectType(Identifier("node")),
+                                   ObjectType(Identifier("node")),
+                                   ManyType(ManyType(ByteType())) ] },
         "transmit" : { "type": "void",
-                       "params": [ ObjectTypeExp(Identifier("node")),
-                                   ObjectTypeExp(Identifier("node")),
-                                   ObjectTypeExp(Identifier("node")),
-                                   ObjectTypeExp(Identifier("payload")) ] }
+                       "params": [ ObjectType(Identifier("node")),
+                                   ObjectType(Identifier("node")),
+                                   ObjectType(Identifier("node")),
+                                   ManyType(ManyType(ByteType())) ] }
       }[name]
     except KeyError:
       print "WARNING: requested unknown function : node::" + str(name)
