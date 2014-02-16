@@ -50,9 +50,7 @@ class Checker(SemanticChecker):
     # example: Model > Module(heartbeat) > When(receive) > FunctionExp(receive)
     parent = parents[1]
     if isinstance(parent, ExecutionStrategy):
-      if isinstance(parent.scope, Scope): domain = parent.scope.domain
-      else: domain = parent.scope
-      if domain.get_function(function.name): return
+      if parent.scope.get_function(function.name): return
 
     # special case 2 : 
     # example: Model > Module(heartbeat) > When(receive) >
@@ -69,3 +67,13 @@ class Checker(SemanticChecker):
     # don't know where to look anymore
     self.fail("FunctionExp has no definition. Did you miss an import?", \
               function.name)
+
+  def check_VariableExp(self, var):
+    pass
+    # print "TODO: VariableExp", var.name
+    # can be found as constant
+    #              in function declaration
+
+  def check_ObjectExp(self, obj):
+    pass
+    # print "TODO: ObjectExp", obj.name

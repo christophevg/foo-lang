@@ -7,7 +7,7 @@ import inspect
 from util.visitor import Visitable
 from util.check   import isstring
 
-from foo_lang.semantic.model  import SemanticVisitor
+from foo_lang.semantic.model  import SemanticVisitor, FunctionDecl
 from foo_lang.semantic.dumper import Dumper
 
 def stacked(method):
@@ -66,6 +66,13 @@ class SemanticHandler(SemanticVisitor):
     
     for execution in module.executions:
       execution.accept(self)
+
+    for function in module.functions:
+      # we only want to handle non-anonymous function declarations here
+      # because anonymous declarations are declared in their specific scope
+      # TODO: do this in a cleaner way (AnonFunctionDecl?)
+      if function.name[0:9] != "anonymous":
+        function.accept(self)
 
   @stacked
   def handle_Constant(self, constant): pass
@@ -255,10 +262,13 @@ class SemanticChecker(SemanticHandler):
 
   def report(self):
     print "-" * 79
-    self.log("results of run",
-            ( "SUCCESS - model is valid" if self.fails == 0 \
-              else "FAILURES : " + str(self.fails)),
-            "SUCCESSES: " + str(self.successes))
+
+    result = "SUCCESS - model is valid" if self.fails == 0 \
+             else "FAILURES : " + str(self.fails)
+    info   = "SUCCESSES: " + str(self.successes) if self.successes != 0 \
+             else None
+
+    self.log("results of run", result, info)
     print "-" * 79
 
   def fail(self, msg, *args):
@@ -297,7 +307,8 @@ class SemanticChecker(SemanticHandler):
   def log(self, msg1, *msgs):
     print "foo-" + self.__class__.__name__.lower() + ": " + msg1
     for msg in msgs:
-      print " " * len(self.name) + "  " + msg
+      if not msg is None:
+        print " " * len(self.name) + "  " + msg
 
   # ASSERTIONS HELPERS
 

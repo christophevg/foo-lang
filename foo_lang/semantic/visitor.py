@@ -206,7 +206,7 @@ class Visitor():
     assert tree.text == "ON"
     children = tree.getChildren()
     timing   = children[0].text
-    scope    = self.visit(children[1])
+    scope    = self.as_scope(self.visit(children[1]))
     event    = self.visit(children[2])
     function = self.visit(children[3])
     

@@ -191,6 +191,9 @@ class Dumper(SemanticVisitor):
 
   def handle_TypeExp(self, type):
     return type.identifier.accept(self)
+
+  def handle_ObjectTypeExp(self, type):
+    return type.identifier.accept(self)
   
   def handle_UnknownType(self, type):
     assert False, "Dumper: Don't handle UnknowType"

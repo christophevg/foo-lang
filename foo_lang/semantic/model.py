@@ -93,6 +93,8 @@ class TypedList(Visitable):
     return self
   def __len__(self):
     return len(self.objects)
+  def index(self, obj):
+    return self.objects.index(obj)
 
 class Constant(Visitable):
   def __init__(self, identifier, value, type=None):
@@ -182,11 +184,9 @@ class Parameter(Visitable):
   def get_type(self):
     return self._type
   def set_type(self, type):
-    assert self._type == type
+    assert self._type == type or isinstance(self._type, UnknownType)
     self._type = type
-  def del_type(self):
-    del self._type
-  type = property(get_type, set_type, del_type)
+  type = property(get_type, set_type)
   def get_name(self): return self.identifier.name
   name = property(get_name)
 
@@ -317,10 +317,24 @@ class TupleTypeExp(TypeExp):
   def __init__(self, types=[]):
     self.types = TypedList(TypeExp, types)
 
+class ObjectTypeExp(TypeExp):
+  def __init__(self, identifier):
+    super(ObjectTypeExp, self).__init__(identifier)
+    self.provides = []
+  
+class ValueTypeExp(TypeExp): pass
+
 class VariableExp(Exp):
   def __init__(self, identifier):
     assert isinstance(identifier, Identifier)
     self.identifier = identifier
+    self._type       = None                # Inferrer typically fills this in
+  def get_type(self):
+    return self._type
+  def set_type(self, type):
+    assert self._type == type or isinstance(self._type, UnknownType)
+    self._type = type
+  type = property(get_type, set_type)
   def get_name(self): return self.identifier.name
   name = property(get_name)
 
