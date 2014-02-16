@@ -33,6 +33,14 @@ class Checker(SemanticChecker):
 
   # Definitions
 
+  def check_VariableExp(self, variable):
+    self.assertNotIsInstance(variable.type, UnknownType, 
+                             "variable type is Unknown", variable.name)
+
+  def check_ObjectExp(self, obj):
+    pass
+    # print "TODO: ObjectExp", obj.name
+
   def check_FunctionExp(self, function):
     """
     Every expressed function (read: name), should be known. It can be:
@@ -67,13 +75,3 @@ class Checker(SemanticChecker):
     # don't know where to look anymore
     self.fail("FunctionExp has no definition. Did you miss an import?", \
               function.name)
-
-  def check_VariableExp(self, var):
-    pass
-    # print "TODO: VariableExp", var.name
-    # can be found as constant
-    #              in function declaration
-
-  def check_ObjectExp(self, obj):
-    pass
-    # print "TODO: ObjectExp", obj.name
