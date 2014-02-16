@@ -7,7 +7,7 @@ import inspect
 from util.visitor import Visitable
 from util.check   import isstring
 
-from foo_lang.semantic.model  import SemanticVisitor, FunctionDecl
+from foo_lang.semantic.model  import SemanticVisitor
 from foo_lang.semantic.dumper import Dumper
 
 def stacked(method):
@@ -18,16 +18,26 @@ def stacked(method):
   def wrapped(self, obj):
     self.start_handling(obj_name, obj)
     method(self, obj)
-    self.stop_handling()
+    self.stop_handling(obj_name, obj)
   return wrapped
 
 class SemanticHandler(SemanticVisitor):
-  def __init__(self):
-    self.prefix = None
-    self._stack = []
+  def __init__(self, top_down=True, bottom_up=False):
+    assert top_down is not bottom_up, "Can't go both ways, up and down ;-)"
+    self.prefix    = None
+    self._stack    = []
+    self.top_down  = top_down
+    self.bottom_up = bottom_up
 
   def start_handling(self, part_name, part):
     self._stack.append(part)
+    if self.top_down: self.perform_handling(part_name, part)
+
+  def stop_handling(self, part_name, part):
+    if self.bottom_up: self.perform_handling(part_name, part)
+    self._stack.pop()
+
+  def perform_handling(self, part_name, part):
     if self.prefix != None and self.prefix != "handle_":
       try:
         method = getattr(self, self.prefix + part_name)
@@ -36,9 +46,6 @@ class SemanticHandler(SemanticVisitor):
         # possibly there is no handler
         # print "not handling", part_name
         pass
-
-  def stop_handling(self):
-    self._stack.pop()
   
   def get_stack(self): return self._stack
   stack = property(get_stack)
@@ -253,8 +260,8 @@ class SemanticHandler(SemanticVisitor):
 # CHECKER
 
 class SemanticChecker(SemanticHandler):
-  def __init__(self, model):
-    super(SemanticChecker, self).__init__()
+  def __init__(self, model, top_down=True, bottom_up=False):
+    super(SemanticChecker, self).__init__(top_down, bottom_up)
     self.model  = model
     self.prefix = "check_"
     self.name   = "foo-" + self.__class__.__name__.lower()
