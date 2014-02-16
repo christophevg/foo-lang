@@ -22,10 +22,13 @@ def stacked(method):
   return wrapped
 
 class SemanticHandler(SemanticVisitor):
-  def __init__(self, top_down=True, bottom_up=False):
-    assert top_down is not bottom_up, "Can't go both ways, up and down ;-)"
+  def __init__(self, top_down=None, bottom_up=None):
     self.prefix    = None
     self._stack    = []
+    if top_down == bottom_up == None:
+      top_down = True
+      bottom_up = False
+    assert top_down != bottom_up, "Can't move in both/no direction ;-)"
     self.top_down  = top_down
     self.bottom_up = bottom_up
 
@@ -260,7 +263,7 @@ class SemanticHandler(SemanticVisitor):
 # CHECKER
 
 class SemanticChecker(SemanticHandler):
-  def __init__(self, model, top_down=True, bottom_up=False):
+  def __init__(self, model, top_down=None, bottom_up=None):
     super(SemanticChecker, self).__init__(top_down, bottom_up)
     self.model  = model
     self.prefix = "check_"
