@@ -61,7 +61,7 @@ class Checker(SemanticChecker):
     if isinstance(parent, FunctionCallExp) and isinstance(grandparent, CaseStmt):
       # function is a method on the expressed object of the CaseStmt
       # we need to check if that object actually provides this method
-      if isinstance(grandparent.expression.type, ObjectType) and \
+      if isinstance(grandparent.expression.type, ComplexType) and \
          function.name in grandparent.expression.type.provides: return
 
     # don't know where to look anymore

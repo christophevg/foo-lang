@@ -117,3 +117,82 @@ class Inferrer(SemanticChecker):
                     paramter.name)
       else:
         assert False, "Unsupported situation for FunctionDecl for Parameter"
+
+  # infer all types on all expressions (that aren't typed by default)
+  # those that aren't needed have been removed: e.g. ListLiteral, ObjectLiteral,
+  # Property, FunctionCallExp, MethodCallExp
+
+  def infer_VariableExp(self, variable):
+    # original : self._type = UnknownType()
+    # we need to move up the stack to find the declaration and reuse that;
+    # variables can be declared in FunctionDecl, might be a Constant, or as 
+    # part of an assignment, then we can also reuse the type of the value part 
+    # of the assignment
+
+    # simplest case, it's a constant reference
+    if variable.name in self.stack[1].constants:
+      self.success("Found constant containing type for", variable.name,
+                   "Inferring to", self.stack[1].constants[variable.name])
+      variable.type = self.stack[1].constants[variable.name]
+      return
+
+    parents = list(reversed(self.stack))
+
+    # try to find a FunctionDeclaration
+    for parent in parents:
+      if isinstance(parent, FunctionDecl):
+        for parameter in parent.parameters:
+          if parameter.name == variable.name:
+            self.success("Found FunctionDecl containing type for", variable.name,
+                         "Inferring to", parameter.type.accept(Dumper()))
+            variable.type = parameter.type
+            return
+
+    # special case: if the VarExp is part of a FuncCallExp that is part of a
+    # CaseStmt, it is in fact not a VarExp but a VarDecl (TODO: fix this higher)
+    # we can then ignore it
+    if isinstance(parents[1], ListLiteralExp) and \
+       isinstance(parents[2], FunctionCallExp) and \
+       isinstance(parents[3], CaseStmt):
+      # TODO: map declaration to corresponding parameters
+      return
+
+    # a VarExp in a consequences Stmt of a CaseStmt can look for a same-name
+    # VarExp in the corresponding cases FunctionCallExp of the CaseStmt
+    for index in range(0,len(parents)):
+      if isinstance(parents[index], CaseStmt):
+        case              = parents[index]
+        consequence = parents[index-1]
+        consequence_index = case.consequences.index(consequence)
+        functioncall      = case.cases[consequence_index]
+        for argument in functioncall.arguments:
+          if isinstance(argument, VariableExp) and argument.name == variable.name:
+            self.success("Found CaseFuncCall with decl for", variable.name,
+                         "Inferring to", parameter.type.accept(Dumper()))
+            variable.type = parameter.type
+            return
+          if isinstance(argument, ListLiteralExp):
+            for item in argument.expressions:
+              if isinstance(item, VariableExp) and item.name == variable.name:
+                self.success("Found CaseFuncCall in list with decl for", 
+                             variable.name,
+                             "Inferring to", item.type.accept(Dumper()))
+                variable.type = item.type
+                return
+    
+    self.fail("Couldn't find declaration for variable", variable.name)
+
+  def infer_ObjectExp(self, exp):
+    # original : self._type = UnknownType()
+    # we need to move up the stack to find the declaration and reuse that
+    pass
+
+  def infer_FunctionExp(self, exp):
+    # original: UnknownType
+    # we need to find the function (declaration) and reuse it's type
+    pass
+
+  def infer_PropertyExp(self, exp):
+    # original: UnknownType()
+    # we need to retrieve the type of the property on the object
+    pass

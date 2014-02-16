@@ -72,6 +72,8 @@ class NamedTypedOrderedDict(Visitable):
     return iter(self.objects.values())
   def __contains__(self, key):
     return key in self.objects
+  def __getitem__(self, key):
+    return self.object[key]
   def append(self, obj):
     assert isinstance(obj, self.type)
     self.objects[obj.name] = obj
@@ -95,6 +97,8 @@ class TypedList(Visitable):
     return len(self.objects)
   def index(self, obj):
     return self.objects.index(obj)
+  def __getitem__(self, index):
+    return self.objects[index]
 
 class Constant(Visitable):
   def __init__(self, identifier, value, type=None):
@@ -340,10 +344,12 @@ class ManyType(ComplexType):
   def __init__(self, subtype):
     assert isinstance(subtype, TypeExp)
     self.subtype = subtype
+    self.provides = { "contains": {} }
 
 class TupleType(ComplexType):
   def __init__(self, types=[]):
     self.types = TypedList(TypeExp, types)
+    self.provides = { "contains": {} }
 
 class ObjectType(ComplexType):
   def __init__(self, identifier):
@@ -371,11 +377,6 @@ class VariableExp(Exp):
 class ObjectExp(VariableExp):
   def __init__(self, identifier):
     super(ObjectExp, self).__init__(identifier)
-  def get_type(self):
-    return ObjectType(self.identifier)
-  def set_type(self, type):
-    raise RuntimeError("can't change object type, change it's identifier.")
-  type = property(get_type, set_type)
 
 class FunctionExp(VariableExp): pass
 
@@ -490,9 +491,13 @@ class MethodCallExp(Exp, Stmt):
     self.object     = obj
     self.identifier = identifier
     self.arguments  = TypedList(Exp, arguments)
-    self._type      = UnknownType()
   def get_name(self): return self.identifier.name
   name = property(get_name)
+  def get_type(self):
+    try:
+      return self.obj.type.provides[self.identifier]['type']
+    except: pass
+    return UnknownType()
 
 class AnythingExp(Exp): pass
 
@@ -504,7 +509,7 @@ class MatchExp(Exp):
     assert operand == None or isinstance(operand, Exp)
     self.operator = operator
     self.operand  = operand
-    self._type    = UnknownType()
+    self._type    = BooleanType()
 
 # VISITOR
 
