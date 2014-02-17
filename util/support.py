@@ -16,9 +16,11 @@ class warn():
   def __call__(parent, method):
     def wrapped(self, *args):
       if warn.first:
-        print("", file=sys.stderr)
+        print_stderr("")
         warn.first = False
-      print( "WARNING: " + self.__class__.__name__ + ": " + str(parent.text),
-             end='\n', file=sys.stderr)
+      print_stderr( "WARNING: " + self.__class__.__name__ + ": " + str(parent.text))
       return method(self, *args)
     return wrapped
+
+def print_stderr(msg):
+  print(msg, end='\n', file=sys.stderr)
