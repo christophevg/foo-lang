@@ -77,7 +77,7 @@ class NamedTypedOrderedDict(Visitable):
   def __contains__(self, key):
     return key in self.objects
   def __getitem__(self, key):
-    return self.object[key]
+    return self.objects[key]
   def append(self, obj):
     assert isinstance(obj, self.type)
     self.objects[obj.name] = obj
