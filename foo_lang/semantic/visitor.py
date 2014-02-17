@@ -202,8 +202,12 @@ class AstVisitor():
     assert tree.text == "FUNC_DECL"
     children   = tree.getChildren()
     name       = self.visit(children[0])
-    parameters = self.handle_parameters(children[1])
-    body       = self.visit(children[2])
+    if len(children) > 2:
+      parameters = self.handle_parameters(children[1])
+      body       = self.visit(children[2])
+    else:
+      parameters = []
+      body       = self.visit(children[1])
     function   = FunctionDecl(body, identifier=name, parameters=parameters)
     self.current_module.functions.append(function)
     return function
