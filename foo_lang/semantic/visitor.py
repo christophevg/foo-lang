@@ -728,17 +728,19 @@ class SemanticVisitor(SemanticVisitorBase):
 # - overrides handle_ prefix with check_
 
 class SemanticChecker(SemanticVisitor):
-  def __init__(self, model, top_down=None, bottom_up=None):
+  def __init__(self, model, top_down=None, bottom_up=None, verbose=True):
     super(SemanticChecker, self).__init__(top_down, bottom_up)
-    self.model  = model
-    self.prefix = "check_"
-    self.name   = "foo-" + self.__class__.__name__.lower()
+    self.model   = model
+    self.prefix  = "check_"
+    self.name    = "foo-" + self.__class__.__name__.lower()
+    self.verbose = verbose
 
   def check(self):
-    print self.name + ": processing model"
+    if self.verbose: print self.name + ": processing model"
     self.start();
     self.model.accept(self)
     self.stop()
+    return { "successes": self.successes, "failures": self.fails }
 
   def start(self):
     self.fails = 0
@@ -748,6 +750,7 @@ class SemanticChecker(SemanticVisitor):
     self.report()
 
   def report(self):
+    if not self.verbose: return
     print "-" * 79
 
     result = "SUCCESS - model is valid" if self.fails == 0 \
@@ -763,9 +766,9 @@ class SemanticChecker(SemanticVisitor):
     self.log("failure: " + msg + " : " + str(*args),
              "stack: " + " > ".join([self.show(obj) for obj in self._stack]))
 
+  # TODO: move this to objects themselves :-(
   def show(self, obj):
     name   = obj.__class__.__name__
-    attrib = False
     try:
       attrib = {
                  'FunctionDecl'    : 'name',
@@ -777,21 +780,19 @@ class SemanticChecker(SemanticVisitor):
                  'Module'          : 'name',
                  'Parameter'       : 'name'
                }[name]
-    except KeyError: pass
-
-    if attrib != False:
       attrib = getattr(obj, attrib)
       if isinstance(attrib, Visitable):
         attrib = attrib.accept(Dumper())
       return name + "(" + attrib + ")"
-    else:
-      return name
+    except KeyError: pass
+    return name
 
   def success(self, msg, *args):
     self.successes += 1
     self.log("success: " + msg + " : " + " ".join([str(arg) for arg in args]))
 
   def log(self, msg1, *msgs):
+    if not self.verbose: return
     print "foo-" + self.__class__.__name__.lower() + ": " + msg1
     for msg in msgs:
       if not msg is None:

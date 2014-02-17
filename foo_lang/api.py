@@ -59,11 +59,13 @@ def load(string, model=None):
   AstVisitor(model).visit(parse(string).tree)
   return model
 
-def check(model):
-  Checker(model).check()
+def check(model, silent=False):
+  verbose = not silent
+  return Checker(model, verbose=verbose).check()
 
-def infer(model):
-  Inferrer(model).infer()
+def infer(model, silent=False):
+  verbose = not silent
+  return Inferrer(model, verbose=verbose).infer()
 
 def generate(model, generator):
   generator.generate(model)
