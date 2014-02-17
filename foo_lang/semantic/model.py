@@ -320,7 +320,8 @@ class Property(Visitable):
   name = property(get_name)
 
 @nohandling
-class TypeExp(Exp): pass
+class TypeExp(Exp):
+  def __repr__(self): return self.__class__.__name__
 
 class UnknownType(TypeExp):
   def __init__(self):
