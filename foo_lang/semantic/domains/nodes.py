@@ -20,14 +20,14 @@ class NodesScope(Scope):
       # print "NODES: looking for function ", str(name)
       # without a name, we can only return a function that is implemented on
       # one argument: node, something is performed in scope of each single node
-      if name is None: return { "type": "void",
+      if name is None: return { "type": VoidType(),
                                 "params": [ ObjectType(Identifier("node"))]}
       return {
-        "receive"  : { "type": "void",
+        "receive"  : { "type": VoidType(),
                        "params": [ ObjectType(Identifier("node")),
                                    ObjectType(Identifier("node")),
                                    ManyType(ManyType(ByteType())) ] },
-        "transmit" : { "type": "void",
+        "transmit" : { "type": VoidType,
                        "params": [ ObjectType(Identifier("node")),
                                    ObjectType(Identifier("node")),
                                    ObjectType(Identifier("node")),
@@ -46,8 +46,8 @@ class AllNodes(NodesScope):
   def get_method(self, name):
     try:
       return {
-        "broadcast" : { "type": "void",
-                        "params": [ ObjectTypeExp(Identifier("payload")) ] }
+        "broadcast" : { "type": VoidType(),
+                        "params": [ ManyType(ManyType(ByteType())) ] }
 
       }[name]
     except KeyError:
