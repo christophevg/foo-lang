@@ -57,6 +57,11 @@ class TestEnvironment(unittest.TestCase):
     self.assertEqual(str(self.env), 
                      "abc : abc2\ndef : def2\n  abc : abc1\n  def : def1\n" )
 
+  def test_contain_in_environment(self):
+    self.create_environment()
+    self.assertTrue("abc" in self.env)
+    self.assertFalse("xyz" in self.env)
+
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestEnvironment)
   unittest.TextTestRunner(verbosity=2).run(suite)

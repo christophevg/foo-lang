@@ -11,6 +11,7 @@ import inspect
 
 from util.check               import isidentifier, isstring
 from util.visitor             import Visitable
+from util.environment         import Environment
 
 from foo_lang.semantic.model  import *     # too many to import explicitly
 from foo_lang.semantic.dumper import Dumper
@@ -466,12 +467,14 @@ def stacked(method):
 #
 # Implements the SemanticVisitorBase with handlers to visit all parts of the
 # Semantic Model. This can be done in a top-down or bottom-up approach.
-# While doing so, it constructs a stack of visited parts.
+# While doing so, it constructs a stack of visited parts and an environment of
+# declared entities (Variables, Objects,...)
 
 class SemanticVisitor(SemanticVisitorBase):
   def __init__(self, top_down=None, bottom_up=None):
     self.prefix    = None
     self._stack    = []
+    self.env       = Environment()
     if top_down == bottom_up == None:
       top_down = True
       bottom_up = False
@@ -490,22 +493,24 @@ class SemanticVisitor(SemanticVisitorBase):
       module.accept(self)
 
   @stacked
-  def handle_Domain(self, domain): pass
+  def handle_Domain(self, domain):
+    self.env[domain.name] = domain
     
   @stacked
   def handle_Scope(self, scope): pass
 
   @stacked
   def handle_Module(self, module):
+    self.env.extend()
     for constant in module.constants:
       constant.accept(self)
+    
+    for function, library in module.externals.items():
+      self.env[function] = library
     
     for extension in module.extensions:
       extension.accept(self)
     
-    for execution in module.executions:
-      execution.accept(self)
-
     for function in module.functions:
       # we only want to handle non-anonymous function declarations here
       # because anonymous declarations are declared in their specific scope
@@ -513,8 +518,14 @@ class SemanticVisitor(SemanticVisitorBase):
       if function.name[0:9] != "anonymous":
         function.accept(self)
 
+    for execution in module.executions:
+      execution.accept(self)
+        
+    self.env.reduce()
+
   @stacked
-  def handle_Constant(self, constant): pass
+  def handle_Constant(self, constant):
+    self.env[constant.name] = constant
 
   @stacked
   def handle_Extension(self, extension):
@@ -535,19 +546,25 @@ class SemanticVisitor(SemanticVisitorBase):
 
   @stacked
   def handle_FunctionDecl(self, function):
+    self.env[function.name] = function
+    self.env.extend()
     for param in function.parameters:
       param.accept(self)
     function.body.accept(self)
+    self.env.reduce()
 
   @stacked
-  def handle_Parameter(self, parameter): pass
+  def handle_Parameter(self, parameter):
+    self.env[parameter.name] = parameter
 
   # STATEMENTS
 
   @stacked
   def handle_BlockStmt(self, block):
+    self.env.extend()
     for statement in block.statements:
       statement.accept(self)
+    self.env.reduce()
 
   @stacked
   def handle_AssignStmt(self, stmt):
@@ -583,8 +600,10 @@ class SemanticVisitor(SemanticVisitorBase):
   def handle_CaseStmt(self, stmt):
     stmt.expression.accept(self)
     for case, consequence in zip(stmt.cases, stmt.consequences):
+      self.env.extend()
       case.accept(self)
       consequence.accept(self)
+      self.env.reduce()
 
   @stacked
   def handle_ReturnStmt(self, stmt):
@@ -646,7 +665,12 @@ class SemanticVisitor(SemanticVisitorBase):
       type.accept(self)
 
   @stacked
-  def handle_VariableExp(self, var): pass
+  def handle_VariableExp(self, var):
+    # on first use, a variable is self-instantiating
+    try:
+      prev = self.env[var.name]
+    except KeyError:
+      self.env[var.name] = var
   
   @stacked
   def handle_PropertyExp(self, prop):

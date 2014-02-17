@@ -48,8 +48,14 @@ class Checker(SemanticChecker):
     - some special cases
     """
     module = self.stack[1]
-    if function.name in module.externals: return
-    if function.name in module.functions: return
+    
+    # print "-" * 25
+    # print "looking for", function.name
+    # print self.env
+    # print "-" * 25
+    if function.name in self.env: return
+
+    # HERE CONTINUE introduction environment-based checking
 
     parents = list(reversed(self.stack))
 
