@@ -12,6 +12,7 @@ from test.parser      import TestParser
 from test.integration import TestIntegration
 from test.code        import TestCode
 from test.environment import TestEnvironment
+from test.infercheck  import TestInferCheck
 
 if __name__ == '__main__':
   exp_tests         = unittest.TestLoader().loadTestsFromTestCase(TestExpressions)
@@ -21,12 +22,7 @@ if __name__ == '__main__':
   integration_tests = unittest.TestLoader().loadTestsFromTestCase(TestIntegration)
   code_tests        = unittest.TestLoader().loadTestsFromTestCase(TestCode)
   environment_tests = unittest.TestLoader().loadTestsFromTestCase(TestEnvironment)
+  infercheck_tests  = unittest.TestLoader().loadTestsFromTestCase(TestInferCheck)
 
-  all_tests = unittest.TestSuite( [ exp_tests,
-                                    stmt_tests,
-                                    model_tests,
-                                    parser_tests,
-                                    integration_tests,
-                                    code_tests,
-                                    environment_tests ])
-  unittest.TextTestRunner(verbosity=1).run(all_tests)
+  all_tests = unittest.TestSuite( [ infercheck_tests])
+  unittest.TextTestRunner(verbosity=2).run(all_tests)

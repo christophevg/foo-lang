@@ -11,7 +11,7 @@ class Inferrer(SemanticChecker):
 
   def infer(self):
     self.prefix = "infer_"
-    self.check()
+    return self.check()
 
   def infer_Constant(self, constant):
     """
@@ -53,70 +53,70 @@ class Inferrer(SemanticChecker):
 
     try:
       function.body.accept(ReturnDetector())
-      self.success("Found no typed return stmt in function body.", \
-                   "Inferring return type to 'void'.")
       function.type = VoidType()
+      self.success("Found no typed return stmt in function body.", \
+                   "Inferring return type to", function.type )
     except TypedReturnDetectedException, type:
       self.fail("Found return typed stmt in untyped function body. " + \
-                "Inferring return type to " + type)
+                "Inferring return type to " + str(type))
 
   def infer_Parameter(self, parameter):
-    if isinstance(parameter.type, UnknownType):
-      parents  = list(reversed(self.stack))
-      function = parents[1]
-      env      = parents[2]
+    if not isinstance(parameter.type, UnknownType): return
 
-      if isinstance(env, Module):  
-        # case 2: it's a global function declaration, but with a reference
-        #         from the first case, so we try to convert the environment
-        #         to an ExecutionStrategy
-        for execution in env.executions:
-          func = execution.executed
-          if isinstance(func, FunctionExp) and func.name == function.name:
-            env = execution
-            break
-        else:
-          # case 3: it's a global function and is referenced from another 
-          # function TODO (currently not in scope)
-          self.fail("Unsupported situation for FunctionDecl for Parameter",
-                    parameter.name)
-      
-      # we reached this point so we found an env that can tell us the signature
-      # of our function
-      if isinstance(env, ExecutionStrategy):
-        # case 1: function declaration for exection in an ExecutionStrategy =>
-        #         it's a handler and we should be able to match the function's
-        #         signature to that of the scope of the strategy
-        # An ExecutionStrategy can have an event (When) or not (Every)
-        # An event is a FunctionExp executed within the Scope.
-        if isinstance(env, When):
-          # print "looking up", env.event.name, "in", env.scope
-          info = env.scope.get_function(env.event.name)
-          # print "looked up info = ", info
-        else:
-          info = env.scope.get_function()
-        type = None
-        try:
-          # try to extract the param information for the same indexed parameter
-          index = function.parameters.index(parameter)
-          # print "function:", function.name, "function.parameters=", function.parameters
-          # print parameter.name, "is found at position", index
-          # print "info=", info
-          type = info["params"][index]
-        except:
-          # print "but there was nu such parameter in the info at ", index
-          pass
-        if not type is None:
-          self.success("Found ExecutionStrategy with Scope providing info. " +
-                       "Inferring parameter", parameter.name, "to",
-                       type.accept(Dumper()))
-          parameter.type = type
-        else:
-          self.fail("Couldn't extract parameter typing info from " + \
-                    "ExecutionStrategy environment for parameter",
-                    paramter.name)
+    parents  = list(reversed(self.stack))
+    function = parents[1]
+    env      = parents[2]
+
+    if isinstance(env, Module):  
+      # case 2: it's a global function declaration, but with a reference
+      #         from the first case, so we try to convert the environment
+      #         to an ExecutionStrategy
+      for execution in env.executions:
+        func = execution.executed
+        if isinstance(func, FunctionExp) and func.name == function.name:
+          env = execution
+          break
       else:
-        assert False, "Unsupported situation for FunctionDecl for Parameter"
+        # case 3: it's a global function and is referenced from another 
+        # function. Here we have no reference to use to infer the type. This
+        # will be handled by the calling side, who will infer its argument types
+        # upon these parameters
+        pass
+    
+    # we reached this point so we found an env that can tell us the signature
+    # of our function
+    if isinstance(env, ExecutionStrategy):
+      # case 1: function declaration for exection in an ExecutionStrategy =>
+      #         it's a handler and we should be able to match the function's
+      #         signature to that of the scope of the strategy
+      # An ExecutionStrategy can have an event (When) or not (Every)
+      # An event is a FunctionExp executed within the Scope.
+      if isinstance(env, When):
+        # print "looking up", env.event.name, "in", env.scope
+        info = env.scope.get_function(env.event.name)
+        # print "looked up info = ", info
+      else:
+        info = env.scope.get_function()
+      type = None
+      try:
+        # try to extract the param information for the same indexed parameter
+        index = function.parameters.index(parameter)
+        # print "function:", function.name, "function.parameters=", function.parameters
+        # print parameter.name, "is found at position", index
+        # print "info=", info
+        type = info["params"][index]
+      except:
+        # print "but there was nu such parameter in the info at ", index
+        pass
+      if not type is None:
+        self.success("Found ExecutionStrategy with Scope providing info. " +
+                     "Inferring parameter", parameter.name, "to",
+                     type.accept(Dumper()))
+        parameter.type = type
+      else:
+        self.fail("Couldn't extract parameter typing info from " + \
+                  "ExecutionStrategy environment for parameter",
+                  paramter.name)
 
   # infer all types on all expressions (that aren't typed by default)
   # those that aren't needed have been removed: e.g. ListLiteral, ObjectLiteral,
@@ -129,24 +129,13 @@ class Inferrer(SemanticChecker):
     # part of an assignment, then we can also reuse the type of the value part 
     # of the assignment
 
-    # simplest case, it's a constant reference
-    if variable.name in self.stack[1].constants:
-      self.success("Found constant containing type for", variable.name,
-                   "Inferring to", self.stack[1].constants[variable.name])
-      variable.type = self.stack[1].constants[variable.name]
-      return
+    # simplest case, it's in the environment
+    if variable.name in self.env:
+      variable.type = self.env[variable.name].type
+      self.success("VariableExp referenced the environment.", variable.name, 
+                   "Inferred type to", variable.type)
 
     parents = list(reversed(self.stack))
-
-    # try to find a FunctionDeclaration
-    for parent in parents:
-      if isinstance(parent, FunctionDecl):
-        for parameter in parent.parameters:
-          if parameter.name == variable.name:
-            self.success("Found FunctionDecl containing type for", variable.name,
-                         "Inferring to", parameter.type.accept(Dumper()))
-            variable.type = parameter.type
-            return
 
     # special case: if the VarExp is part of a FuncCallExp that is part of a
     # CaseStmt, it is in fact not a VarExp but a VarDecl (TODO: fix this higher)
@@ -168,7 +157,7 @@ class Inferrer(SemanticChecker):
         for argument in functioncall.arguments:
           if isinstance(argument, VariableExp) and argument.name == variable.name:
             self.success("Found CaseFuncCall with decl for", variable.name,
-                         "Inferring to", parameter.type.accept(Dumper()))
+                         "Inferring to", str(parameter.type))
             variable.type = parameter.type
             return
           if isinstance(argument, ListLiteralExp):
@@ -176,7 +165,7 @@ class Inferrer(SemanticChecker):
               if isinstance(item, VariableExp) and item.name == variable.name:
                 self.success("Found CaseFuncCall in list with decl for", 
                              variable.name,
-                             "Inferring to", item.type.accept(Dumper()))
+                             "Inferring to", str(item.type))
                 variable.type = item.type
                 return
     
@@ -188,11 +177,50 @@ class Inferrer(SemanticChecker):
     pass
 
   def infer_FunctionExp(self, exp):
-    # original: UnknownType
-    # we need to find the function (declaration) and reuse it's type
-    pass
+    try:
+      exp.type = self.env[exp.name].type
+      self.success("Found declaration for FunctionExp in environment", exp.name,
+                   "Inferred type to", str(exp.type))
+      return
+    except: pass
+    parents = list(reversed(self.stack))[1:]
+
+    # it's not in the environment
+
+    # special case 1: It's the event FunctionExp of a When ExecutionStrategy
+    if isinstance(parents[0], When):
+      # it now expresses a method on the scope, try to retrieve it
+      try:
+        exp.type = parents[0].scope.get_function(exp.name)['type']
+        self.success("Found declaration for FunctionExp in scope-method",
+                     "Inferred type to", str(exp.type))
+        return
+      except: pass
+
+    # I'm out of ideas ;-)
+    self.fail("Couldn't retrieve type from declaration for FunctionExp",
+               exp.name)
 
   def infer_PropertyExp(self, exp):
     # original: UnknownType()
     # we need to retrieve the type of the property on the object
     pass
+
+  def infer_FunctionCallExp(self, call):
+    # If we can access the FunctionDecl, check that it's parameters are typed,
+    # else infer them from our arguments. This can happen multiple times, but
+    # that is good, because the type of the parameters can only change once. If
+    # multiple situations lead to different typing, we have a problem.
+    name = call.function.name
+    if name in self.env:
+      function = self.env[name]
+      assert isinstance(function, FunctionDecl)
+      for index, parameter in enumerate(function.parameters):
+        if isinstance(parameter.type, UnknownType):
+          if not isinstance(call.arguments[index].type, UnknownType):
+            parameter.type = call.arguments[index].type
+            self.success("Pushed up argument type to parameter", name, 
+                         parameter.name, "Inferred to", parameter.type)
+          else:
+            self.fail("Couldn't push up argument type to parameter.", name,
+                      parameter.name)

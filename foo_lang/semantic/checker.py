@@ -25,6 +25,10 @@ class Checker(SemanticChecker):
     self.assertNotIsInstance( function.type, UnknownType, \
                               "function return type is Unknown", function.name )
 
+  def check_FunctionCallExp(self, call):
+    self.assertNotIsInstance( call.type, UnknownType, \
+                              "functioncall return type is Unknown", call.name )
+
   # Optional attributes that seem to be missing
 
   def check_Scope(self, scope):
@@ -33,8 +37,8 @@ class Checker(SemanticChecker):
   # Definitions
 
   def check_VariableExp(self, variable):
-    self.assertNotIsInstance(variable.type, UnknownType, 
-                             "variable type is Unknown", variable.name)
+    if variable.name in self.env: return
+    self.fail("Variable has no definition.", variable.name)
 
   def check_ObjectExp(self, obj):
     pass
@@ -42,26 +46,19 @@ class Checker(SemanticChecker):
 
   def check_FunctionExp(self, function):
     """
-    Every expressed function (read: name), should be known. It can be:
-    - in an External
-    - in a FunctionDecl
-    - some special cases
+    Every expressed function (read: its name), should be known (read: be in the
+    environment)
     """
-    module = self.stack[1]
+    self.assertNotIsInstance(function.type, UnknownType, \
+                             "FunctionExp type is Unknown", function.name)
+
+    parents = list(reversed(self.stack))[1:]  # up the chain, remove ourself
     
-    # print "-" * 25
-    # print "looking for", function.name
-    # print self.env
-    # print "-" * 25
     if function.name in self.env: return
-
-    # HERE CONTINUE introduction environment-based checking
-
-    parents = list(reversed(self.stack))
 
     # special case 1: function is handler for and ExecutionStrategy
     # example: Model > Module(heartbeat) > When(receive) > FunctionExp(receive)
-    parent = parents[1]
+    parent = parents[0]
     if isinstance(parent, ExecutionStrategy):
       if parent.scope.get_function(function.name): return
 
@@ -69,14 +66,20 @@ class Checker(SemanticChecker):
     # example: Model > Module(heartbeat) > When(receive) >
     #          FunctionDecl(anonymous1) > BlockStmt > CaseStmt(payload) >
     #          FunctionCallExp(contains) > FunctionExp(contains)
-    parent      = parents[1]
-    grandparent = parents[2]
+    parent      = parents[0]
+    grandparent = parents[1]
     if isinstance(parent, FunctionCallExp) and isinstance(grandparent, CaseStmt):
       # function is a method on the expressed object of the CaseStmt
       # we need to check if that object actually provides this method
       if isinstance(grandparent.expression.type, ComplexType) and \
          function.name in grandparent.expression.type.provides: return
 
+
+    print "-" * 25
+    print "NOT FOUND:", function.name
+    print parents
+    print self.env
+    print "-" * 25
+
     # don't know where to look anymore
-    self.fail("FunctionExp has no definition. Did you miss an import?", \
-              function.name)
+    self.fail("FunctionExp has no definition.", function.name)

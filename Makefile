@@ -1,4 +1,4 @@
-SRCS=examples/heartbeat.foo examples/reputation.foo
+SRCS=examples/heartbeat.foo #examples/reputation.foo
 
 ANTLR=java -cp lib/antlr-3.1.jar org.antlr.Tool
 PYTHON=PYTHONPATH=. /opt/local/bin/python2.7
@@ -21,7 +21,7 @@ FOO=$(PYTHON) foo.py
 
 OUTPUT=out
 
-all: clean test infer-check # generate pdf coverage generate beautify show
+all: clean test # infer-check generate pdf coverage generate beautify show
 
 %.ast: %.foo parser
 	@echo "*** pasring $< and dumping AST into $@"
