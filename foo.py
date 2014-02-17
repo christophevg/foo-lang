@@ -24,6 +24,7 @@ def load(args):
   for source in args.sources:
     if args.verbose: print "  -", source.name
     api.load(source.read(), model)
+    source.seek(0)
   return model
 
 def indent_ast(tree, level=0):
@@ -41,11 +42,13 @@ def dump_dot(args, model=None):
   if args.verbose: print "foo: generating DOT"
   for source in args.sources:
     print antlr3.extras.toDOT(api.parse(source.read()).tree)
+    source.seek(0)
 
 def dump_ast(args, model=None):
   if args.verbose: print "foo: generating AST"
-  for source in sources:
+  for source in args.sources:
     print indent_ast(api.parse(source.read()).tree)
+    source.seek(0)
 
 def generate_code(args, model=None):
   if model is None: model = load(args)
