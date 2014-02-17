@@ -255,6 +255,7 @@ class SemanticHandler(SemanticVisitor):
 
   @stacked
   def handle_MatchExp(self, exp):
+    # TODO remove this dependency on string operator
     if not isstring(exp.operator):
       exp.operator.accept(self)
     if exp.operand != None:
