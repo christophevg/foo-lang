@@ -54,6 +54,13 @@ class Dumper(SemanticVisitorBase):
     
     for execution in module.executions:
       string += execution.accept(self) + "\n"
+      
+    for function in module.functions:
+      # we only want to handle non-anonymous function declarations here
+      # because anonymous declarations are declared in their specific scope
+      # TODO: do this in a cleaner way (AnonFunctionDecl?)
+      if function.name[0:9] != "anonymous":
+        string += function.accept(self)
 
     return string
 
