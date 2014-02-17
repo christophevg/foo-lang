@@ -52,6 +52,11 @@ class TestEnvironment(unittest.TestCase):
     def bad(): self.env.reduce()
     self.assertRaises(RuntimeError, bad)
 
+  def test_stringification_of_environment(self):
+    self.create_environment()
+    self.assertEqual(str(self.env), 
+                     "abc : abc2\ndef : def2\n  abc : abc1\n  def : def1\n" )
+
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestEnvironment)
   unittest.TextTestRunner(verbosity=2).run(suite)

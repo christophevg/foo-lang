@@ -34,3 +34,12 @@ class Environment():
       return True
     except KeyError:
       return False
+
+  def __repr__(self):
+    indent = 0
+    string = ""
+    for env in self.envs:
+      for key, value in env.items():
+        string += "  " * indent + str(key) + " : " + str(value) + "\n"
+      indent += 1
+    return string
