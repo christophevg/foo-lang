@@ -3,7 +3,7 @@
 # fill in the (missing) optional types
 # author: Christophe VG
 
-from foo_lang.semantic.handler import SemanticChecker, SemanticHandler
+from foo_lang.semantic.visitor import SemanticChecker, SemanticVisitor
 from foo_lang.semantic.model   import *
 from foo_lang.semantic.dumper  import Dumper
 
@@ -40,7 +40,7 @@ class Inferrer(SemanticChecker):
     # if the body doesn't contain a ReturnStmt or the ReturnStmt doesn't carry
     # an expression to return, the return-type=void
     class TypedReturnDetectedException(Exception): pass
-    class ReturnDetector(SemanticHandler):
+    class ReturnDetector(SemanticVisitor):
       def handle_ReturnStmt(self, stmt):
         if not stmt.expression is None:
           # currently no in scope

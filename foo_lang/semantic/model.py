@@ -33,6 +33,10 @@ class Domain(Visitable):
 
   def get_function(self, function_name):
     return None
+  
+  def get_name(self):
+    return self.__class__.__name__.lower()
+  name = property(get_name)
 
 @nohandling
 class Scope(Visitable):
@@ -514,4 +518,4 @@ class MatchExp(Exp):
 # VISITOR
 
 @visitor_for([Visitable])
-class SemanticVisitor(): pass
+class SemanticVisitorBase(): pass

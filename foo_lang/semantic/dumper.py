@@ -3,7 +3,7 @@
 # author: Christophe VG
 
 from util.check              import isstring
-from foo_lang.semantic.model import SemanticVisitor, UnknownType
+from foo_lang.semantic.model import SemanticVisitorBase, UnknownType
 
 # Helper decorator for indenting foo-syntax
 def indent(method):
@@ -11,7 +11,7 @@ def indent(method):
     return "  " * self.indent_level + method(self, obj)
   return wrapped
 
-class Dumper(SemanticVisitor):
+class Dumper(SemanticVisitorBase):
   def __init__(self):
     self.indent_level = 0
 

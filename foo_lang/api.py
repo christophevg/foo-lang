@@ -11,7 +11,7 @@ from foo_lang.parser.foo_langParser  import foo_langParser
 
 from foo_lang.semantic.model         import Model
 from foo_lang.semantic.domains.nodes import Nodes
-from foo_lang.semantic.visitor       import Visitor
+from foo_lang.semantic.visitor       import AstVisitor
 
 from foo_lang.semantic.checker       import Checker
 from foo_lang.semantic.inferrer      import Inferrer
@@ -56,7 +56,7 @@ def load(string, model=None):
   if model == None: model = create_model()
   if not model.domains['nodes']: model.domains['nodes'] = Nodes()
 
-  Visitor(model).visit(parse(string).tree)
+  AstVisitor(model).visit(parse(string).tree)
   return model
 
 def check(model):

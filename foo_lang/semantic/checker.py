@@ -3,8 +3,7 @@
 # author: Christophe VG
 
 from foo_lang.semantic.model   import *
-from foo_lang.semantic.handler import SemanticChecker
-from foo_lang.semantic.typer   import Typer
+from foo_lang.semantic.visitor import SemanticChecker
 
 class Checker(SemanticChecker):
 
