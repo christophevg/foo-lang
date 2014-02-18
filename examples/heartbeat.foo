@@ -18,10 +18,10 @@ const validation_interval    = 5000    // check nodes every 5 seconds
 
 // imports general purpose functionality. this is done explicit to avoid lookup
 // through all possible collections of functions. function collections are
-// simple C modules of which the public functions can be called. using python-
-// based transformations arguments are mapped back and forth.
-from crypto import sha1
-from time   import now
+// simple C modules of which the public functions can be called.
+// importing functions require full typing of the prototype
+from crypto import sha1(byte**) : byte*
+from time   import now()        : integer
 
 // modules can be extended. the implications can differ. here the internal
 // representation of a node is extended with some properties that are specific

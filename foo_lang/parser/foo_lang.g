@@ -15,10 +15,11 @@ options {
 tokens {  // must be declared here/before use, not with other real tokens below
   ANNOTATED; ANNOTATION; ANON_FUNC_DECL; ANYTHING; APPLY; ARGS; ATOM_LITERAL;
   BLOCK; BOOLEAN_LITERAL; CASE; CASES; CONST; DEC; DOMAIN; EXTEND; EXTERNAL;
-  FLOAT_LITERAL; FUNC_CALL; FUNC_DECL; FUNC_REF; IDENTIFIER; IF; IMPORT; INC;
-  INTEGER_LITERAL; LIST_LITERAL; MANY_TYPE_EXP; MATCH_EXP; METHOD_CALL; MODULE;
-  OBJECT_LITERAL; OBJECT_REF; ON; PARAMS; PROPERTY_EXP; PROPERTY_LITERAL;
-  RETURN; ROOT; TUPLE_TYPE_EXP; TYPE_EXP; UNKNOWN_TYPE; VALUE; VAR_EXP;
+  FLOAT_LITERAL; FUNC_CALL; FUNC_DECL; FUNC_PROTO; FUNC_REF; IDENTIFIER; IF;
+  IMPORT; INC; INTEGER_LITERAL; LIST_LITERAL; MANY_TYPE_EXP; MATCH_EXP;
+  METHOD_CALL; MODULE; OBJECT_LITERAL; OBJECT_REF; ON; PARAMS; PROPERTY_EXP;
+  PROPERTY_LITERAL; RETURN; ROOT; TUPLE_TYPE_EXP; TYPE_EXP; UNKNOWN_TYPE;
+  VALUE; VAR_EXP;
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -94,6 +95,13 @@ scoping
 domain: identifier -> ^(DOMAIN identifier);
 
 event_timing: 'before' | 'after';
+
+function_prototype
+  : identifier LPAREN (function_param_type_list)? RPAREN COLON type
+  -> ^(FUNC_PROTO identifier type function_param_type_list?)
+  ;
+
+function_param_type_list: t+=type (COMMA t+=type)* -> ^(PARAMS $t+);
 
 function_declaration
   : 'function' identifier LPAREN (function_param_list)? RPAREN function_body
@@ -232,8 +240,8 @@ object_expression
 
 directive : import_directive;
 
-import_directive : 'from' identifier 'import' identifier
-                   -> ^(IMPORT identifier identifier);
+import_directive : 'from' identifier 'import' function_prototype
+                   -> ^(IMPORT identifier function_prototype);
 
 // EXTENSIONS
 

@@ -40,6 +40,7 @@ class AstVisitor():
 
       "ANON_FUNC_DECL"  : self.handle_anon_func_decl,
       "FUNC_DECL"       : self.handle_func_decl,
+      "FUNC_PROTO"      : self.handle_func_proto,
       "ON"              : self.handle_event_handler_decl,
       
       "BLOCK"           : self.handle_block_stmt,
@@ -151,7 +152,7 @@ class AstVisitor():
     children = tree.getChildren()
     module   = self.visit(children[0])
     function = self.visit(children[1])
-    self.current_module.externals[function.name] = module.name
+    self.current_module.externals[function.name] = function
   
   def handle_annotated(self, tree):
     assert tree.text == "ANNOTATED"
@@ -212,10 +213,29 @@ class AstVisitor():
     self.current_module.functions.append(function)
     return function
 
+  def handle_func_proto(self, tree):
+    assert tree.text == "FUNC_PROTO"
+    children   = tree.getChildren()
+    name       = self.visit(children[0])
+    type       = self.visit(children[1])
+    if len(children) > 2:
+      parameter_types = self.handle_parameter_types(children[2])
+    else:
+      parameter_types = []
+    prototype = FunctionDecl(BlockStmt(), identifier=name, parameters=parameter_types)
+    prototype.type = type
+    return prototype
+
   def handle_parameters(self, tree):
     assert tree.text == "PARAMS"
     parameters = tree.getChildren()
     return [Parameter(self.visit(parameter)) for parameter in parameters]
+
+  def handle_parameter_types(self, tree):
+    assert tree.text == "PARAMS"
+    parameter_types = tree.getChildren()
+    return [Parameter(Identifier("name"+str(index)), type=self.visit(parameter_type)) \
+              for index, parameter_type in enumerate(parameter_types)]
 
   def handle_event_handler_decl(self, tree):
     assert tree.text == "ON"
@@ -509,8 +529,8 @@ class SemanticVisitor(SemanticVisitorBase):
     for constant in module.constants:
       constant.accept(self)
     
-    for function, library in module.externals.items():
-      self.env[function] = library
+    for name, function in module.externals.items():
+      self.env[name] = function
     
     for extension in module.extensions:
       extension.accept(self)

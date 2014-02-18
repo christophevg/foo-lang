@@ -19,7 +19,8 @@ const max_fail_count              =    3
 const aging_weight                = 0.98  // factor to age reputation
 const indirect_threshold  : float = 0.9   // lower limit for including indirect
 
-from time import now
+// importing functions require full typing
+from time import now() : integer
 
 extend nodes with {
   queue      : [timestamp, byte*]*   = []
