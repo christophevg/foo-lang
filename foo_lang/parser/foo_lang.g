@@ -279,11 +279,17 @@ list_literal
   ;
 
 type
-  : basic_type '*' -> ^(MANY_TYPE_EXP basic_type)
+  : many_type '*'  -> ^(MANY_TYPE_EXP many_type)    // support for type**
+  | many_type      -> many_type
   | basic_type     -> basic_type
   | tuple_type '*' -> ^(MANY_TYPE_EXP tuple_type)
   | tuple_type     -> tuple_type
   ;
+
+many_type
+  : basic_type '*' -> ^(MANY_TYPE_EXP basic_type)
+  ;
+
 basic_type: type_identifier -> ^(TYPE_EXP type_identifier);
 type_identifier
   : t='byte'      -> ^(IDENTIFIER $t)
