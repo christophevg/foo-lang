@@ -15,14 +15,17 @@ from test.environment import TestEnvironment
 from test.infercheck  import TestInferCheck
 
 if __name__ == '__main__':
-  exp_tests         = unittest.TestLoader().loadTestsFromTestCase(TestExpressions)
-  stmt_tests        = unittest.TestLoader().loadTestsFromTestCase(TestStatements)
-  model_tests       = unittest.TestLoader().loadTestsFromTestCase(TestModel)
-  parser_tests      = unittest.TestLoader().loadTestsFromTestCase(TestParser)
-  integration_tests = unittest.TestLoader().loadTestsFromTestCase(TestIntegration)
-  code_tests        = unittest.TestLoader().loadTestsFromTestCase(TestCode)
-  environment_tests = unittest.TestLoader().loadTestsFromTestCase(TestEnvironment)
-  infercheck_tests  = unittest.TestLoader().loadTestsFromTestCase(TestInferCheck)
+  tests = [ unittest.TestLoader().loadTestsFromTestCase(test)
+            for test in [ TestExpressions,
+                          TestStatements,
+                          TestModel,
+                          TestParser,
+                          TestIntegration,
+                          TestCode,
+                          TestEnvironment,
+                          TestInferCheck
+                         ]
+          ]
 
-  all_tests = unittest.TestSuite( [ infercheck_tests])
-  unittest.TextTestRunner(verbosity=2).run(all_tests)
+  all_tests = unittest.TestSuite( tests )
+  unittest.TextTestRunner(verbosity=1).run(all_tests)

@@ -12,7 +12,7 @@ class TestParser(unittest.TestCase):
   pass
 
 good = { "const"  : "const some_identifier = 123",
-         "import" : "from module_name import function_name",
+         "import" : "from module_name import function_name() : integer",
          "extend" : "extend module_name with {prop1 = 0 prop2 : boolean = true}"
        }
 
