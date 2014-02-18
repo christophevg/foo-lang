@@ -4,7 +4,7 @@
 # author: Christophe VG
 
 import foo_lang.semantic.model as model
-from foo_lang.code.instructions import *
+import foo_lang.code.instructions as code
 
 class Builder():
   def code(self):
@@ -15,7 +15,7 @@ class Module(Builder):
 
     self.sections = sections
     for section in sections:
-      self.__dict__[section] = InstructionList()
+      self.__dict__[section] = code.InstructionList()
 
     self.builders = builders
     for builder in builders:
@@ -23,28 +23,29 @@ class Module(Builder):
 
   def code(self):
     # merge sections into single InstructionList
-    code = InstructionList()
+    instructions = code.InstructionList()
     for section in self.sections:
       for instruction in self.__dict__[section]:
-        code.append(instruction)
-    return code
+        instructions.append(instruction)
+    return instructions
 
 class EventLoop(Builder):
   def __init__(self):
-    self.body = BlockStmt([])
+    self.body = code.BlockStmt([])
   def code(self):
-    return WhileDoStmt(BooleanLiteral(True), self.body)
+    return code.WhileDoStmt(code.BooleanLiteral(True), self.body)
 
 def Function(name, type=None, params={}, body=None):
-  type = UnknownType() if type == None else TypeExp(Identifier(type))
-  parameters = [ ParameterDecl(Identifier(name),TypeExp(Identifier(type)))
+  type = code.UnknownType() if type == None else code.TypeExp(code.Identifier(type))
+  parameters = [ code.ParameterDecl(code.Identifier(name), 
+                                    code.TypeExp(code.Identifier(type)))
                    for name, type in params.items() ]
-  return FunctionDecl( Identifier(name), type=type, parameters=parameters,
-                       body=body)
+  return code.FunctionDecl( code.Identifier(name), type=type, parameters=parameters,
+                            body=body)
 
 def Call(name, args=[]):
   arguments = [ Expression(arg) for arg in args]
-  return FunctionCallExp(Identifier(name), arguments)
+  return code.FunctionCallExp(code.Identifier(name), arguments)
 
 def Variable(name):
-  return SimpleVariableExp(Identifier(name))
+  return code.SimpleVariableExp(Identifier(name))
