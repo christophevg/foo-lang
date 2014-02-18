@@ -100,9 +100,11 @@ class TypedList(Visitable):
   def __len__(self):
     return len(self.objects)
   def index(self, obj):
-    return self.objects.index(obj)
+    try: return self.objects.index(obj)
+    except: return None
   def __getitem__(self, index):
-    return self.objects[index]
+    try: return self.objects[index]
+    except: return None
 
 class Constant(Visitable):
   def __init__(self, identifier, value, type=None):
@@ -349,7 +351,7 @@ class ManyType(ComplexType):
   def __init__(self, subtype):
     assert isinstance(subtype, TypeExp)
     self.subtype = subtype
-    self.provides = { "contains": {} }
+    self.provides = { "contains": { "type": BooleanType(), "args": ByteType() } }
 
 class TupleType(ComplexType):
   def __init__(self, types=[]):

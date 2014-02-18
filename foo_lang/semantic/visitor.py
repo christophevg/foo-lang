@@ -592,8 +592,8 @@ class SemanticVisitor(SemanticVisitorBase):
 
   @stacked
   def handle_AssignStmt(self, stmt):
-    stmt.variable.accept(self)
     stmt.value.accept(self)
+    stmt.variable.accept(self)
 
   @stacked
   def handle_AddStmt(self, stmt):
@@ -784,7 +784,8 @@ class SemanticChecker(SemanticVisitor):
   def fail(self, msg, *args):
     self.fails += 1
     self.log("failure: " + msg + " : " + str(*args),
-             "stack: " + " > ".join([self.show(obj) for obj in self._stack]))
+             "stack: " + " > ".join([self.show(obj) for obj in self._stack]),
+             "env: " + str(self.env))
 
   # TODO: move this to objects themselves :-(
   def show(self, obj):
@@ -809,10 +810,10 @@ class SemanticChecker(SemanticVisitor):
 
   def success(self, msg, *args):
     self.successes += 1
-    self.log("success: " + msg + " : " + " ".join([str(arg) for arg in args]))
+    if self.verbose:
+      self.log("success: " + msg + " : " + " ".join([str(arg) for arg in args]))
 
   def log(self, msg1, *msgs):
-    if not self.verbose: return
     print "foo-" + self.__class__.__name__.lower() + ": " + msg1
     for msg in msgs:
       if not msg is None:

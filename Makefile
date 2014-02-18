@@ -21,7 +21,7 @@ FOO=$(PYTHON) foo.py
 
 OUTPUT=out
 
-all: clean test # infer-check generate pdf coverage generate beautify show
+all: clean test infer-check generate pdf coverage generate beautify show
 
 %.ast: %.foo parser
 	@echo "*** pasring $< and dumping AST into $@"

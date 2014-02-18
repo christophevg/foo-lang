@@ -91,8 +91,8 @@ if __name__ == "__main__":
 
   model = load(args)
 
-  if args.infer: api.infer(model)
-  if args.check: api.check(model)
+  if args.infer: api.infer(model, silent=(not verbose))
+  if args.check: api.check(model, silent=(not verbose))
 
   {
     "none": lambda x,y: None,

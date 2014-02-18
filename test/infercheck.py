@@ -10,11 +10,11 @@ from foo_lang.semantic.model import *
 
 class TestInferCheck(unittest.TestCase):
 
-  def infer(self, model, successes, silent=True):
+  def infer(self, model, successes, failures=0, silent=True):
     # infer - no failures allowed
     results = api.infer(model, silent=silent)
     self.assertEqual(results["successes"], successes)
-    self.assertEqual(results["failures"],  0)
+    self.assertEqual(results["failures"],  failures)
     # check - checking should ALWAYS result in a valid model ;-)
     results = api.check(model, silent=silent)
     self.assertEqual(results["successes"], 0)
@@ -79,7 +79,24 @@ class TestInferCheck(unittest.TestCase):
     self.assertIsInstance(f["abc"].parameters[2].type, ManyType)    # payload
     self.assertIsInstance(m.executions[0].event.type, VoidType)
     self.assertIsInstance(m.executions[0].executed.type, VoidType)
-  
+
+  def test_case(self):
+    src = """
+    module test
+    after nodes receive do function(from, to, payload) {
+      case payload {
+        contains( [ #heartbeat, time, sequence, signature ] ) {}
+      }
+    }
+    """
+    model = api.load(src)
+
+    self.infer(model, 13)
+
+    # after (assert successes)
+    m = model.modules["test"]
+    f = m.functions
+
 if __name__ == "__main__":
   suite = unittest.TestLoader().loadTestsFromTestCase(TestInferCheck)
   unittest.TextTestRunner(verbosity=2).run(suite)

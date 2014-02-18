@@ -134,18 +134,24 @@ class Inferrer(SemanticChecker):
       variable.type = self.env[variable.name].type
       self.success("VariableExp referenced the environment.", variable.name, 
                    "Inferred type to", variable.type)
+      # the type might be Unknown, but inference below will fix this
+      if not isinstance(variable.type, UnknownType): return
 
     parents = list(reversed(self.stack))
 
-    # special case: if the VarExp is part of a FuncCallExp that is part of a
-    # CaseStmt, it is in fact not a VarExp but a VarDecl (TODO: fix this higher)
-    # we can then ignore it
+    # special case: if the VarExp is part of a ListLiteral as argument to 
+    # FuncCallExp that is part of a CaseStmt, it takes on the subtype of the
+    # ManyType that is the type of of the CaseStmt's expression
     if isinstance(parents[1], ListLiteralExp) and \
        isinstance(parents[2], FunctionCallExp) and \
        isinstance(parents[3], CaseStmt):
-      # TODO: map declaration to corresponding parameters
+      # TODO: add more checking
+      variable.type = parents[3].expression.type.subtype
+      self.success("VariableExp ", variable.name , 
+                   "is a VariableDecl for data of type",
+                   variable.type.accept(Dumper()))
       return
-
+  
     # a VarExp in a consequences Stmt of a CaseStmt can look for a same-name
     # VarExp in the corresponding cases FunctionCallExp of the CaseStmt
     for index in range(0,len(parents)):
@@ -168,6 +174,26 @@ class Inferrer(SemanticChecker):
                              "Inferring to", str(item.type))
                 variable.type = item.type
                 return
+    
+    # special case: variable from a functiondecl
+    # example: Model > Module(heartbeat) > FunctionDecl(broadcast_heartbeat) > 
+    #          BlockStmt > AssignStmt > VariableExp
+    for parent in parents:
+      if isinstance(parent, FunctionDecl):
+        if variable.name in parent.parameters:
+          variable.type = parent.parameters[variable.name].type
+          self.success("Found VariableDecl for ", variable.name, "in",
+                       "FunctionDecl for", parent.name, "Inferred type to",
+                       variable.type)
+          return
+
+    # special case: parent is assignment
+    if isinstance(parents[1], AssignStmt):
+      variable.type = parents[1].value.function.type
+      self.success("Inferred type of VariableExp", variable.name, "using type",
+                   "of Assigned value", variable.type)
+      return
+        
     
     self.fail("Couldn't find declaration for variable", variable.name)
 
@@ -196,6 +222,23 @@ class Inferrer(SemanticChecker):
                      "Inferred type to", str(exp.type))
         return
       except: pass
+    
+    # special case 2: a method on an object in a CaseStmt's exp should return
+    #                 BooleanType and this should match the actual method's type
+    # example: Model > Module(test) > When(receive) > FunctionDecl(anonymous0) 
+    #        > BlockStmt > CaseStmt(payload) > FunctionCallExp(contains)
+    #        > FunctionExp(contains)
+    if isinstance(parents[1], CaseStmt):
+      exp.type = BooleanType()
+      self.success("Found type of FunctionExp", exp.name, "on CaseStmt obj.",
+                   "Inferred type to", str(exp.type))
+      # check that it actually is
+      if not isinstance(parents[1].expression.type.provides[exp.name]['type'],
+                        BooleanType):
+        self.fail("Method", parents[1].expression.name, "provides",
+                  str(parents[1].expression.type), "but is not BooleanType but",
+                  str(parents[1].expression.type.provides(exp.name)['type']))
+      return
 
     # I'm out of ideas ;-)
     self.fail("Couldn't retrieve type from declaration for FunctionExp",
