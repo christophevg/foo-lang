@@ -21,10 +21,10 @@ FOO=$(PYTHON) foo.py
 
 OUTPUT=out
 
-all: clean test infer-check generate pdf coverage generate beautify show
+all: clean test pdf coverage generate beautify show
 
 %.ast: %.foo parser
-	@echo "*** pasring $< and dumping AST into $@"
+	@echo "*** parsing $< and dumping AST into $@"
 	@$(FOO) -g ast $< > $@ || (cat $@; rm $@; false)
 
 %.dot: %.foo parser
@@ -50,7 +50,7 @@ infer-check: parser
 generate: parser
 	@rm -rf $(OUTPUT)
 	@echo "*** generating code for $(SRCS)"
-	@$(FOO) -g code -o $(OUTPUT) $(SRCS)
+	@$(FOO) -g code -i -c -o $(OUTPUT) $(SRCS)
 
 beautify:
 	@$(ASTYLE) --recursive "$(OUTPUT)/*"
