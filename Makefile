@@ -1,4 +1,4 @@
-SRCS=examples/heartbeat.foo #examples/reputation.foo
+SRCS=examples/heartbeat.foo examples/reputation.foo
 
 ANTLR=java -cp lib/antlr-3.1.jar org.antlr.Tool
 PYTHON=PYTHONPATH=. /opt/local/bin/python2.7
@@ -27,13 +27,20 @@ all: clean test pdf coverage generate beautify show
 	@echo "*** parsing $< and dumping AST into $@"
 	@$(FOO) -g ast $< > $@ || (cat $@; rm $@; false)
 
-%.dot: %.foo parser
+%.ast.dot: %.foo parser
 	@echo "*** creating $@ from $<"
-	@$(FOO) -g dot $< > $@ || (cat $@; rm $@; false)
+	@$(FOO) -g ast-dot $< > $@ || (cat $@; rm $@; false)
+
+%.foo.dot: %.foo parser
+	@echo "*** creating $@ from $<"
+	@$(FOO) -g foo-dot $< > $@ || (cat $@; rm $@; false)
 
 %.pdf: %.dot
 	@echo "*** visualizing AST of $< as PDF $@"
 	@$(DOT) -Tpdf -o $@ $<
+
+shell: parser
+	$(PYTHON)	
 
 check: parser
 	@echo "*** checking model for $(SRCS)"
@@ -67,7 +74,9 @@ coverage:
 	@echo "*** generating unittest coverage report (based on last test run)"
 	@$(COVERAGE) report -m --omit 'foo_lang/parser/foo_lang*.py,*__init__.py,test/*'
 
-pdf: $(SRCS:.foo=.pdf)
+pdf: ast-pdf foo-pdf
+ast-pdf: $(SRCS:.foo=.ast.pdf)
+foo-pdf: $(SRCS:.foo=.foo.pdf)
 
 foo: parser
 	@echo "*** loading $(SRCS) into a model and dumping in foo-lang"
@@ -86,8 +95,8 @@ $(PARSER): $(APP)/parser/$(APP).g
 
 clean:
 	@rm -f $(ANTLR_OUT)
-	@rm -f *.dot *.dump
-	@rm -f ../*.{dot,png,pdf,dump}
+	@rm -f *.dot
+	@rm -f ../*.{dot,png,pdf}
 
 mrproper: clean
 	@(cd $(APP)/parser/; \

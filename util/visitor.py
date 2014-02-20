@@ -15,16 +15,7 @@ class Visitable(object):
   def accept(self, visitor):
     class_name  = self.handler()
     method_name = "handle_" + class_name
-    try:
-      return getattr(visitor, method_name)(self)
-    except AttributeError, e:
-      print visitor.__class__.__name__, "doesn't provide", method_name, \
-            "(", e,")"
-      raise
-    # except:
-    #   print visitor.__class__.__name__, ": Unexpected exception in", \
-    #         method_name, ":", sys.exc_info()[1]
-    #   raise
+    return getattr(visitor, method_name)(self)
 
 class Visitor(object):
   """

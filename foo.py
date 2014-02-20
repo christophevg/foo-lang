@@ -16,7 +16,7 @@ import antlr3.extras
 
 from foo_lang                 import api
 from foo_lang.generator       import build
-from foo_lang.semantic.dumper import Dumper
+from foo_lang.semantic.dumper import Dumper, DotDumper
 
 def load(args):
   if verbose: print "foo: loading sources into model"
@@ -38,16 +38,21 @@ def dump_foo(args, model=None):
   if args.verbose: print "foo: generating FOO"
   print model.accept(Dumper())
 
-def dump_dot(args, model=None):
-  if args.verbose: print "foo: generating DOT"
-  for source in args.sources:
-    print antlr3.extras.toDOT(api.parse(source.read()).tree)
-    source.seek(0)
+def dump_foo_dot(args, model=None):
+  if model is None: model = load(args)
+  if args.verbose: print "foo: generating FOO-DOT"
+  print DotDumper().dump(model)
 
 def dump_ast(args, model=None):
   if args.verbose: print "foo: generating AST"
   for source in args.sources:
     print indent_ast(api.parse(source.read()).tree)
+    source.seek(0)
+
+def dump_ast_dot(args, model=None):
+  if args.verbose: print "foo: generating AST-DOT"
+  for source in args.sources:
+    print antlr3.extras.toDOT(api.parse(source.read()).tree)
     source.seek(0)
 
 def generate_code(args, model=None):
@@ -69,8 +74,8 @@ if __name__ == "__main__":
   parser.add_argument("-i", "--infer", help="perform model type inferring",
                       action="store_true")
   parser.add_argument("-g", "--generate",
-                      help="output format " + choice_default,
-                      default="none", choices=["none", "foo", "dot", "ast", "code"],
+                      help="output format " + choice_default, default="none",
+                      choices=["none", "foo", "foo-dot", "ast", "ast-dot", "code"],
                       metavar='FORMAT')
   parser.add_argument("sources", type=file, nargs="*",
                       help="the source files in foo-lang")
@@ -96,8 +101,9 @@ if __name__ == "__main__":
 
   {
     "none": lambda x,y: None,
-    "foo" : dump_foo,
-    "dot" : dump_dot,
-    "ast" : dump_ast,
-    "code": generate_code
+    "foo"     : dump_foo,
+    "foo-dot" : dump_foo_dot,
+    "ast"     : dump_ast,
+    "ast-dot" : dump_ast_dot,
+    "code"    : generate_code
   }[args.generate](args, model)

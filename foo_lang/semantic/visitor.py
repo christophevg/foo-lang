@@ -476,13 +476,19 @@ def stacked(method):
     self._stack.append(obj)
     if self.bottom_up: method(self, obj)
     if self.prefix != None and self.prefix != "handle_":
+      method_name = self.prefix + obj_name
+      # TODO: find nicer Pythonic way to structure this :-(
       try:
-        external_handler = getattr(self, self.prefix + obj_name)
-        external_handler(obj)
-      except AttributeError:
-        # possibly there is no handler
-        # print "not handling", part_name
-        pass
+        getattr(self, method_name)(obj)
+      except AttributeError, e:
+        expected = "'{0}' object has no attribute '{1}'".format(
+                     self.__class__.__name__, method_name)
+        if str(e) != expected:
+          # Whoops some other AttributeError ... while calling
+          raise
+        else:
+          # no handler, that's ok
+          pass
     if self.top_down: method(self, obj)
     self._stack.pop()
   return wrapped
@@ -508,6 +514,9 @@ class SemanticVisitor(SemanticVisitorBase):
 
   def get_stack(self): return self._stack
   stack = property(get_stack)
+  
+  def stack_as_string(self):
+    return " > ".join([str(obj) for obj in self._stack])
 
   # HANDLERS IMPLEMENTING VISITOR and adding a handle call
 
@@ -694,6 +703,7 @@ class SemanticVisitor(SemanticVisitorBase):
     try:
       prev = self.env[var.name]
     except KeyError:
+      # print "AUTO-DECL", var.name, "Stack=", self.stack_as_string(), "Env=", str(self.env)
       self.env[var.name] = var
   
   @stacked
@@ -783,30 +793,9 @@ class SemanticChecker(SemanticVisitor):
 
   def fail(self, msg, *args):
     self.fails += 1
-    self.log("failure: " + msg + " : " + str(*args),
-             "stack: " + " > ".join([self.show(obj) for obj in self._stack]),
-             "env: " + str(self.env))
-
-  # TODO: move this to objects themselves :-(
-  def show(self, obj):
-    name   = obj.__class__.__name__
-    try:
-      attrib = {
-                 'FunctionDecl'    : 'name',
-                 'FunctionExp'     : 'name',
-                 'FunctionCallExp' : 'function',
-                 'CaseStmt'        : 'expression',
-                 'Every'           : 'interval',
-                 'When'            : 'event',
-                 'Module'          : 'name',
-                 'Parameter'       : 'name'
-               }[name]
-      attrib = getattr(obj, attrib)
-      if isinstance(attrib, Visitable):
-        attrib = attrib.accept(Dumper())
-      return name + "(" + attrib + ")"
-    except KeyError: pass
-    return name
+    self.log("failure: " + msg + " : " + " ".join([str(arg) for arg in args]),
+             "stack:\n" + self.stack_as_string(),
+             "env:\n" + str(self.env))
 
   def success(self, msg, *args):
     self.successes += 1
@@ -814,10 +803,10 @@ class SemanticChecker(SemanticVisitor):
       self.log("success: " + msg + " : " + " ".join([str(arg) for arg in args]))
 
   def log(self, msg1, *msgs):
-    print "foo-" + self.__class__.__name__.lower() + ": " + msg1
+    print self.name + ": " + msg1.replace("\n", "\n      ")
     for msg in msgs:
       if not msg is None:
-        print " " * len(self.name) + "  " + msg
+        print "    " + msg.replace("\n", "\n      ")
 
   # ASSERTIONS HELPERS
 

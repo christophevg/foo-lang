@@ -26,7 +26,7 @@ class Generator():
 
     self.domain_generators = {}
 
-  def __repr__(self):
+  def __str__(self):
     return "generating to " + self.output + " using " + self.language + \
                      " on " + self.platform
 

@@ -129,7 +129,7 @@ class Comment(Stmt):
   def __init__(self, comment):
     assert isstring(comment)
     self.comment = comment
-  def __repr__(self):
+  def __str__(self):
     return self.comment
 
 @nohandling

@@ -134,7 +134,7 @@ class Inferrer(SemanticChecker):
       variable.type = self.env[variable.name].type
       self.success("VariableExp referenced the environment.", variable.name, 
                    "Inferred type to", variable.type)
-      # the type might be Unknown, but inference below will fix this
+      # the type might be Unknown, but inference below should fix this
       if not isinstance(variable.type, UnknownType): return
 
     parents = list(reversed(self.stack))
@@ -189,13 +189,26 @@ class Inferrer(SemanticChecker):
 
     # special case: parent is assignment
     if isinstance(parents[1], AssignStmt):
-      variable.type = parents[1].value.function.type
-      self.success("Inferred type of VariableExp", variable.name, "using type",
-                   "of Assigned value", variable.type)
+      # print "=============", parents[1].value
+      try:
+        variable.type = parents[1].value.type
+      except Exception, e:
+        self.fail("UNSUPPORTED assignment value expression:",
+                  parents[1].value.__class__.__name__, e )
+  
+      if isinstance(variable.type, UnknownType):
+        self.fail("VariableExp is part of assignment, but couldn't infer",
+                  "type of expression", parents[1].value)
+      else:
+        self.success("Inferred type of VariableExp", variable.name, "using type",
+                     "of Assigned value", variable.type)
       return
-        
-    
+
     self.fail("Couldn't find declaration for variable", variable.name)
+
+  def infer_BinaryExp(self, exp):
+    # print "*" * 100, exp.operator(), exp.left, exp.right
+    pass
 
   def infer_ObjectExp(self, exp):
     # original : self._type = UnknownType()
@@ -243,6 +256,10 @@ class Inferrer(SemanticChecker):
     # I'm out of ideas ;-)
     self.fail("Couldn't retrieve type from declaration for FunctionExp",
                exp.name)
+
+  def infer_MethodCallExp(self, call):
+    # print "TODO: METHODCALL:", str(call)
+    pass
 
   def infer_PropertyExp(self, exp):
     # original: UnknownType()

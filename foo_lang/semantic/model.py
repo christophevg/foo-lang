@@ -11,6 +11,7 @@ class Identifier(Visitable):
   def __init__(self, name):
     assert isidentifier(name), "bad identifier name " + str(name)
     self.name = name
+  def __str__(self): return self.__class__.__name__ + "(" + self.name + ")"
 
 class Model(Visitable):
   """
@@ -19,6 +20,7 @@ class Model(Visitable):
   def __init__(self):
     self.modules = {}
     self.domains = {}
+  def __str__(self): return self.__class__.__name__
 
 @nohandling
 class Domain(Visitable):
@@ -38,6 +40,8 @@ class Domain(Visitable):
     return self.__class__.__name__.lower()
   name = property(get_name)
 
+  def __str__(self): return self.__class__.__name__ + "(" + self.name + ")"
+
 @nohandling
 class Scope(Visitable):
   def __init__(self, domain):
@@ -47,6 +51,8 @@ class Scope(Visitable):
 
   def handler(self):
     return "Scope"
+
+  def __str__(self): return self.__class__.__name__ + "(" + self.domain.name + ")"
 
 class Module(Visitable):
   """
@@ -66,6 +72,7 @@ class Module(Visitable):
     self.functions  = NamedTypedOrderedDict(FunctionDecl)
   def get_name(self): return self.identifier.name
   name = property(get_name)
+  def __str__(self): return self.__class__.__name__ + "(" + self.name + ")"
 
 @nohandling
 class NamedTypedOrderedDict(Visitable):
@@ -120,6 +127,7 @@ class Constant(Visitable):
     self.value      = value
   def get_name(self): return self.identifier.name
   name = property(get_name)
+  def __str__(self): return self.__class__.__name__ + "(" + self.name + ")"
 
 class Extension(Visitable):
   def __init__(self, domain, extension):
@@ -131,6 +139,7 @@ class Extension(Visitable):
            " but expected an ObjectLiteralExp"
     self.domain    = domain
     self.extension = extension
+  def __str__(self): return self.__class__.__name__
 
 @nohandling
 class ExecutionStrategy(Visitable):
@@ -141,6 +150,7 @@ class ExecutionStrategy(Visitable):
     assert isinstance(function, FunctionExp) or isinstance(function, FunctionDecl)
     self.scope    = scope
     self.executed = function
+  def __str__(self): return self.__class__.__name__ + "(" + str(self.scope) + ")"
 
 class Every(ExecutionStrategy):
   """
@@ -183,6 +193,7 @@ class FunctionDecl(Visitable):
     self.type       = type
   def get_name(self): return self.identifier.name
   name = property(get_name)
+  def __str__(self): return self.__class__.__name__ + "(" + self.name + ")"
 
 class Parameter(Visitable):
   def __init__(self, identifier, type=None):
@@ -199,6 +210,7 @@ class Parameter(Visitable):
   type = property(get_type, set_type)
   def get_name(self): return self.identifier.name
   name = property(get_name)
+  def __str__(self): return self.__class__.__name__ + "(" + self.name + ")"
 
 # STATEMENTS
 
@@ -208,6 +220,7 @@ class Stmt(Visitable): pass
 class BlockStmt(Stmt):
   def __init__(self, statements=[]):
     self.statements = TypedList(Stmt, statements)
+  def __str__(self): return self.__class__.__name__
 
 @nohandling
 class VariableValueStmt(Stmt):
@@ -216,6 +229,7 @@ class VariableValueStmt(Stmt):
     assert isinstance(value, Exp)
     self.variable = variable
     self.value    = value
+  def __str__(self): return self.__class__.__name__ + "(" + str(self.variable) + "," + str(self.value) + ")"
 
 class AssignStmt(VariableValueStmt): pass
 class AddStmt(VariableValueStmt): pass
@@ -226,6 +240,7 @@ class VariableStmt(Stmt):
   def __init__(self, variable):
     assert isinstance(variable, VariableExp) or isinstance(variable, PropertyExp)
     self.variable = variable
+  def __str__(self): return self.__class__.__name__ + "(" + str(self.variable) + ")"
 
 class IncStmt(VariableStmt): pass
 class DecStmt(VariableStmt): pass
@@ -238,6 +253,7 @@ class IfStmt(Stmt):
     self.condition = condition
     self.true      = true
     self.false     = false
+  def __str__(self): return self.__class__.__name__ + "(" + str(self.condition) + ")"
 
 class CaseStmt(Stmt):
   def __init__(self, expression, cases, consequences):
@@ -247,11 +263,13 @@ class CaseStmt(Stmt):
     self.expression   = expression
     self.cases        = TypedList(FunctionCallExp, cases)
     self.consequences = TypedList(Stmt, consequences)
+  def __str__(self): return self.__class__.__name__ + "(" + str(self.expression) + ")"
 
 class ReturnStmt(Stmt):
   def __init__(self, expression=None):
     assert expression == None or isinstance(expression, Exp)
     self.expression = expression
+  def __str__(self): return self.__class__.__name__
 
 # EXPRESSIONS
 
@@ -266,6 +284,7 @@ class Exp(Visitable):
     assert self._type == type or isinstance(self._type, UnknownType)
     self._type = type
   type = property(get_type, set_type)
+  def __str__(self): return self.__class__.__name__
 
 @nohandling
 class LiteralExp(Exp): pass
@@ -323,7 +342,7 @@ class Property(Visitable):
 
 @nohandling
 class TypeExp(Exp):
-  def __repr__(self): return self.__class__.__name__
+  def __str__(self): return self.__class__.__name__
 
 class UnknownType(TypeExp):
   def __init__(self):
@@ -490,6 +509,10 @@ class FunctionCallExp(Exp, Stmt):
     self.arguments = TypedList(Exp, arguments)
   def get_type(self):
     return self.function.type
+  type=property(get_type)
+  def get_name(self):
+    return self.function.name
+  name=property(get_name)
 
 class MethodCallExp(Exp, Stmt):
   def __init__(self, obj, identifier, arguments=[]):
@@ -505,6 +528,7 @@ class MethodCallExp(Exp, Stmt):
       return self.obj.type.provides[self.identifier]['type']
     except: pass
     return UnknownType()
+  type = property(get_type)
 
 class AnythingExp(Exp): pass
 

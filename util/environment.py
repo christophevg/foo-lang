@@ -35,7 +35,7 @@ class Environment():
     except KeyError:
       return False
 
-  def __repr__(self):
+  def __str__(self):
     indent = 0
     string = ""
     for env in self.envs:
