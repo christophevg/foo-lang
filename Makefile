@@ -31,12 +31,12 @@ all: clean test pdf coverage generate beautify show
 	@echo "*** creating $@ from $<"
 	@$(FOO) -g ast-dot $< > $@ || (cat $@; rm $@; false)
 
-%.foo.dot: %.foo parser
+%.sm.dot: %.foo parser
 	@echo "*** creating $@ from $<"
-	@$(FOO) -g foo-dot $< > $@ || (cat $@; rm $@; false)
+	@$(FOO) -i -g sm-dot $< > $@ || (cat $@; rm $@; false)
 
 %.pdf: %.dot
-	@echo "*** visualizing AST of $< as PDF $@"
+	@echo "*** visualizing $< as PDF $@"
 	@$(DOT) -Tpdf -o $@ $<
 
 shell: parser
@@ -76,7 +76,7 @@ coverage:
 
 pdf: ast-pdf foo-pdf
 ast-pdf: $(SRCS:.foo=.ast.pdf)
-foo-pdf: $(SRCS:.foo=.foo.pdf)
+foo-pdf: $(SRCS:.foo=.sm.pdf)
 
 foo: parser
 	@echo "*** loading $(SRCS) into a model and dumping in foo-lang"
@@ -96,7 +96,7 @@ $(PARSER): $(APP)/parser/$(APP).g
 clean:
 	@rm -f $(ANTLR_OUT)
 	@rm -f *.dot
-	@rm -f ../*.{dot,png,pdf}
+	@rm -f examples/*.{dot,png,pdf}
 
 mrproper: clean
 	@(cd $(APP)/parser/; \
@@ -104,4 +104,5 @@ mrproper: clean
 	@find . -name \*.pyc -type f -delete
 
 .PHONY: test clean
-.PRECIOUS: $(SRC:.foo=.dot)
+.PRECIOUS: $(SRC:.foo=.ast.dot) $(SRC:.foo=.sm.dot)
+.SECONDARY: $(SRC:.foo=.ast.dot) $(SRC:.foo=.sm.dot)

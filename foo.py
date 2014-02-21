@@ -38,9 +38,9 @@ def dump_foo(args, model=None):
   if args.verbose: print "foo: generating FOO"
   print model.accept(Dumper())
 
-def dump_foo_dot(args, model=None):
+def dump_sm_dot(args, model=None):
   if model is None: model = load(args)
-  if args.verbose: print "foo: generating FOO-DOT"
+  if args.verbose: print "foo: generating DOT for SM"
   print DotDumper().dump(model)
 
 def dump_ast(args, model=None):
@@ -75,7 +75,7 @@ if __name__ == "__main__":
                       action="store_true")
   parser.add_argument("-g", "--generate",
                       help="output format " + choice_default, default="none",
-                      choices=["none", "foo", "foo-dot", "ast", "ast-dot", "code"],
+                      choices=["none", "ast", "ast-dot", "sm-dot", "foo", "code"],
                       metavar='FORMAT')
   parser.add_argument("sources", type=file, nargs="*",
                       help="the source files in foo-lang")
@@ -101,9 +101,9 @@ if __name__ == "__main__":
 
   {
     "none": lambda x,y: None,
-    "foo"     : dump_foo,
-    "foo-dot" : dump_foo_dot,
     "ast"     : dump_ast,
     "ast-dot" : dump_ast_dot,
+    "sm-dot"  : dump_sm_dot,
+    "foo"     : dump_foo,
     "code"    : generate_code
   }[args.generate](args, model)
