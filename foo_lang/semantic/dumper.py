@@ -6,6 +6,7 @@ import inspect
 
 from util.support            import print_stderr
 from util.check              import isstring
+from util.dot                import DotBuilder
 
 from foo_lang.semantic.model import SemanticVisitorBase, UnknownType
 
@@ -257,71 +258,48 @@ class Dumper(SemanticVisitorBase):
 
 class DotDumper(object):
   def __init__(self):
-    self.declarations = []
-    self.index = 0
+    self.dot = DotBuilder()
     self.stack = []
-
-  def __str__(self):
-    return """
-digraph {
-  ordering=out;
-  ranksep=.4;
-  node [shape=plaintext, fixedsize=true, fontsize=11, fontname="Courier",
-        width=.25, height=.25];
-  edge [arrowsize=.5]
-""" + "\n".join(self.declarations) + "}"
-
-  def add_node(self, label, options={}):
-    node = "n" + str(self.index)
-    self.index+=1
-    options["label"] = label
-    self.declarations.append( node + "[" +  
-      ",".join(['{0}="{1}"'.format(k, v) for k, v in options.items()]) + "]" )
-    return node
-
-  def add_vertex(self, van, to, options={}):
-    self.declarations.append("{0} -> {1} [{2}];".format(van, to,
-      ",".join(['{0}="{1}"'.format(k, v) for k, v in options.items()])))
 
   def dump(self, obj):
     self.process(obj)
-    return str(self)
+    return str(self.dot)
 
   def process(self, obj):
     if obj.__repr__ in self.stack:
       # print_stderr("LOOP DETECTED: " + str(obj) + str(self.stack) + "\n")
-      return self.add_node(str(obj), {"style":"filled","color":"lightblue"})
+      return self.dot.node(str(obj), {"style":"filled","color":"lightblue"})
     self.stack.append(obj.__repr__)
 
-    if inspect.isclass(obj):   return self.add_node(obj.__name__)
-    if isstring(obj):          return self.add_node(str(obj))
-    if isinstance(obj, int):   return self.add_node(str(obj))
-    if isinstance(obj, float): return self.add_node(str(obj))
-    if isinstance(obj, bool):  return self.add_node(str(obj))
+    if inspect.isclass(obj):   return self.dot.node(obj.__name__)
+    if isstring(obj):          return self.dot.node(str(obj))
+    if isinstance(obj, int):   return self.dot.node(str(obj))
+    if isinstance(obj, float): return self.dot.node(str(obj))
+    if isinstance(obj, bool):  return self.dot.node(str(obj))
     
     if isinstance(obj, UnknownType): 
-      return self.add_node(obj.__class__.__name__, {"style":"filled", "color":"orange"})
+      return self.dot.node(obj.__class__.__name__, {"style":"filled", "color":"orange"})
 
     if isinstance(obj, dict):
-      node = self.add_node(obj.__class__.__name__)
+      node = self.dot.node(obj.__class__.__name__)
       for key, value in obj.items():
         if not value is None:
-          self.add_vertex(node, self.process(value), {"label":key})
+          self.dot.vertex(node, self.process(value), {"label":key})
     elif isinstance(obj, list):
-      node = self.add_node(obj.__class__.__name__)
+      node = self.dot.node(obj.__class__.__name__)
       for value in obj:
         if not value is None:
-          self.add_vertex(node, self.process(value))
+          self.dot.vertex(node, self.process(value))
     elif isinstance(obj, property):
       pass
     else:
       if obj.__module__ == "foo_lang.semantic.model":
-        node = self.add_node(obj.__class__.__name__, {"style":"filled", "color":"green"})
+        node = self.dot.node(obj.__class__.__name__, {"style":"filled", "color":"green"})
       else:
-        node = self.add_node(obj.__class__.__name__)
+        node = self.dot.node(obj.__class__.__name__)
       for key, value in obj.__dict__.items():
         if not value is None:
-          self.add_vertex(node, self.process(value), {"label":key})
+          self.dot.vertex(node, self.process(value), {"label":key})
 
     self.stack.pop()
     return node
