@@ -8,7 +8,7 @@ from util.support            import print_stderr
 from util.check              import isstring
 from util.dot                import DotBuilder
 
-from foo_lang.semantic.model import SemanticVisitorBase, UnknownType
+from foo_lang.semantic.model import SemanticVisitorBase, UnknownType, TypeExp
 
 # Helper decorator for indenting foo-syntax
 def indent(method):
@@ -255,6 +255,12 @@ class Dumper(SemanticVisitorBase):
            ((" " + exp.operand.accept(self)) if exp.operand != None else "")
 
 # DOT DUMPER
+#
+# Generic Dumper using the internal __dict__ of objects to traverse attributes
+# - loops are detected and presented as lightblue nodes
+# - Model classes are given a green color
+# - UnknownType nodes are shown orange (after inference there shouldn't be any)
+# - _type in Types is suppressed as it is always UnknownType
 
 class DotDumper(object):
   def __init__(self):
@@ -266,37 +272,50 @@ class DotDumper(object):
     return str(self.dot)
 
   def process(self, obj):
+    # CLASSES
+    if inspect.isclass(obj):
+      options = {"color":"springgreen"} if "semantic.model" in obj.__module__ else {}
+      node = self.dot.node(obj.__name__, options)
+      return node
+
+    # A SIMPLE TYPE
+    if isstring(obj) or isinstance(obj, int) or isinstance(obj, float) or \
+       isinstance(obj, bool):
+      return self.dot.node(str(obj))
+
+    # UNKNOWN TYPE
+    if isinstance(obj, UnknownType): 
+      return self.dot.node(obj.__class__.__name__, {"color":"orange"})
+
+    # TYPES
+    if isinstance(obj, TypeExp): 
+      return self.dot.node(obj.__class__.__name__, {"color":"limegreen"})
+
+    # RECURSION & LOOP DETECTION
     if obj.__repr__ in self.stack:
       # print_stderr("LOOP DETECTED: " + str(obj) + str(self.stack) + "\n")
-      return self.dot.node(str(obj), {"style":"filled","color":"lightblue"})
+      return self.dot.node(str(obj), {"color":"lightblue"})
+
     self.stack.append(obj.__repr__)
 
-    if inspect.isclass(obj):   return self.dot.node(obj.__name__)
-    if isstring(obj):          return self.dot.node(str(obj))
-    if isinstance(obj, int):   return self.dot.node(str(obj))
-    if isinstance(obj, float): return self.dot.node(str(obj))
-    if isinstance(obj, bool):  return self.dot.node(str(obj))
-    
-    if isinstance(obj, UnknownType): 
-      return self.dot.node(obj.__class__.__name__, {"style":"filled", "color":"orange"})
+    # ITERATABLES
 
+    # SIMPLE DICT
     if isinstance(obj, dict):
       node = self.dot.node(obj.__class__.__name__)
       for key, value in obj.items():
         if not value is None:
           self.dot.vertex(node, self.process(value), {"label":key})
+    # SIMPLE LIST
     elif isinstance(obj, list):
       node = self.dot.node(obj.__class__.__name__)
       for value in obj:
         if not value is None:
           self.dot.vertex(node, self.process(value))
-    elif isinstance(obj, property):
-      pass
+    # OBJECT
     else:
-      if obj.__module__ == "foo_lang.semantic.model":
-        node = self.dot.node(obj.__class__.__name__, {"style":"filled", "color":"green"})
-      else:
-        node = self.dot.node(obj.__class__.__name__)
+      options = {"color":"green"} if "semantic.model" in obj.__module__ else {}
+      node = self.dot.node(obj.__class__.__name__, options)
       for key, value in obj.__dict__.items():
         if not value is None:
           self.dot.vertex(node, self.process(value), {"label":key})

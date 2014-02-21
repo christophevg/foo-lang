@@ -21,6 +21,7 @@ digraph {
     node = "n" + str(self.index)
     self.index+=1
     options["label"] = label
+    if "color" in options: options["style"] = "filled"
     self.declarations.append( node + "[" +  
       ",".join(['{0}="{1}"'.format(k, v) for k, v in options.items()]) + "]" )
     return node
