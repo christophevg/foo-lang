@@ -9,6 +9,7 @@
 import sys
 import inspect
 
+from util.support             import print_stderr
 from util.check               import isidentifier, isstring
 from util.visitor             import Visitable
 from util.environment         import Environment
@@ -803,10 +804,10 @@ class SemanticChecker(SemanticVisitor):
       self.log("success: " + msg + " : " + " ".join([str(arg) for arg in args]))
 
   def log(self, msg1, *msgs):
-    print self.name + ": " + msg1.replace("\n", "\n      ")
+    print_stderr(self.name + ": " + msg1.replace("\n", "\n      "))
     for msg in msgs:
       if not msg is None:
-        print "    " + msg.replace("\n", "\n      ")
+        print_stderr( "    " + msg.replace("\n", "\n      "))
 
   # ASSERTIONS HELPERS
 
