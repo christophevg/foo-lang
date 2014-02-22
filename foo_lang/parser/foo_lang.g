@@ -49,7 +49,7 @@ except RecognitionException, e:
 start : modules? EOF -> ^(ROOT modules?);
 
 modules : (module)*;
-module : 'module' identifier instructions -> ^(MODULE identifier instructions);
+module : 'module' identifier instructions? -> ^(MODULE identifier instructions?);
 
 instructions : (instruction)*;
 instruction
