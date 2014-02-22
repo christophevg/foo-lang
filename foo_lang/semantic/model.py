@@ -458,7 +458,7 @@ class BooleanBinaryExp(BinaryExp):
 class NumericBinaryExp(BinaryExp):
   def __init__(self, left, right):
     super(NumericBinaryExp, self).__init__(left, right)
-    self._type = BooleanType()
+    self._type = NumericType()
 
 class AndExp(BooleanBinaryExp):
   def operator(self): return "and"
