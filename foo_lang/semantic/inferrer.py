@@ -93,10 +93,10 @@ class Inferrer(SemanticChecker):
       # An event is a FunctionExp executed within the Scope.
       if isinstance(env, When):
         # print "looking up", env.event.name, "in", env.scope
-        info = env.scope.get_function(env.event.name)
+        func = env.scope.get_function(env.event.name)
         # print "looked up info = ", info
       else:
-        info = env.scope.get_function()
+        func = env.scope.get_function()
       type = None
       try:
         # try to extract the param information for the same indexed parameter
@@ -104,7 +104,7 @@ class Inferrer(SemanticChecker):
         # print "function:", function.name, "function.parameters=", function.parameters
         # print parameter.name, "is found at position", index
         # print "info=", info
-        type = info["params"][index]
+        type = func.parameters[index].type
       except:
         # print "but there was nu such parameter in the info at ", index
         pass
@@ -116,7 +116,7 @@ class Inferrer(SemanticChecker):
       else:
         self.fail("Couldn't extract parameter typing info from " + \
                   "ExecutionStrategy environment for parameter",
-                  paramter.name)
+                  parameter.name)
 
   # infer all types on all expressions (that aren't typed by default)
   # those that aren't needed have been removed: e.g. ListLiteral, ObjectLiteral,
@@ -157,7 +157,7 @@ class Inferrer(SemanticChecker):
     for index in range(0,len(parents)):
       if isinstance(parents[index], CaseStmt):
         case              = parents[index]
-        consequence = parents[index-1]
+        consequence       = parents[index-1]
         consequence_index = case.consequences.index(consequence)
         functioncall      = case.cases[consequence_index]
         for argument in functioncall.arguments:
@@ -206,14 +206,41 @@ class Inferrer(SemanticChecker):
 
     self.fail("Couldn't find declaration for variable", variable.name)
 
-  def infer_BinaryExp(self, exp):
-    # print "*" * 100, exp.operator(), exp.left, exp.right
-    pass
+  def infer_ObjectExp(self, obj):
+    if not isinstance(obj._type, UnknownType): return
+    
+    # the identifier points to an object, which should be in the environment
+    if obj.identifier.name in self.env:
+      obj._type = self.env[obj.identifier.name].type
+      self.success("ObjecExp referenced in environment as", obj.identifier.name,
+                   "Inferred to", str(obj._type))
+      return
+    
+    self.fail("Couldn't infer ObjectExp", obj.identifier.name)
+    # print "OBJECT_EXP", str(exp)
+    # print self.stack_as_string()
+    # print str(self.env)
 
-  def infer_ObjectExp(self, exp):
-    # original : self._type = UnknownType()
-    # we need to move up the stack to find the declaration and reuse that
-    pass
+  def infer_PropertyExp(self, prop):
+    if not isinstance(prop._type, UnknownType): return
+    
+    # the object should be known, check its provided items
+    if not isinstance(prop.obj, ObjectExp):
+      self.fail("PropertyExp", prop.identifier.name, "doesn't have an obj of type",
+                "ObjectExp, but", str(prop.obj))
+      return
+    
+    if isinstance(prop.obj.type, UnknownType):
+      self.fail("PropertyExp", prop.identifier.name, "has ObjectExp with UnknownType")
+      return
+    
+    prop._type = prop.obj.type
+    if not isinstance(prop._type, UnknownType):
+      self.success("PropertyExp", prop.identifier.name, "has valid ObjectExp",
+                   "Inferred to", prop._type)
+      return
+
+    self.fail("Couldn't infer PropertyExp", prop.identifier.name)
 
   def infer_FunctionExp(self, exp):
     try:
@@ -230,7 +257,7 @@ class Inferrer(SemanticChecker):
     if isinstance(parents[0], When):
       # it now expresses a method on the scope, try to retrieve it
       try:
-        exp.type = parents[0].scope.get_function(exp.name)['type']
+        exp.type = parents[0].scope.get_function(exp.name).type
         self.success("Found declaration for FunctionExp in scope-method",
                      "Inferred type to", str(exp.type))
         return
@@ -257,15 +284,6 @@ class Inferrer(SemanticChecker):
     self.fail("Couldn't retrieve type from declaration for FunctionExp",
                exp.name)
 
-  def infer_MethodCallExp(self, call):
-    # print "TODO: METHODCALL:", str(call)
-    pass
-
-  def infer_PropertyExp(self, exp):
-    # original: UnknownType()
-    # we need to retrieve the type of the property on the object
-    pass
-
   def infer_FunctionCallExp(self, call):
     # If we can access the FunctionDecl, check that it's parameters are typed,
     # else infer them from our arguments. This can happen multiple times, but
@@ -284,3 +302,7 @@ class Inferrer(SemanticChecker):
           else:
             self.fail("Couldn't push up argument type to parameter.", name,
                       parameter.name)
+
+  def infer_BinaryExp(self, exp):
+    # print "*" * 100, exp.operator(), exp.left, exp.right
+    pass

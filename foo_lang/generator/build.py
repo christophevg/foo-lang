@@ -54,9 +54,9 @@ class Generator():
     """
     modules = {}
     
-    for domain_name, domain in model.domains.items():
-      domain_generator = self.generator_for_domain(domain_name)
-      for module_name, module in model.modules.items():
+    for module_name, module in model.modules.items():
+      for domain_name, domain in module.domains.items():
+        domain_generator = self.generator_for_domain(domain_name)
         code = domain_generator.create(module, model)
         name = domain_name + "-" + module_name
         if self.verbose: print "creating " + name
@@ -84,9 +84,10 @@ class Generator():
     module.event_loop = build.EventLoop()
     
     # allow each domain generator to alter the main module
-    for domain_name, domain in model.domains.items():
-      domain_generator = self.generator_for_domain(domain_name)
-      domain_generator.transform(module, name="main")
+    for mod in model.modules.values():
+      for domain_name, domain in mod.domains.items():
+        domain_generator = self.generator_for_domain(domain_name)
+        domain_generator.transform(module, name="main")
 
     # insert event loop
     main.body.append(module.event_loop.code())

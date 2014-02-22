@@ -19,11 +19,13 @@ class Model(Visitable):
   """
   def __init__(self):
     self.modules = {}
-    self.domains = {}
   def __str__(self): return self.__class__.__name__
 
 @nohandling
 class Domain(Visitable):
+  def extend(self, extension):
+    raise NotImplementedError, "Domain.extend not implemented on " + str(self)
+  
   def get_scope(self, sub="*"):
     return self.scoping[sub]
 
@@ -65,9 +67,9 @@ class Module(Visitable):
     self.identifier = identifier
     self.constants  = NamedTypedOrderedDict(Constant)
     self.externals  = OrderedDict()     # { function : library }
-    self.extensions = TypedList(Extension)
+    self.domains    = NamedTypedOrderedDict(Domain)
     self.executions = TypedList(ExecutionStrategy)
-
+    
     # functions are part of a module, but are linked from ExecutionStrategies
     self.functions  = NamedTypedOrderedDict(FunctionDecl)
   def get_name(self): return self.identifier.name
@@ -79,12 +81,16 @@ class NamedTypedOrderedDict(Visitable):
   def __init__(self, type):
     self.objects = OrderedDict()
     self.type    = type
+  def items(self):
+    return self.objects.items()
   def __iter__(self):
     return iter(self.objects.values())
   def __contains__(self, key):
     return key in self.objects
   def __getitem__(self, key):
     return self.objects[key]
+  def __setitem__(self, key, value):
+    self.objects[key] = value
   def append(self, obj):
     assert isinstance(obj, self.type)
     self.objects[obj.name] = obj
@@ -339,6 +345,8 @@ class Property(Visitable):
     self.type       = type
   def get_name(self): return self.identifier.name
   name = property(get_name)
+  def __str__(self):
+    return "Property(" + self.name + ")"
 
 @nohandling
 class TypeExp(Exp):
@@ -378,12 +386,16 @@ class TupleType(ComplexType):
     self.provides = { "contains": {} }
 
 class ObjectType(ComplexType):
-  def __init__(self, identifier):
+  def __init__(self, identifier, provides={}):
     assert isinstance(identifier, Identifier)
     self.identifier = identifier
-    self.provides   = {}
+    self.provides   = OrderedDict()
+    for key, value in provides.items():
+      self.provides[key] = value
   def get_name(self): return self.identifier.name
   name = property(get_name)
+  def __str__(self):
+    return "ObjectType(" + self.name + ")"
 
 # BUILD-IN object types
 
@@ -399,6 +411,8 @@ class VariableExp(Exp):
     self._type      = UnknownType()
   def get_name(self): return self.identifier.name
   name = property(get_name)
+  def __str__(self):
+    return self.__class__.__name__ + "(" +  self.identifier.name + ")"
 
 class ObjectExp(VariableExp):
   def __init__(self, identifier):

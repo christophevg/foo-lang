@@ -90,12 +90,31 @@ class TestInferCheck(unittest.TestCase):
     }
     """
     model = api.load(src)
-
+  
     self.infer(model, 13)
-
+  
     # after (assert successes)
     m = model.modules["test"]
     f = m.functions
+    self.assertIsInstance(f["anonymous1"].type, VoidType)
+    # TODO: check all inferences
+
+  def test_with_nodes(self):
+    src = """
+    module test
+    const interval = 1000
+    @every(interval)
+    with nodes do function(node) {}
+    """
+    model = api.load(src)
+  
+    self.infer(model, 4)
+  
+    # after (assert successes)
+    m = model.modules["test"]
+    f = m.functions
+    self.assertIsInstance(f["anonymous2"].type, VoidType)
+    # TODO: check all inferences
 
 if __name__ == "__main__":
   suite = unittest.TestLoader().loadTestsFromTestCase(TestInferCheck)

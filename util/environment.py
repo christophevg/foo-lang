@@ -15,6 +15,9 @@ class Environment():
     except IndexError:
       raise RuntimeError("Cannot reduce emtpy Environment.")
 
+  def is_empty(self):
+    return len(self.envs) == 0 or (len(self.envs) == 1 and self.envs[0] == {})
+
   def __setitem__(self, key, value):
     self.envs[0][key] = value
   

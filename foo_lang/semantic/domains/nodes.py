@@ -11,51 +11,79 @@ class Nodes(Domain):
       "*"    : AllNodes(self),
       "self" : OwnNode(self)
     }
-  def get_function(self, name=None):
-    raise RuntimeException("This shouldn't happen ;-)")
+    self.extensions = []
 
-class NodesScope(Scope):
-  def get_function(self, name=None):
-    try:
-      # print "NODES: looking for function ", str(name)
-      # without a name, we can only return a function that is implemented on
-      # one argument: node, something is performed in scope of each single node
-      if name is None: return { "type": VoidType(),
-                                "params": [ ObjectType(Identifier("node"))]}
-      return {
-        "receive"  : { "type": VoidType(),
-                       "params": [ ObjectType(Identifier("node")),
-                                   ObjectType(Identifier("node")),
-                                   ManyType(ManyType(ByteType())) ] },
-        "transmit" : { "type": VoidType,
-                       "params": [ ObjectType(Identifier("node")),
-                                   ObjectType(Identifier("node")),
-                                   ObjectType(Identifier("node")),
-                                   ManyType(ManyType(ByteType())) ] }
-      }[name]
-    except KeyError:
-      print "WARNING: requested unknown function : node::" + str(name)
-      pass
-    return None
+    self.node_t    = ObjectType(Identifier("node"))
+    self.payload_t = ManyType(ManyType(ByteType())) # not exported, internal use
 
-class AllNodes(NodesScope):
+    self.type = self.node_t
+    
+    self.node_t.provides["foreach_node"] = \
+      FunctionDecl(BlockStmt(), identifier=Identifier("foreach_node"), type=VoidType(),
+                   parameters=[Parameter(Identifier("node"), self.node_t)])
+
+    self.node_t.provides["broadcast"] = \
+      FunctionDecl(BlockStmt(), identifier=Identifier("broadcast"), type=VoidType(),
+                   parameters=[Parameter(Identifier("payload"), self.payload_t)])
+
+    self.node_t.provides["transmit"] = \
+      FunctionDecl(BlockStmt(), identifier=Identifier("transmit"),  type=VoidType(),
+                   parameters=[Parameter(Identifier("from"),    self.node_t),
+                               Parameter(Identifier("to"),      self.node_t),
+                               Parameter(Identifier("hop"),     self.node_t),
+                               Parameter(Identifier("payload"), self.payload_t)
+                              ])
+    self.node_t.provides["receive"] = \
+      FunctionDecl(BlockStmt(), identifier=Identifier("receive"),   type=VoidType(),
+                   parameters=[Parameter(Identifier("from"),    self.node_t),
+                               Parameter(Identifier("to"),      self.node_t),
+                               Parameter(Identifier("payload"), self.payload_t)
+                              ])
+
+  def get_scope(self, name="*"):
+    return self.scoping[name]
+
+  def extend(self, extension):
+    assert isinstance(extension, Extension)
+    self.extensions.append(extension)
+    for prop in extension.extension.properties:
+      if prop.identifier.name in self.node_t.provides:
+        raise KeyError, "node_type already has definition for " + prop.identifier.name
+      self.node_t.provides[prop.identifier.name] = prop
+
+  def get_type(self, name):
+    assert name == "node", "Nodes domain only supports the 'node' type."
+    return self.node_t
+
+class AllNodes(Scope):
   def __init__(self, domain):
-    Scope.__init__(self, domain)
+    super(AllNodes, self).__init__(domain)
     self.scope = "nodes"
 
-  def get_method(self, name):
-    try:
-      return {
-        "broadcast" : { "type": VoidType(),
-                        "params": [ ManyType(ManyType(ByteType())) ] }
+  def get_property(self, name):
+    prop = self.domain.node_t[name]
+    assert isinstance(prop, Property), "Not a property " + name
 
-      }[name]
-    except KeyError:
-      print "WARNING: requested unknown method : nodes::" + name
-      pass
-    return None
+  def get_function(self, name="foreach_node"):
+    return self.domain.node_t.provides[name]
+
+  def get_type(self):
+    return self.domain.get_type("node")
+  type = property(get_type)
   
-class OwnNode(NodesScope):
+class OwnNode(Scope):
   def __init__(self, domain):
-    Scope.__init__(self, domain)
+    super(OwnNode, self).__init__(domain)
     self.scope = "nodes.self"
+
+  def get_property(self, name):
+    prop = self.domain.node_t[name]
+    assert isinstance(prop, Property), "Not a property " + name
+
+  def get_function(self, name="foreach_node"):
+    assert name in ["foreach_node", "transmit", "receive"], "OwnNodes doesn't support function " + name
+    return self.domain.node_t.provides[name]
+
+  def get_type(self):
+    return self.domain.get_type("node")
+  type = property(get_type)

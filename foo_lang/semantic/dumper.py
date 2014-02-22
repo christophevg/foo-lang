@@ -8,7 +8,7 @@ from util.support            import print_stderr
 from util.check              import isstring
 from util.dot                import DotBuilder
 
-from foo_lang.semantic.model import SemanticVisitorBase, UnknownType, TypeExp
+from foo_lang.semantic.model import *
 
 # Helper decorator for indenting foo-syntax
 def indent(method):
@@ -54,8 +54,9 @@ class Dumper(SemanticVisitorBase):
     for function, library in module.externals.items():
       string += "from " + library + " import " + function + "\n"
     
-    for extension in module.extensions:
-      string += extension.accept(self) + "\n"
+    for domain in module.domains:
+      for extension in domain.extensions:
+        string += extension.accept(self) + "\n"
     
     for execution in module.executions:
       string += execution.accept(self) + "\n"
@@ -260,7 +261,8 @@ class Dumper(SemanticVisitorBase):
 # - loops are detected and presented as lightblue nodes
 # - Model classes are given a green color
 # - UnknownType nodes are shown orange (after inference there shouldn't be any)
-# - _type in Types is suppressed as it is always UnknownType
+# - details of Types is suppressed as its _type always UnknownType
+# - Identifiers are simple nodes with their name and a blueish color
 
 class DotDumper(object):
   def __init__(self):
@@ -272,6 +274,10 @@ class DotDumper(object):
     return str(self.dot)
 
   def process(self, obj):
+    # IDENTIFIERS
+    if isinstance(obj, Identifier):
+      return self.dot.node(obj.name, {"color":"seagreen"})
+
     # CLASSES
     if inspect.isclass(obj):
       options = {"color":"springgreen"} if "semantic.model" in obj.__module__ else {}
@@ -285,18 +291,18 @@ class DotDumper(object):
 
     # UNKNOWN TYPE
     if isinstance(obj, UnknownType): 
-      return self.dot.node(obj.__class__.__name__, {"color":"orange"})
+      return self.dot.node(obj.__class__.__name__, {"color":"coral"})
 
     # TYPES
-    if isinstance(obj, TypeExp): 
+    if isinstance(obj, TypeExp) and not isinstance(obj, ComplexType):
       return self.dot.node(obj.__class__.__name__, {"color":"limegreen"})
 
     # RECURSION & LOOP DETECTION
-    if obj.__repr__ in self.stack:
+    if str(obj.__repr__) in self.stack:
       # print_stderr("LOOP DETECTED: " + str(obj) + str(self.stack) + "\n")
       return self.dot.node(str(obj), {"color":"lightblue"})
 
-    self.stack.append(obj.__repr__)
+    self.stack.append(str(obj.__repr__))
 
     # ITERATABLES
 
@@ -314,11 +320,31 @@ class DotDumper(object):
           self.dot.vertex(node, self.process(value))
     # OBJECT
     else:
-      options = {"color":"green"} if "semantic.model" in obj.__module__ else {}
+      options = {"color":"limegreen"} if isinstance(obj, ComplexType) else \
+      {"color":"green"} if "foo_lang.semantic" in obj.__module__ else {}
       node = self.dot.node(obj.__class__.__name__, options)
-      for key, value in obj.__dict__.items():
+      # manual exception to allow modules to be processed in such a way that 
+      # domains are processed sooner than functions, to make sure that types
+      # defined in domains are added in detail and all other instances are shown
+      # as references
+      if isinstance(obj, Module):
+        items = [ ["identifier", obj.identifier],
+                  ["constants",  obj.constants],
+                  ["externals",  obj.externals],
+                  ["domains",    obj.domains],
+                  ["functions",  obj.functions],
+                  ["executions", obj.executions]
+                ]
+      else:
+        items = obj.__dict__.items()
+      for key, value in items:
         if not value is None:
-          self.dot.vertex(node, self.process(value), {"label":key})
+          # SCOPE
+          if isinstance(value, Scope):
+            subnode = self.dot.node(value.__class__.__name__, {"color":"lightblue"})
+          else:
+            subnode = self.process(value)
+          self.dot.vertex(node, subnode, {"label":key})
 
-    self.stack.pop()
+    # self.stack.pop()
     return node

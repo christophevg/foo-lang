@@ -86,7 +86,8 @@ class TestModel(unittest.TestCase):
   def create_module_with_extension(self, name, domain, obj):
     ext = Extension(domain, obj)
     module = Module(Identifier(name))
-    module.extensions.append(ext)
+    module.domains.append(domain)
+    module.domains[domain.name].extend(ext)
     return module
 
   def test_module_with_extensions(self):
@@ -142,7 +143,6 @@ class TestModel(unittest.TestCase):
   # MODEL
   def test_empty_model(self):
     self.assertModelEquals("")
-    self.assertEqual(self.model.domains, {})
 
   def test_model_with_modules(self):
     module1 = self.create_module_with_constants("module1")

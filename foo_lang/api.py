@@ -18,7 +18,8 @@ from foo_lang.semantic.inferrer      import Inferrer
 
 def create_model():
   model = Model()
-  model.domains['nodes'] = Nodes()
+  for module in model.modules:
+    if not module.domains['nodes']: module.domains['nodes'] = Nodes()
   return model
 
 def parse(string, noprint=False):
@@ -54,8 +55,6 @@ def load(string, model=None):
   """
   
   if model == None: model = create_model()
-  if not model.domains['nodes']: model.domains['nodes'] = Nodes()
-
   AstVisitor(model).visit(parse(string).tree)
   return model
 

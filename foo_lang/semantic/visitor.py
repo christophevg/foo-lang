@@ -17,6 +17,8 @@ from util.environment         import Environment
 from foo_lang.semantic.model  import *     # too many to import explicitly
 from foo_lang.semantic.dumper import Dumper
 
+from foo_lang.semantic.domains.nodes import Nodes
+
 # AST VISITOR
 #
 # Accepts a model and imports a foo-based AST.
@@ -121,12 +123,19 @@ class AstVisitor():
   def handle_module(self, tree):
     assert tree.text == "MODULE"
     children = tree.getChildren()
-    name     = self.visit(children[0])
-    module   = Module(name)
-    self.model.modules[name.name] = module
-    self.current_module           = module
-    for index in range(1,len(children)):
-      self.visit(children[index])
+    id       = self.visit(children[0])
+    module   = Module(id)
+    
+    # by default a module contains the Nodes domain
+    # more generic this could be triggered by a USE <domain> instruction
+    module.domains['nodes'] = Nodes()
+    
+    self.model.modules[id.name] = module
+    self.current_module         = module
+
+    if len(children) > 1:
+      for index in range(1,len(children)):
+        self.visit(children[index])
     return module
 
   def handle_constant(self, tree):
@@ -145,7 +154,7 @@ class AstVisitor():
     domain    = self.handle_domain(children[0])
     obj       = self.handle_object_literal(children[1])
     extension = Extension(domain, obj)
-    self.current_module.extensions.append(extension)
+    self.current_module.domains[domain.name].extend(extension)
     return extension
   
   def handle_import(self, tree):
@@ -189,7 +198,7 @@ class AstVisitor():
   def handle_domain(self, tree):
     assert tree.text == "DOMAIN"
     domain = self.visit(tree.getChildren()[0])
-    return self.model.domains[domain.name]
+    return self.current_module.domains[domain.name]
 
   def handle_anon_func_decl(self, tree):
     assert tree.text == "ANON_FUNC_DECL"
@@ -468,6 +477,13 @@ class AstVisitor():
     else:
       raise RuntimeError("Un-scopable object:", obj)
 
+# SEMANTIC VISITOR
+#
+# Implements the SemanticVisitorBase with handlers to visit all parts of the
+# Semantic Model. This can be done in a top-down or bottom-up approach.
+# While doing so, it constructs a stack of visited parts and an environment of
+# declared entities (Variables, Objects,...)
+
 def stacked(method):
   """
   Decorator for methods to keep track of their execution using a stack.
@@ -493,13 +509,6 @@ def stacked(method):
     if self.top_down: method(self, obj)
     self._stack.pop()
   return wrapped
-
-# SEMANTIC VISITOR
-#
-# Implements the SemanticVisitorBase with handlers to visit all parts of the
-# Semantic Model. This can be done in a top-down or bottom-up approach.
-# While doing so, it constructs a stack of visited parts and an environment of
-# declared entities (Variables, Objects,...)
 
 class SemanticVisitor(SemanticVisitorBase):
   def __init__(self, top_down=None, bottom_up=None):
@@ -542,9 +551,11 @@ class SemanticVisitor(SemanticVisitorBase):
     for name, function in module.externals.items():
       self.env[name] = function
     
-    for extension in module.extensions:
-      extension.accept(self)
-    
+    for domain in module.domains:
+      domain.accept(self)
+      for extension in domain.extensions:
+        extension.accept(self)
+
     for function in module.functions:
       # we only want to handle non-anonymous function declarations here
       # because anonymous declarations are declared in their specific scope
