@@ -387,7 +387,10 @@ manytype_provides = {
                                                  type=ByteType())]),
   "remove": FunctionDecl(BlockStmt(), type=IntegerType(),
                          parameters=[Parameter(Identifier("items"),
-                                               type=UnknownType())])
+                                               type=UnknownType())]),
+  "push": FunctionDecl(BlockStmt(), type=VoidType(),
+                       parameters=[Parameter(Identifier("item"),
+                                             type=UnknownType())])
 }
 # TODO: solve chicken-egg problem
 # TODO: ManyType might be considered an ObjectType
