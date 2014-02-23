@@ -33,7 +33,7 @@ all: clean test pdf coverage generate beautify show
 
 %.sm.dot: %.foo parser
 	@echo "*** creating $@ from $<"
-	@$(FOO) -i -g sm-dot $< > $@ || (cat $@; rm $@; false)
+	@$(FOO) -i -c -g sm-dot $< > $@ || (cat $@; rm $@; false)
 
 %.pdf: %.dot
 	@echo "*** visualizing $< as PDF $@"

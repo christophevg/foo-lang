@@ -29,6 +29,14 @@ class Checker(SemanticChecker):
     self.assertNotIsInstance( call.type, UnknownType, \
                               "functioncall return type is Unknown", call.name )
 
+  def check_MethodCallExp(self, call):
+    self.assertNotIsInstance(call.type, UnknownType,  \
+                             "MethodCallExp type is Unknown", call.name)
+
+  def check_ManyType(self, many):
+    self.assertNotIsInstance(many.subtype, UnknownType,  \
+                             "ManyType's subtype is Unknown", "TODO:identify")
+
   # Optional attributes that seem to be missing
 
   def check_Scope(self, scope):
@@ -39,10 +47,6 @@ class Checker(SemanticChecker):
   def check_VariableExp(self, variable):
     if variable.name in self.env: return
     self.fail("Variable has no definition.", variable.name)
-
-  def check_ObjectExp(self, obj):
-    pass
-    # print "TODO: ObjectExp", obj.name
 
   def check_FunctionExp(self, function):
     """
@@ -73,13 +77,6 @@ class Checker(SemanticChecker):
       # we need to check if that object actually provides this method
       if isinstance(grandparent.expression.type, ComplexType) and \
          function.name in grandparent.expression.type.provides: return
-
-
-    print "-" * 25
-    print "NOT FOUND:", function.name
-    print parents
-    print self.env
-    print "-" * 25
 
     # don't know where to look anymore
     self.fail("FunctionExp has no definition.", function.name)
