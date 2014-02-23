@@ -35,7 +35,7 @@ class Checker(SemanticChecker):
 
   def check_ManyType(self, many):
     self.assertNotIsInstance(many.subtype, UnknownType,  \
-                             "ManyType's subtype is Unknown", "TODO:identify")
+                             "ManyType's subtype is Unknown")
 
   # Optional attributes that seem to be missing
 

@@ -4,7 +4,6 @@
 
 import inspect
 
-from util.support            import print_stderr
 from util.check              import isstring
 from util.dot                import DotBuilder
 
@@ -203,6 +202,9 @@ class Dumper(SemanticVisitorBase):
            " = " + prop.value.accept(self)
 
   def handle_UnknownType(self, type): return "__unknown__"
+  def handle_AnyType(self, type):     return "__any__"
+  def handle_MixedType(self, type):   return "__mixed__"
+  def handle_AtomType(self, type):    return "__atom__"
 
   def handle_VoidType   (self, type): return ""
   def handle_BooleanType(self, type): return "boolean"
@@ -290,8 +292,16 @@ class DotDumper(object):
       return self.dot.node(str(obj))
 
     # UNKNOWN TYPE
-    if isinstance(obj, UnknownType): 
+    if isinstance(obj, UnknownType):
       return self.dot.node(obj.__class__.__name__, {"color":"coral"})
+
+    # ANY TYPE
+    if isinstance(obj, AnyType):
+      return self.dot.node(obj.__class__.__name__, {"color":"limegreen"})
+
+    # ANYTHING EXP
+    if isinstance(obj, AnythingExp):
+      return self.dot.node(obj.__class__.__name__, {"color":"green"})
 
     # TYPES
     if isinstance(obj, TypeExp) and not isinstance(obj, ComplexType):
@@ -299,7 +309,6 @@ class DotDumper(object):
 
     # RECURSION & LOOP DETECTION
     if str(obj.__repr__) in self.processed:
-      # print_stderr("LOOP DETECTED: " + str(obj) + str(self.processed) + "\n")
       return self.dot.node("dict" if isinstance(obj, dict) else str(obj),
                            {"color":"lightblue"})
 
@@ -351,7 +360,7 @@ class DotDumper(object):
       else:
         items = obj.__dict__.items()
       for key, value in items:
-        if key != "_type" and key != "type" and not value is None:
+        if key not in ["_type", "type"] and not value is None:
           # SCOPE
           if isinstance(value, Scope):
             subnode = self.dot.node(value.__class__.__name__, {"color":"lightblue"})

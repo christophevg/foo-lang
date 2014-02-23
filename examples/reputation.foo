@@ -52,7 +52,7 @@ after nodes transmit do function(from, to, hop, payload) {
 
 after nodes receive do function(from, to, payload) {
   case payload {
-    contains( [ #reputation, of, alpha, beta ] ) {
+    contains( [ #reputation, of:node, alpha:float, beta:float ] ) {
       if( from.trust > indirect_threshold ) {
         // taking into account of indirect reputation information
         weight = (2 * from.alpha) /

@@ -366,7 +366,12 @@ class AstVisitor():
 
   def handle_variable_exp(self, tree):
     assert tree.text == "VAR_EXP"
-    return VariableExp(self.visit(tree.getChildren()[0]))
+    children = tree.getChildren()
+    name = self.visit(tree.getChildren()[0])
+    if len(children) > 1:
+      type = self.visit(tree.getChildren()[1])
+      return VariableExp(name, type)
+    return VariableExp(name)
 
   def handle_type_exp(self, tree):
     assert tree.text == "TYPE_EXP"
@@ -382,9 +387,8 @@ class AstVisitor():
         "float"     : FloatType,
         "timestamp" : TimestampType,
       }[identifier.name.lower()]()
-    except KeyError:
-      print "Failed to resolve simple type based on identifier", identifier.name
-    return UnknownType()
+    except KeyError: pass
+    return ObjectType(identifier)
 
   def handle_unknown_type(self, tree):
     assert tree.text == "UNKNOWN_TYPE"
@@ -676,6 +680,10 @@ class SemanticVisitor(SemanticVisitorBase):
 
   def handle_UnknownType(self, lst): pass
 
+  def handle_AnyType(self, type): pass
+  def handle_MixedType(self, type): pass
+  def handle_AtomType(self, type): pass
+
   @stacked
   def handle_ListLiteralExp(self, lst):
     lst.type.accept(self)
@@ -749,7 +757,10 @@ class SemanticVisitor(SemanticVisitorBase):
   def handle_FunctionExp(self, exp): pass
 
   @stacked
-  def handle_ObjectExp(self, exp): pass
+  def handle_ObjectExp(self, exp):
+    exp._type.accept(self)
+
+  def handle_ObjectType(self, obj): pass
 
   @stacked
   def handle_MethodCallExp(self, exp):

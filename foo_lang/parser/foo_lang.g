@@ -133,15 +133,15 @@ block_statement
   ;
 
 assignment_statement
-  : variable (ASSIGN|ADD|SUB)^ expression
+  : variable_expression (ASSIGN|ADD|SUB)^ expression
   ;
 
 increment_statement
-  : variable '++' -> ^(INC variable)
+  : variable_expression '++' -> ^(INC variable_expression)
   ;
 
 decrement_statement
-  : variable '--' -> ^(DEC variable)
+  : variable_expression '--' -> ^(DEC variable_expression)
   ;
 
 if_statement
@@ -204,7 +204,7 @@ primary_expression
   : LPAREN! logical_expression RPAREN!
   | literal
   | call_expression
-  | variable
+  | variable_expression
   | atom
   | matching_expression
   ;
@@ -220,9 +220,10 @@ argument_list: a+=expression (COMMA a+=expression)* -> ^(ARGS $a+);
 
 // functional aliases for identifiers
 // TODO: add more
-variable
+variable_expression
   : property_expression
-  | identifier           -> ^(VAR_EXP identifier)
+  | identifier COLON type -> ^(VAR_EXP identifier type)
+  | identifier            -> ^(VAR_EXP identifier)
   ;
 
 property_expression
@@ -305,6 +306,7 @@ type_identifier
   | t='float'     -> ^(IDENTIFIER $t)
   | t='boolean'   -> ^(IDENTIFIER $t)
   | t='timestamp' -> ^(IDENTIFIER $t)
+  | identifier
   ;
 tuple_type : '[' t+=type (COMMA t+=type)* ']' -> ^(TUPLE_TYPE_EXP $t+);
 

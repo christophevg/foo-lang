@@ -92,22 +92,15 @@ class Inferrer(SemanticChecker):
       # An ExecutionStrategy can have an event (When) or not (Every)
       # An event is a FunctionExp executed within the Scope.
       if isinstance(env, When):
-        # print "looking up", env.event.name, "in", env.scope
         func = env.scope.get_function(env.event.name)
-        # print "looked up info = ", info
       else:
         func = env.scope.get_function()
       type = None
       try:
         # try to extract the param information for the same indexed parameter
         index = function.parameters.index(parameter)
-        # print "function:", function.name, "function.parameters=", function.parameters
-        # print parameter.name, "is found at position", index
-        # print "info=", info
         type = func.parameters[index].type
-      except:
-        # print "but there was nu such parameter in the info at ", index
-        pass
+      except: pass
       if not type is None:
         self.success("Found ExecutionStrategy with Scope providing info. " +
                      "Inferring parameter", parameter.name, "to",
@@ -135,7 +128,24 @@ class Inferrer(SemanticChecker):
       self.success("VariableExp referenced the environment.", variable.name, 
                    "Inferred type to", variable.type)
       # the type might be Unknown, but inference below should fix this
-      if not isinstance(variable.type, UnknownType): return
+      if not isinstance(variable.type, UnknownType):
+        # we might have got type information, but maybe it's incomplete
+        if isinstance(variable.type, ObjectType):
+          if variable.type.provides.values() == []:
+            # we don't do typedefs (yet), be we have domains that export custom
+            # object-types, let's see if OUR module's domain exports it
+            # TODO: add utility functions/properties for this to SemanticChecker
+            #       e.g: self.my_module().domains
+            for domain in self.stack[1].domains:
+              try:
+                variable.type = domain.get_type(variable.type.name)
+                self.success("Retrieved missing type information from domain",
+                             domain.name, variable.type.name)
+                return
+              except: pass
+              self.fail("Couldn't retrieve custom object-type info from domain",
+                        variable.type.name)
+        return
 
     parents = list(reversed(self.stack))
 
@@ -306,9 +316,12 @@ class Inferrer(SemanticChecker):
     
     # determine the best matching type of the expressions in the list
     type = UnknownType()
+    has_atoms = False
     for exp in lst.expressions:
       # no AtomType, it is converted to different other types on need-to basis
-      if isinstance(exp.type, AtomType): continue
+      if isinstance(exp.type, AtomType): 
+        has_atoms = True
+        continue
       # init on first non-UnknownType
       if isinstance(type, UnknownType):
         type = exp.type
@@ -329,12 +342,38 @@ class Inferrer(SemanticChecker):
         continue
       # if there the same, obviously
       if type_class == next_class: continue
-      self.fail("Couldn't determine best matching type for ListLiteral.",
-                "Ended up with", type_class, "and", next_class)
-      return
+      # self.fail("Couldn't determine best matching type for ListLiteral.",
+      #           "Ended up with", type_class, "and", next_class)
+      # TODO: undo this short-cut someday ;-)
+      # we can't easily come to a single type to deal with this, and further on
+      # during code generation we will handle these situations differently
+      # anyway, so let's mark it as MixedType for now
+      type = MixedType()
+      break
+    
+    if has_atoms and isinstance(type, UnknownType):
+      type = AtomType()
     
     # type is best matching type for all expressions in ListLiteral
     # apply it to the subtype of the ListLiteral's ManyType
     lst.type.subtype = type
     self.success("Inferred type of ListLiteral from list's expressions' types.",
                  "Inferred type to", lst.type.accept(Dumper()))
+
+  def infer_ManyType(self, many):
+    if not isinstance(many.subtype, UnknownType): return
+    
+    # special case: We're the type of the value part of a property, which has a
+    # valid type -> copy it
+    parents = list(reversed(self.stack))[1:]
+    if isinstance(parents[0], ListLiteralExp) and \
+       isinstance(parents[1], Property) and \
+       isinstance(parents[1].type, ManyType) and \
+       not isinstance(parents[1].type.subtype, UnknownType):
+      many.subtype = parents[1].type.subtype
+      self.success("Inferred ManyType's subtype from Property's type,")
+      return
+    
+    # don't fail on this one, ListLiteralExp is following later due to bottom-
+    # up handling, and can in certain cases fix this
+    # self.fail("Couldn't infer ManyType's subtype")

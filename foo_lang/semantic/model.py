@@ -361,6 +361,14 @@ class UnknownType(TypeExp):
   def __init__(self):
     self._type = None
 
+class AnyType(TypeExp):
+  def __init__(self):
+    self._type = None
+
+class MixedType(TypeExp):
+  def __init__(self):
+    self._type = None
+
 class VoidType(TypeExp): pass
 class AtomType(TypeExp): pass
 
@@ -387,10 +395,10 @@ manytype_provides = {
                                                  type=ByteType())]),
   "remove": FunctionDecl(BlockStmt(), type=IntegerType(),
                          parameters=[Parameter(Identifier("items"),
-                                               type=UnknownType())]),
+                                               type=AnyType())]),
   "push": FunctionDecl(BlockStmt(), type=VoidType(),
                        parameters=[Parameter(Identifier("item"),
-                                             type=UnknownType())])
+                                             type=AnyType())])
 }
 # TODO: solve chicken-egg problem
 # TODO: ManyType might be considered an ObjectType
@@ -425,14 +433,17 @@ class TimestampType(ObjectType):
     self.provides = {}
 
 class VariableExp(Exp):
-  def __init__(self, identifier):
+  def __init__(self, identifier, type=None):
     assert isinstance(identifier, Identifier)
     self.identifier = identifier
-    self._type      = UnknownType()
+    if type is None: type = UnknownType()
+    assert isinstance(type, TypeExp)
+    self._type      = type
   def get_name(self): return self.identifier.name
   name = property(get_name)
   def __str__(self):
-    return self.__class__.__name__ + "(" +  self.identifier.name + ")"
+    return self.__class__.__name__ + \
+           "(" +  self.identifier.name + ":" + str(self._type) + ")"
 
 class ObjectExp(VariableExp):
   def __init__(self, identifier):
@@ -456,6 +467,8 @@ class PropertyExp(VariableExp):
     self._type      = UnknownType()
   def get_name(self): return self.identifier.name
   name = property(get_name)
+  def __str__(self):
+    return "PropertyExp(" + str(self.obj) + "." + self.identifier.name + ")"
 
 @nohandling
 class UnaryExp(Exp):
