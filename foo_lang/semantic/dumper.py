@@ -267,7 +267,7 @@ class Dumper(SemanticVisitorBase):
 class DotDumper(object):
   def __init__(self):
     self.dot = DotBuilder()
-    self.stack = []
+    self.processed = []
 
   def dump(self, obj):
     self.process(obj)
@@ -298,11 +298,12 @@ class DotDumper(object):
       return self.dot.node(obj.__class__.__name__, {"color":"limegreen"})
 
     # RECURSION & LOOP DETECTION
-    if str(obj.__repr__) in self.stack:
-      # print_stderr("LOOP DETECTED: " + str(obj) + str(self.stack) + "\n")
-      return self.dot.node(str(obj), {"color":"lightblue"})
+    if str(obj.__repr__) in self.processed:
+      # print_stderr("LOOP DETECTED: " + str(obj) + str(self.processed) + "\n")
+      return self.dot.node("dict" if isinstance(obj, dict) else str(obj),
+                           {"color":"lightblue"})
 
-    self.stack.append(str(obj.__repr__))
+    self.processed.append(str(obj.__repr__))
 
     # ITERATABLES
 
@@ -323,6 +324,12 @@ class DotDumper(object):
       options = {"color":"limegreen"} if isinstance(obj, ComplexType) else \
       {"color":"green"} if "foo_lang.semantic" in obj.__module__ else {}
       node = self.dot.node(obj.__class__.__name__, options)
+
+      # if the obj supports the .type property, add it as such
+      if hasattr(obj, "type"):
+        subnode = self.process(obj.type)
+        self.dot.vertex(node, subnode, {"label": "type"})
+
       # manual exception to allow modules to be processed in such a way that 
       # domains are processed sooner than functions, to make sure that types
       # defined in domains are added in detail and all other instances are shown
@@ -339,13 +346,12 @@ class DotDumper(object):
         items = [
                   ["extensions", obj.extensions],
                   ["node_t",     obj.node_t],
-                  ["type",       obj.type],
                   ["payload_t",  obj.payload_t]
                 ]
       else:
         items = obj.__dict__.items()
       for key, value in items:
-        if not value is None:
+        if key != "_type" and key != "type" and not value is None:
           # SCOPE
           if isinstance(value, Scope):
             subnode = self.dot.node(value.__class__.__name__, {"color":"lightblue"})
@@ -353,5 +359,4 @@ class DotDumper(object):
             subnode = self.process(value)
           self.dot.vertex(node, subnode, {"label":key})
 
-    # self.stack.pop()
     return node
