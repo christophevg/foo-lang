@@ -326,11 +326,16 @@ class AstVisitor():
     assert tree.text == "RETURN"
     return ReturnStmt()
 
-  # ??? :-)
+  # references -> expressions
 
   def handle_object_ref(self, tree):
     assert tree.text == "OBJECT_REF"
-    return ObjectExp(self.visit(tree.getChildren()[0]))
+    children = tree.getChildren()
+    obj = ObjectExp(self.visit(children[0]))
+    if len(children) > 1:
+      for prop in children[1:]:
+        obj = PropertyExp(obj, self.visit(prop))
+    return obj
 
   def handle_function_ref(self, tree):
     assert tree.text == "FUNC_REF"
@@ -796,7 +801,7 @@ class SemanticChecker(SemanticVisitor):
 
   def report(self):
     if not self.verbose: return
-    print "-" * 79
+    print_stderr( "-" * 79 )
 
     result = "SUCCESS - model is valid" if self.fails == 0 \
              else "FAILURES : " + str(self.fails)
@@ -804,7 +809,7 @@ class SemanticChecker(SemanticVisitor):
              else None
 
     self.log("results of run", result, info)
-    print "-" * 79
+    print_stderr( "-" * 79 )
 
   def fail(self, msg, *args):
     self.fails += 1

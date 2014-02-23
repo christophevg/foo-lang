@@ -155,6 +155,13 @@ class TestModel(unittest.TestCase):
                            "const name1 : type1 = 1\n" + \
                            "module module2\n" + \
                            "extend nodes with " + dump(obj) + "\n") 
+
+  # OBJECTS & co
+  def test_methodcall_on_propertyexp(self):
+    obj        = ObjectExp(Identifier("obj"))
+    prop       = PropertyExp(obj, Identifier("prop"))
+    methodcall = MethodCallExp(prop, Identifier("method"))
+    self.assertEqual(dump(methodcall), "obj.prop.method()")
  
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestModel)

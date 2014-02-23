@@ -9,6 +9,7 @@ from test.expressions          import TestExpressions
 from test.statements           import TestStatements
 from test.semantic             import TestModel
 from test.parser               import TestParser
+from test.astvisitor           import TestAstVisitor
 from test.integration          import TestIntegration
 from test.code                 import TestCode
 from test.environment          import TestEnvironment
@@ -22,6 +23,7 @@ if __name__ == '__main__':
                           TestStatements,
                           TestModel,
                           TestParser,
+                          TestAstVisitor,
                           TestIntegration,
                           TestCode,
                           TestEnvironment,

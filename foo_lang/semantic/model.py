@@ -551,7 +551,8 @@ class FunctionCallExp(CallExp):
 class MethodCallExp(CallExp):
   def __init__(self, obj, identifier, arguments=[]):
     super(MethodCallExp, self).__init__(arguments)
-    assert isinstance(obj, ObjectExp)
+    assert isinstance(obj, ObjectExp) or isinstance(obj, PropertyExp)
+    # and isinstance(obj.type, ObjectType)
     assert isinstance(identifier, Identifier)
     self.object     = obj
     self.identifier = identifier
