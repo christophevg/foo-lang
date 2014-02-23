@@ -118,6 +118,8 @@ class TypedList(Visitable):
   def __getitem__(self, index):
     try: return self.objects[index]
     except: return None
+  def __str__(self):
+    return "TypedList(" + self.type.__name__ + ")"
 
 class Constant(Visitable):
   def __init__(self, identifier, value, type=None):
@@ -287,7 +289,10 @@ class Exp(Visitable):
     return self._type
   def set_type(self, type):
     # allow to set only to same type or better than Unknown
-    assert self._type == type or isinstance(self._type, UnknownType)
+    assert self._type.__class__.__name__ == type.__class__.__name__ or \
+      isinstance(self._type, UnknownType), \
+      "Can't update type from " + self._type.__class__.__name__ + " to " + \
+      type.__class__.__name__
     self._type = type
   type = property(get_type, set_type)
   def __str__(self): return self.__class__.__name__
@@ -374,11 +379,16 @@ class FloatType(NumericType): pass
 @nohandling
 class ComplexType(TypeExp): pass
 
+manytype_provides = {
+  "contains": FunctionDecl(BlockStmt(), type=BooleanType(),
+                           parameters=[Parameter(Identifier("items"),
+                                                 type=ByteType())])
+}
 class ManyType(ComplexType):
   def __init__(self, subtype):
     assert isinstance(subtype, TypeExp)
     self.subtype = subtype
-    self.provides = { "contains": { "type": BooleanType(), "args": ByteType() } }
+    self.provides = manytype_provides
 
 class TupleType(ComplexType):
   def __init__(self, types=[]):
@@ -418,7 +428,14 @@ class ObjectExp(VariableExp):
   def __init__(self, identifier):
     super(ObjectExp, self).__init__(identifier)
 
-class FunctionExp(VariableExp): pass
+class FunctionExp(VariableExp):
+  def __init__(self, identifier):
+    super(FunctionExp, self).__init__(identifier)
+    self.declaration = FunctionDecl(BlockStmt())
+  def get_type(self): return self.declaration.type
+  type = property(get_type)
+  def get_parameters(self): return self.declaration.parameters
+  parameters = property(get_parameters)
 
 class PropertyExp(VariableExp):
   def __init__(self, obj, identifier):
@@ -516,30 +533,32 @@ class DivExp(NumericBinaryExp):
 class ModuloExp(NumericBinaryExp):
   def operator(self): return "%"
 
-class FunctionCallExp(Exp, Stmt):
+@nohandling
+class CallExp(Exp, Stmt):
+  def __init__(self, arguments=[]):
+    self.arguments = TypedList(Exp, arguments)
+
+class FunctionCallExp(CallExp):
   def __init__(self, function, arguments=[]):
+    super(FunctionCallExp, self).__init__(arguments)
     assert isinstance(function, FunctionExp)
     self.function  = function
-    self.arguments = TypedList(Exp, arguments)
-  def get_type(self):
-    return self.function.type
-  type=property(get_type)
-  def get_name(self):
-    return self.function.name
+  def get_name(self): return self.function.name
   name=property(get_name)
+  def get_type(self): return self.function.type
+  type=property(get_type)
 
-class MethodCallExp(Exp, Stmt):
+class MethodCallExp(CallExp):
   def __init__(self, obj, identifier, arguments=[]):
+    super(MethodCallExp, self).__init__(arguments)
     assert isinstance(obj, ObjectExp)
     assert isinstance(identifier, Identifier)
     self.object     = obj
     self.identifier = identifier
-    self.arguments  = TypedList(Exp, arguments)
-  def get_name(self): return self.identifier.name
+  def get_name(self): return self.object.name + "." + self.identifier.name
   name = property(get_name)
   def get_type(self):
-    try:
-      return self.obj.type.provides[self.identifier]['type']
+    try: return self.object.type.provides[self.identifier.name].type
     except: pass
     return UnknownType()
   type = property(get_type)

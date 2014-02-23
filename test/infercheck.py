@@ -19,7 +19,6 @@ class TestInferCheck(unittest.TestCase):
     results = api.check(model, silent=silent)
     self.assertEqual(results["successes"], 0)
     self.assertEqual(results["failures"],  0)
-    
   
   def test_simple_function_and_call(self):
     src = """
@@ -91,13 +90,23 @@ class TestInferCheck(unittest.TestCase):
     """
     model = api.load(src)
   
-    self.infer(model, 13)
+    self.infer(model, 14)
   
     # after (assert successes)
     m = model.modules["test"]
     f = m.functions
-    self.assertIsInstance(f["anonymous1"].type, VoidType)
-    # TODO: check all inferences
+    self.assertIsInstance(f["anonymous10"].type, VoidType)
+    contains = f["anonymous10"].body.statements[0].cases[0]
+    self.assertIsInstance(contains.arguments[0].type.subtype, ManyType)
+    arguments = contains.arguments[0].expressions
+    self.assertIsInstance(arguments[0].type, AtomType)          # heartbeat
+    self.assertIsInstance(arguments[1].type, ManyType)          # time
+    self.assertIsInstance(arguments[1].type.subtype, ByteType)
+    self.assertIsInstance(arguments[2].type, ManyType)          # sequence
+    self.assertIsInstance(arguments[2].type.subtype, ByteType)
+    self.assertIsInstance(arguments[3].type, ManyType)          # signature
+    self.assertIsInstance(arguments[3].type.subtype, ByteType)
+    # TODO: check more inferences
 
   def test_with_nodes(self):
     src = """
@@ -113,7 +122,7 @@ class TestInferCheck(unittest.TestCase):
     # after (assert successes)
     m = model.modules["test"]
     f = m.functions
-    self.assertIsInstance(f["anonymous2"].type, VoidType)
+    self.assertIsInstance(f["anonymous16"].type, VoidType)
     # TODO: check all inferences
 
 if __name__ == "__main__":

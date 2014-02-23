@@ -189,7 +189,6 @@ class Inferrer(SemanticChecker):
 
     # special case: parent is assignment
     if isinstance(parents[1], AssignStmt):
-      # print "=============", parents[1].value
       try:
         variable.type = parents[1].value.type
       except Exception, e:
@@ -217,9 +216,6 @@ class Inferrer(SemanticChecker):
       return
     
     self.fail("Couldn't infer ObjectExp", obj.identifier.name)
-    # print "OBJECT_EXP", str(exp)
-    # print self.stack_as_string()
-    # print str(self.env)
 
   def infer_PropertyExp(self, prop):
     if not isinstance(prop._type, UnknownType): return
@@ -234,7 +230,8 @@ class Inferrer(SemanticChecker):
       self.fail("PropertyExp", prop.identifier.name, "has ObjectExp with UnknownType")
       return
     
-    prop._type = prop.obj.type
+    try: prop._type = prop.obj.type.provides[prop.name].type
+    except: pass
     if not isinstance(prop._type, UnknownType):
       self.success("PropertyExp", prop.identifier.name, "has valid ObjectExp",
                    "Inferred to", prop._type)
@@ -244,11 +241,11 @@ class Inferrer(SemanticChecker):
 
   def infer_FunctionExp(self, exp):
     try:
-      exp.type = self.env[exp.name].type
+      exp.declaration = self.env[exp.name]
       self.success("Found declaration for FunctionExp in environment", exp.name,
                    "Inferred type to", str(exp.type))
       return
-    except: pass
+    except KeyError: pass
     parents = list(reversed(self.stack))[1:]
 
     # it's not in the environment
@@ -257,7 +254,7 @@ class Inferrer(SemanticChecker):
     if isinstance(parents[0], When):
       # it now expresses a method on the scope, try to retrieve it
       try:
-        exp.type = parents[0].scope.get_function(exp.name).type
+        exp.declaration = parents[0].scope.get_function(exp.name)
         self.success("Found declaration for FunctionExp in scope-method",
                      "Inferred type to", str(exp.type))
         return
@@ -269,11 +266,11 @@ class Inferrer(SemanticChecker):
     #        > BlockStmt > CaseStmt(payload) > FunctionCallExp(contains)
     #        > FunctionExp(contains)
     if isinstance(parents[1], CaseStmt):
-      exp.type = BooleanType()
+      exp.declaration = FunctionDecl(BlockStmt(), type=BooleanType())
       self.success("Found type of FunctionExp", exp.name, "on CaseStmt obj.",
                    "Inferred type to", str(exp.type))
       # check that it actually is
-      if not isinstance(parents[1].expression.type.provides[exp.name]['type'],
+      if not isinstance(parents[1].expression.type.provides[exp.name].type,
                         BooleanType):
         self.fail("Method", parents[1].expression.name, "provides",
                   str(parents[1].expression.type), "but is not BooleanType but",
@@ -303,6 +300,41 @@ class Inferrer(SemanticChecker):
             self.fail("Couldn't push up argument type to parameter.", name,
                       parameter.name)
 
-  def infer_BinaryExp(self, exp):
-    # print "*" * 100, exp.operator(), exp.left, exp.right
-    pass
+  def infer_ListLiteralExp(self, lst):
+    if not isinstance(lst.type, ManyType): return
+    if not isinstance(lst.type.subtype, UnknownType): return
+    
+    # determine the best matching type of the expressions in the list
+    type = UnknownType()
+    for exp in lst.expressions:
+      # no AtomType, it is converted to different other types on need-to basis
+      if isinstance(exp.type, AtomType): continue
+      # init on first non-UnknownType
+      if isinstance(type, UnknownType):
+        type = exp.type
+        next
+      # make sure that all types are compatible with detected type
+      # when we're dealing with ManyType, look into subtype
+      if isinstance(type, ManyType):
+        type_class = type.subtype.__class__.__name__
+        next_class = type.subtype.__class__.__name__
+      else:
+        type_class = type.__class__.__name__
+        next_class = exp.type.__class__.__name__
+      # if we're already dealing with bytes, we can always convert to byte
+      if type_class == "ByteType": continue
+      # otherwise: lower the type restrictions
+      if next_class == "ByteType":
+        type = exp.type
+        continue
+      # if there the same, obviously
+      if type_class == next_class: continue
+      self.fail("Couldn't determine best matching type for ListLiteral.",
+                "Ended up with", type_class, "and", next_class)
+      return
+    
+    # type is best matching type for all expressions in ListLiteral
+    # apply it to the subtype of the ListLiteral's ManyType
+    lst.type.subtype = type
+    self.success("Inferred type of ListLiteral from list's expressions' types.",
+                 "Inferred type to", lst.type.accept(Dumper()))
