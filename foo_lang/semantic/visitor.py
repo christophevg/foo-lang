@@ -669,8 +669,11 @@ class SemanticVisitor(SemanticVisitorBase):
   @stacked
   def handle_AtomLiteralExp(self, atom): pass
 
+  def handle_UnknownType(self, lst): pass
+
   @stacked
   def handle_ListLiteralExp(self, lst):
+    lst.type.accept(self)
     for exp in lst.expressions:
       exp.accept(self) 
 
@@ -830,3 +833,10 @@ class SemanticChecker(SemanticVisitor):
     if isinstance(obj, instance):
       self.fail(msg, *info)
 
+  def assertIsInstance(self, obj, instance, msg, *info):
+    if not isinstance(obj, instance):
+      self.fail(msg, *info)
+
+  def assertEqual(self, left, right, msg, *info):
+    if left != right:
+      self.fail(msg, *info)
