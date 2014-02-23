@@ -379,11 +379,18 @@ class FloatType(NumericType): pass
 @nohandling
 class ComplexType(TypeExp): pass
 
+# TODO: make this more specific and probably not instantiated, because the
+#       underlying types need to be mutable -> grmbl I want an analysis first
 manytype_provides = {
   "contains": FunctionDecl(BlockStmt(), type=BooleanType(),
                            parameters=[Parameter(Identifier("items"),
-                                                 type=ByteType())])
+                                                 type=ByteType())]),
+  "remove": FunctionDecl(BlockStmt(), type=IntegerType(),
+                         parameters=[Parameter(Identifier("items"),
+                                               type=UnknownType())])
 }
+# TODO: solve chicken-egg problem
+# TODO: ManyType might be considered an ObjectType
 class ManyType(ComplexType):
   def __init__(self, subtype):
     assert isinstance(subtype, TypeExp)
