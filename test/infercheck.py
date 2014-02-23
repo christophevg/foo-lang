@@ -95,8 +95,8 @@ class TestInferCheck(unittest.TestCase):
     # after (assert successes)
     m = model.modules["test"]
     f = m.functions
-    self.assertIsInstance(f["anonymous10"].type, VoidType)
-    contains = f["anonymous10"].body.statements[0].cases[0]
+    self.assertIsInstance(f.objects.values()[0].type, VoidType)
+    contains = f.objects.values()[0].body.statements[0].cases[0]
     self.assertIsInstance(contains.arguments[0].type.subtype, ManyType)
     arguments = contains.arguments[0].expressions
     self.assertIsInstance(arguments[0].type, AtomType)          # heartbeat
@@ -122,7 +122,7 @@ class TestInferCheck(unittest.TestCase):
     # after (assert successes)
     m = model.modules["test"]
     f = m.functions
-    self.assertIsInstance(f["anonymous16"].type, VoidType)
+    self.assertIsInstance(f.objects.values()[0].type, VoidType)
     # TODO: check all inferences
 
 if __name__ == "__main__":
