@@ -335,6 +335,13 @@ class DotDumper(object):
                   ["functions",  obj.functions],
                   ["executions", obj.executions]
                 ]
+      elif isinstance(obj, Domain):
+        items = [
+                  ["extensions", obj.extensions],
+                  ["node_t",     obj.node_t],
+                  ["type",       obj.type],
+                  ["payload_t",  obj.payload_t]
+                ]
       else:
         items = obj.__dict__.items()
       for key, value in items:
