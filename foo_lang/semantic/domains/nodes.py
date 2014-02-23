@@ -33,6 +33,9 @@ class Nodes(Domain):
                                Parameter(Identifier("hop"),     self.node_t),
                                Parameter(Identifier("payload"), self.payload_t)
                               ])
+    self.node_t.provides["send_to"] = \
+      FunctionDecl(BlockStmt(), identifier=Identifier("transmit"),  type=VoidType(),
+                   parameters=[Parameter(Identifier("payload"), self.payload_t)])
     self.node_t.provides["receive"] = \
       FunctionDecl(BlockStmt(), identifier=Identifier("receive"),   type=VoidType(),
                    parameters=[Parameter(Identifier("from"),    self.node_t),
