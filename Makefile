@@ -39,6 +39,10 @@ all: clean test pdf coverage generate beautify show
 	@echo "*** visualizing $< as PDF $@"
 	@$(DOT) -Tpdf -o $@ $<
 
+all.sm.dot: $(SRCS) parser
+	@echo "*** creating joined model+dot"
+	@$(FOO) -i -c -g sm-dot $(SRCS) > $@ || (cat $@; rm $@; false)
+
 shell: parser
 	$(PYTHON)	
 
