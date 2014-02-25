@@ -9,12 +9,12 @@ class Visitable(object):
   """
   Baseclass for visitable classes
   """
-  def handler(self):
+  def visited(self):
     return self.__class__.__name__
 
   def accept(self, visitor):
-    class_name  = self.handler()
-    method_name = "handle_" + class_name
+    class_name  = self.visited()
+    method_name = "visit_" + class_name
     return getattr(visitor, method_name)(self)
 
 class Visitor(object):
@@ -27,20 +27,18 @@ class Visitor(object):
     """
     methods = inspect.getmembers(self, predicate=inspect.ismethod)
     for name, method in methods:
-      if name[:7] == "handle_":
-        try:
-          method(None)
-        except AttributeError:
-          pass
+      if name[:5] == "visit_":
+        try: method(None)
+        except AttributeError: pass
 
-nohandlings = []
-def nohandling(clazz):
-  nohandlings.append(clazz.__module__ + "." + clazz.__name__)
+novisitings = []
+def novisiting(clazz):
+  novisitings.append(clazz.__module__ + "." + clazz.__name__)
   return clazz
 
-class visitor_for(object):
+class visits(object):
   """
-  Decorator @visitor_for(superclass) makes a decorated class a visitor for all
+  Decorator @visitors([superclass]) makes a decorated class a visitor for all
   classes in the module of the decorated class. The visitable classes can be
   limited to a number of common superclasses.
   """
@@ -64,8 +62,47 @@ class visitor_for(object):
 
     for name, clazz in classes:
       fqn = module.__name__ + "." + name
-      if fqn not in nohandlings:
+      if fqn not in novisitings:
         if super == [] or any([issubclass(clazz, sup) for sup in self.supers]):
-          setattr(visitor, "handle_" + name, NotImplemented("handle_" + name))
+          setattr(visitor, "visit_" + name, NotImplemented("visit_" + name))
 
     return visitor
+
+def stacked(method):
+  """
+  Decorator for methods to keep track of their execution using a stack.
+  """
+  def wrapped(self, obj):
+    self._stack.append(obj)
+    method(self, obj)
+    self._stack.pop()
+  return wrapped
+
+def with_handling(method):
+  """
+  Decorator for methods of the Visitor to perform actual handling before or
+  after the Visitor visits its children.
+  """
+  def execute(self, name, obj):
+    # TODO: find nicer Pythonic way to structure this :-(
+    try:
+      # get and execute actual handling
+      getattr(self, name)(obj)
+    except AttributeError, e:
+      expected = "'{0}' object has no attribute '{1}'".format(
+                   self.__class__.__name__, name)
+      if str(e) != expected:
+        # Whoops some other AttributeError ... while calling
+        raise
+      else:
+        # no handler, that's ok
+        pass
+
+  obj_name = method.__name__[len("visit_"):]  # extract object name from method 
+
+  def wrapped(self, obj):
+    execute(self, "before_visit_" + obj_name, obj)
+    method(self, obj)
+    execute(self, "after_visit_" + obj_name, obj)
+
+  return wrapped

@@ -2,10 +2,10 @@
 # instructions to represent abstract (procedural+OO) code - AST anyone? ;-)
 # author: Christophe VG
 
-from util.visitor import Visitable, visitor_for, nohandling
+from util.visitor import Visitable, visits, novisiting
 from util.check   import isstring, isidentifier
 
-@nohandling
+@novisiting
 class Fragment(Visitable): pass
 
 class Identifier(Fragment):
@@ -14,10 +14,10 @@ class Identifier(Fragment):
     assert isidentifier(name)
     self.name = name
 
-@nohandling
-class Instruction(Visitable): pass
+@novisiting
+class Instruction(Fragment): pass
 
-class InstructionList(Visitable):
+class InstructionList(Instruction):
   def __init__(self, instructions=[]):
     self.instructions = []
     [self.append(instruction) for instruction in instructions]
@@ -32,7 +32,7 @@ class InstructionList(Visitable):
     self.instructions.append(instruction)
     return self
 
-@nohandling
+@novisiting
 class Declaration(Instruction): pass
 
 class FunctionDecl(Declaration):
@@ -47,7 +47,7 @@ class FunctionDecl(Declaration):
     self.body       = body
     self.type       = type
 
-@nohandling
+@novisiting
 class ParameterList(Fragment):
   def __init__(self, parameters):
     self.parameters = []
@@ -72,7 +72,7 @@ class ParameterDecl(Declaration):
     self.type    = type
     self.default = default
 
-@nohandling
+@novisiting
 class Stmt(Instruction):
   def ends(self):
     return False
@@ -103,7 +103,7 @@ class IfStmt(Stmt):
     self.true_clause  = true_clause
     self.false_clause = false_clause
 
-@nohandling
+@novisiting
 class MutUnOpStmt(Stmt):
   def __init__(self, operand):
     assert isinstance(operand, VariableExp)
@@ -114,7 +114,7 @@ class MutUnOpStmt(Stmt):
 class IncStmt(MutUnOpStmt): pass
 class DecStmt(MutUnOpStmt): pass
 
-@nohandling
+@novisiting
 class ImmutUnOpStmt(Stmt):
   def __init__(self, expression):
     assert isinstance(expression, Expression)
@@ -132,7 +132,7 @@ class Comment(Stmt):
   def __str__(self):
     return self.comment
 
-@nohandling
+@novisiting
 class BinOpStmt(Stmt):
   def __init__(self, operand, expression):
     assert isinstance(operand, VariableExp)
@@ -153,7 +153,7 @@ class ReturnStmt(Stmt):
   def ends(self):
     return True
 
-@nohandling
+@novisiting
 class CondLoopStmt(Stmt):
   def __init__(self, condition, body):
     assert isinstance(condition, Expression)
@@ -178,10 +178,10 @@ class ForStmt(Stmt):
     self.change = change
     self.body   = body
 
-@nohandling
+@novisiting
 class Expression(Stmt): pass
 
-@nohandling
+@novisiting
 class VariableExp(Expression): pass
 
 class SimpleVariableExp(VariableExp):
@@ -198,7 +198,7 @@ class PropertyExp(ObjectExp):
     self.obj  = obj
     self.prop = prop
 
-@nohandling
+@novisiting
 class UnOpExp(Expression):
   def __init__(self, operand):
     assert isinstance(operand, Expression)
@@ -206,7 +206,7 @@ class UnOpExp(Expression):
 
 class NotExp(UnOpExp): pass
 
-@nohandling
+@novisiting
 class BinOpExp(Expression):
   def __init__(self, left, right):
     assert isinstance(left, Expression)
@@ -244,7 +244,7 @@ class MethodCallExp(Expression):
     self.method    = method
     self.arguments = ExpressionList(arguments)
 
-@nohandling
+@novisiting
 class ExpressionList(Fragment):
   def __init__(self, expressions):
     self.expressions = []
@@ -260,7 +260,7 @@ class ExpressionList(Fragment):
     self.expressions.append(expression)
     return self
 
-@nohandling
+@novisiting
 class LiteralExp(Expression): pass
 
 class BooleanLiteral(LiteralExp):
@@ -301,5 +301,5 @@ class UnknownType(TypeExp):
 
 # VISITOR FOR INSTRUCTIONS
 
-@visitor_for([Instruction, Fragment])
+@visits([Fragment])
 class InstructionVisitor(): pass

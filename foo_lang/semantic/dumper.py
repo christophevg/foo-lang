@@ -25,26 +25,26 @@ class Dumper(SemanticVisitorBase):
   def dec_indent(self):
     self.indent_level -= 1
 
-  def handle_Identifier(self, id):
+  def visit_Identifier(self, id):
     return id.name
 
   @indent
-  def handle_Model(self, model):
+  def visit_Model(self, model):
     string = ""
     for module in model.modules.values():
       string += module.accept(self)
     return string
 
   @indent
-  def handle_Domain(self, domain):
+  def visit_Domain(self, domain):
     return domain.__class__.__name__.lower()
 
   @indent
-  def handle_Scope(self, scope):
+  def visit_Scope(self, scope):
     return scope.scope
 
   @indent
-  def handle_Module(self, module):
+  def visit_Module(self, module):
     string = "module " + module.identifier.accept(self) + "\n";
 
     for constant in module.constants:
@@ -70,31 +70,31 @@ class Dumper(SemanticVisitorBase):
     return string
 
   @indent
-  def handle_Constant(self, constant):
+  def visit_Constant(self, constant):
     return "const " + constant.identifier.accept(self) \
            + ((" : " + constant.type.accept(self)) \
              if not isinstance(constant.type, UnknownType) else "") \
            + " = " + constant.value.accept(self)
 
   @indent
-  def handle_Extension(self, extension):
+  def visit_Extension(self, extension):
     return "extend " + extension.domain.accept(self) + \
            " with " + extension.extension.accept(self)
 
   @indent
-  def handle_Every(self, execution):
+  def visit_Every(self, execution):
     return "@every(" + execution.interval.accept(self) + ")\n" + \
            "with " + execution.scope.accept(self) + " do " + \
            execution.executed.accept(self).lstrip()
 
   @indent
-  def handle_When(self, execution):
+  def visit_When(self, execution):
     return execution.timing + " " + execution.scope.accept(self) + " " + \
            execution.event.accept(self) + " do " + \
            execution.executed.accept(self).lstrip()
 
   @indent
-  def handle_FunctionDecl(self, function):
+  def visit_FunctionDecl(self, function):
     name = "" if function.name[0:9] == "anonymous" \
               else " " + function.identifier.accept(self)
     string = "function" + name + \
@@ -103,13 +103,13 @@ class Dumper(SemanticVisitorBase):
                function.body.accept(self).lstrip()
     return string
 
-  def handle_Parameter(self, parameter):
+  def visit_Parameter(self, parameter):
     return parameter.identifier.accept(self)
 
   # STATEMENTS
 
   @indent
-  def handle_BlockStmt(self, block):
+  def visit_BlockStmt(self, block):
       string = "{";
       if len(block.statements) == 0:
         string += " }"
@@ -123,27 +123,27 @@ class Dumper(SemanticVisitorBase):
       return string
 
   @indent
-  def handle_AssignStmt(self, stmt):
+  def visit_AssignStmt(self, stmt):
     return stmt.variable.accept(self) + " = " + stmt.value.accept(self)
 
   @indent
-  def handle_AddStmt(self, stmt):
+  def visit_AddStmt(self, stmt):
     return stmt.variable.accept(self) + " += " + stmt.value.accept(self)
   
   @indent
-  def handle_SubStmt(self, stmt):
+  def visit_SubStmt(self, stmt):
     return stmt.variable.accept(self) + " -= " + stmt.value.accept(self)
 
   @indent
-  def handle_IncStmt(self, stmt):
+  def visit_IncStmt(self, stmt):
     return stmt.variable.accept(self) + "++"
 
   @indent
-  def handle_DecStmt(self, stmt):
+  def visit_DecStmt(self, stmt):
     return stmt.variable.accept(self) + "--"
 
   @indent
-  def handle_IfStmt(self, stmt):
+  def visit_IfStmt(self, stmt):
     string =  "if( " + stmt.condition.accept(self) + " ) " + \
               stmt.true.accept(self).lstrip()
     if stmt.false != None:
@@ -151,7 +151,7 @@ class Dumper(SemanticVisitorBase):
     return string
 
   @indent
-  def handle_CaseStmt(self, stmt):
+  def visit_CaseStmt(self, stmt):
     string = "case " + stmt.expression.accept(self) + " {\n"
     # a case is a FunctionCallExp
     # a consequences is a Statement
@@ -163,28 +163,28 @@ class Dumper(SemanticVisitorBase):
     return string
 
   @indent
-  def handle_ReturnStmt(self, stmt):
+  def visit_ReturnStmt(self, stmt):
     return "return" + \
          ("" if stmt.expression == None else " " + stmt.expression.accept(self))
     
   # EXPRESSIONS
   
-  def handle_BooleanLiteralExp(self, exp):
+  def visit_BooleanLiteralExp(self, exp):
     return "true" if exp.value else "false"
 
-  def handle_IntegerLiteralExp(self, exp):
+  def visit_IntegerLiteralExp(self, exp):
     return str(exp.value)
 
-  def handle_FloatLiteralExp(self, exp):
+  def visit_FloatLiteralExp(self, exp):
     return str(exp.value)
   
-  def handle_AtomLiteralExp(self, atom):
+  def visit_AtomLiteralExp(self, atom):
     return "#" + atom.identifier.accept(self)
 
-  def handle_ListLiteralExp(self, lst):
+  def visit_ListLiteralExp(self, lst):
     return "[" + ",".join([exp.accept(self) for exp in lst.expressions]) + "]"
 
-  def handle_ObjectLiteralExp(self, obj):
+  def visit_ObjectLiteralExp(self, obj):
     string = "{";
     if len(obj.properties) != 0: string += "\n"
     self.inc_indent()
@@ -195,65 +195,65 @@ class Dumper(SemanticVisitorBase):
     return string
 
   @indent
-  def handle_Property(self, prop):
+  def visit_Property(self, prop):
     return prop.identifier.accept(self) + \
            ((" : " + prop.type.accept(self)) \
              if not isinstance(prop.type, UnknownType) else "") + \
            " = " + prop.value.accept(self)
 
-  def handle_UnknownType(self, type): return "__unknown__"
-  def handle_AnyType(self, type):     return "__any__"
-  def handle_MixedType(self, type):   return "__mixed__"
-  def handle_AtomType(self, type):    return "__atom__"
+  def visit_UnknownType(self, type): return "__unknown__"
+  def visit_AnyType(self, type):     return "__any__"
+  def visit_MixedType(self, type):   return "__mixed__"
+  def visit_AtomType(self, type):    return "__atom__"
 
-  def handle_VoidType   (self, type): return ""
-  def handle_BooleanType(self, type): return "boolean"
-  def handle_ByteType   (self, type): return "byte"
-  def handle_IntegerType(self, type): return "integer"
-  def handle_FloatType  (self, type): return "float"
-  def handle_ObjectType (self, type): return type.name
+  def visit_VoidType   (self, type): return ""
+  def visit_BooleanType(self, type): return "boolean"
+  def visit_ByteType   (self, type): return "byte"
+  def visit_IntegerType(self, type): return "integer"
+  def visit_FloatType  (self, type): return "float"
+  def visit_ObjectType (self, type): return type.name
 
-  def handle_TimestampType (self, type): return "timestamp"
+  def visit_TimestampType (self, type): return "timestamp"
   
-  def handle_ManyType(self, many):
+  def visit_ManyType(self, many):
     return many.subtype.accept(self) + "*"
     
-  def handle_TupleType(self, tuple):
+  def visit_TupleType(self, tuple):
     return "[" + ",".join([type.accept(self) for type in tuple.types]) + "]"
 
-  def handle_VariableExp(self, var):
+  def visit_VariableExp(self, var):
     return var.identifier.accept(self)
 
-  def handle_FunctionExp(self, var):
+  def visit_FunctionExp(self, var):
     return var.identifier.accept(self)
 
-  def handle_ObjectExp(self, var):
+  def visit_ObjectExp(self, var):
     return var.identifier.accept(self)
   
-  def handle_PropertyExp(self, prop):
+  def visit_PropertyExp(self, prop):
     return prop.obj.accept(self) + "." + prop.identifier.accept(self)
 
-  def handle_UnaryExp(self, exp):
+  def visit_UnaryExp(self, exp):
     return exp.operator() + " " + exp.operand.accept(self)
 
-  def handle_BinaryExp(self, exp):
+  def visit_BinaryExp(self, exp):
     return "( " + exp.left.accept(self) + " "  + exp.operator() + " " + \
                  exp.right.accept(self) + " )"
 
   @indent
-  def handle_FunctionCallExp(self, exp):
+  def visit_FunctionCallExp(self, exp):
     return exp.function.accept(self) + \
            "(" + ", ".join([arg.accept(self) for arg in exp.arguments]) + ")"
 
   @indent
-  def handle_MethodCallExp(self, exp):
+  def visit_MethodCallExp(self, exp):
     return exp.object.accept(self) + "." + exp.identifier.accept(self) + \
            "(" + ", ".join([arg.accept(self) for arg in exp.arguments]) + ")"
 
-  def handle_AnythingExp(self, exp):
+  def visit_AnythingExp(self, exp):
     return "_"
 
-  def handle_MatchExp(self, exp):
+  def visit_MatchExp(self, exp):
     return (exp.operator if isstring(exp.operator) else exp.operator.accept(self)) + \
            ((" " + exp.operand.accept(self)) if exp.operand != None else "")
 

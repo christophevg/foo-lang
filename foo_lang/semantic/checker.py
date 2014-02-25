@@ -9,46 +9,46 @@ class Checker(SemanticChecker):
 
   # Unknown Types (these should be fixed by the Inferrer)
 
-  def check_Parameter(self, param):
+  def after_visit_Parameter(self, param):
     self.assertNotIsInstance( param.type, UnknownType, \
                               "parameter type is Unknown", param.name )
   
-  def check_Property(self, prop):
+  def after_visit_Property(self, prop):
     self.assertNotIsInstance( prop.type, UnknownType, \
                               "property type is Unknown", prop.name )
 
-  def check_Constant(self, constant):
+  def after_visit_Constant(self, constant):
     self.assertNotIsInstance( constant.type, UnknownType, \
                               "constant type is Unknown", constant.name )
 
-  def check_FunctionDecl(self, function):
+  def after_visit_FunctionDecl(self, function):
     self.assertNotIsInstance( function.type, UnknownType, \
                               "function return type is Unknown", function.name )
 
-  def check_FunctionCallExp(self, call):
+  def after_visit_FunctionCallExp(self, call):
     self.assertNotIsInstance( call.type, UnknownType, \
                               "functioncall return type is Unknown", call.name )
 
-  def check_MethodCallExp(self, call):
+  def after_visit_MethodCallExp(self, call):
     self.assertNotIsInstance(call.type, UnknownType,  \
                              "MethodCallExp type is Unknown", call.name)
 
-  def check_ManyType(self, many):
+  def after_visit_ManyType(self, many):
     self.assertNotIsInstance(many.subtype, UnknownType,  \
                              "ManyType's subtype is Unknown")
 
   # Optional attributes that seem to be missing
 
-  def check_Scope(self, scope):
+  def after_visit_Scope(self, scope):
     self.assertIsNotNone( scope.scope, "scope's scope is None" )
 
   # Definitions
 
-  def check_VariableExp(self, variable):
+  def after_visit_VariableExp(self, variable):
     if variable.name in self.env: return
     self.fail("Variable has no definition.", variable.name)
 
-  def check_FunctionExp(self, function):
+  def after_visit_FunctionExp(self, function):
     """
     Every expressed function (read: its name), should be known (read: be in the
     environment)

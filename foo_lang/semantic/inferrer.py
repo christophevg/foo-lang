@@ -10,10 +10,10 @@ from foo_lang.semantic.dumper  import Dumper
 class Inferrer(SemanticChecker):
 
   def infer(self):
-    self.prefix = "infer_"
+    self.prefix = "after_visit_"
     return self.check()
 
-  def infer_Constant(self, constant):
+  def after_visit_Constant(self, constant):
     """
     Infers the type of the constant if it is unknown. 
     """
@@ -31,7 +31,7 @@ class Inferrer(SemanticChecker):
         self.fail("Failed to infer constant type based on value of " + \
                   constant.name)
 
-  def infer_FunctionDecl(self, function):
+  def after_visit_FunctionDecl(self, function):
     """
     Infers the return type of the function.
     """
@@ -41,7 +41,7 @@ class Inferrer(SemanticChecker):
     # an expression to return, the return-type=void
     class TypedReturnDetectedException(Exception): pass
     class ReturnDetector(SemanticVisitor):
-      def handle_ReturnStmt(self, stmt):
+      def visit_ReturnStmt(self, stmt):
         if not stmt.expression is None:
           # currently no in scope
           # TODO: determine Type and return through exception
@@ -60,7 +60,7 @@ class Inferrer(SemanticChecker):
       self.fail("Found return typed stmt in untyped function body. " + \
                 "Inferring return type to " + str(type))
 
-  def infer_Parameter(self, parameter):
+  def after_visit_Parameter(self, parameter):
     if not isinstance(parameter.type, UnknownType): return
 
     parents  = list(reversed(self.stack))
@@ -115,7 +115,7 @@ class Inferrer(SemanticChecker):
   # those that aren't needed have been removed: e.g. ListLiteral, ObjectLiteral,
   # Property, FunctionCallExp, MethodCallExp
 
-  def infer_VariableExp(self, variable):
+  def after_visit_VariableExp(self, variable):
     # original : self._type = UnknownType()
     # we need to move up the stack to find the declaration and reuse that;
     # variables can be declared in FunctionDecl, might be a Constant, or as 
@@ -215,7 +215,7 @@ class Inferrer(SemanticChecker):
 
     self.fail("Couldn't find declaration for variable", variable.name)
 
-  def infer_ObjectExp(self, obj):
+  def after_visit_ObjectExp(self, obj):
     if not isinstance(obj._type, UnknownType): return
     
     # the identifier points to an object, which should be in the environment
@@ -227,7 +227,7 @@ class Inferrer(SemanticChecker):
     
     self.fail("Couldn't infer ObjectExp", obj.identifier.name)
 
-  def infer_PropertyExp(self, prop):
+  def after_visit_PropertyExp(self, prop):
     if not isinstance(prop._type, UnknownType): return
     
     # the object should be known, check its provided items
@@ -249,7 +249,7 @@ class Inferrer(SemanticChecker):
 
     self.fail("Couldn't infer PropertyExp", prop.identifier.name)
 
-  def infer_FunctionExp(self, exp):
+  def after_visit_FunctionExp(self, exp):
     try:
       exp.declaration = self.env[exp.name]
       self.success("Found declaration for FunctionExp in environment", exp.name,
@@ -291,7 +291,7 @@ class Inferrer(SemanticChecker):
     self.fail("Couldn't retrieve type from declaration for FunctionExp",
                exp.name)
 
-  def infer_FunctionCallExp(self, call):
+  def after_visit_FunctionCallExp(self, call):
     # If we can access the FunctionDecl, check that it's parameters are typed,
     # else infer them from our arguments. This can happen multiple times, but
     # that is good, because the type of the parameters can only change once. If
@@ -310,7 +310,7 @@ class Inferrer(SemanticChecker):
             self.fail("Couldn't push up argument type to parameter.", name,
                       parameter.name)
 
-  def infer_ListLiteralExp(self, lst):
+  def after_visit_ListLiteralExp(self, lst):
     if not isinstance(lst.type, ManyType): return
     if not isinstance(lst.type.subtype, UnknownType): return
     
@@ -360,7 +360,7 @@ class Inferrer(SemanticChecker):
     self.success("Inferred type of ListLiteral from list's expressions' types.",
                  "Inferred type to", lst.type.accept(Dumper()))
 
-  def infer_ManyType(self, many):
+  def after_visit_ManyType(self, many):
     if not isinstance(many.subtype, UnknownType): return
     
     # special case: We're the type of the value part of a property, which has a

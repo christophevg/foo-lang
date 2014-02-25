@@ -60,11 +60,11 @@ def load(string, model=None):
 
 def check(model, silent=False):
   verbose = not silent
-  return Checker(model, verbose=verbose, bottom_up=True).check()
+  return Checker(model, verbose=verbose).check()
 
 def infer(model, silent=False):
   verbose = not silent
-  return Inferrer(model, verbose=verbose, bottom_up=True).infer()
+  return Inferrer(model, verbose=verbose).infer()
 
 def generate(model, generator):
   generator.generate(model)

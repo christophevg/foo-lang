@@ -5,6 +5,7 @@
 
 import unittest
 
+from test.visitor              import TestVisitor
 from test.expressions          import TestExpressions
 from test.statements           import TestStatements
 from test.semantic             import TestModel
@@ -19,6 +20,7 @@ from test.infercheck           import TestInferCheck
 if __name__ == '__main__':
   tests = [ unittest.TestLoader().loadTestsFromTestCase(test)
             for test in [ 
+                          TestVisitor,
                           TestExpressions,
                           TestStatements,
                           TestModel,

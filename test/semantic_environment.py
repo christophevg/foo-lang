@@ -16,7 +16,7 @@ class TestSemanticEnvironment(unittest.TestCase):
 
     class TestVisitor(SemanticVisitor):
       def __init__(self):
-        super(TestVisitor, self).__init__(bottom_up=True)
+        super(TestVisitor, self).__init__()
         self.prefix = "visit_"
   
       def visit_Module(self, module):

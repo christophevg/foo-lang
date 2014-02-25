@@ -12,45 +12,45 @@ class Emitter(Language):
 
   def ext(self): return "c"
 
-  def handle_Identifier(self, id):
+  def visit_Identifier(self, id):
     return str(id.name)
 
-  def handle_InstructionList(self, program):
+  def visit_InstructionList(self, program):
     return "\n".join([ instruction.accept(self)
                        for instruction in program.instructions ])
 
-  def handle_FunctionDecl(self, function):
+  def visit_FunctionDecl(self, function):
     params = ", ".join([ param.accept(self) for param in function.parameters ])
     if params == "": params = "void"
     return function.type.accept(self) + " " + function.name.accept(self) + \
            "(" + params + ")" + \
            " " + function.body.accept(self)
 
-  def handle_TypeExp(self, type):
+  def visit_TypeExp(self, type):
     return type.name.accept(self)
 
-  def handle_UnknownType(self, type):
+  def visit_UnknownType(self, type):
     return "void"
 
-  def handle_EmptyStmt(self, stmt):
+  def visit_EmptyStmt(self, stmt):
     return "{}"
 
-  def handle_ParameterDecl(self, param):
+  def visit_ParameterDecl(self, param):
     return param.type.accept(self) + " " + param.name.accept(self)
 
-  def handle_BlockStmt(self, block):
+  def visit_BlockStmt(self, block):
     if block == None: block = [] # Fixme, happens when testing coverage
     return "{\n" + "\n".join([ (statement.accept(self) + \
                                 (";" if statement.ends() else ""))
                                  for statement in block ]) + "\n}"
 
-  def handle_SimpleVariableExp(self, var):
+  def visit_SimpleVariableExp(self, var):
     return var.name.accept(self)
 
-  def handle_ObjectExp(self, obj):
+  def visit_ObjectExp(self, obj):
     return obj.name.accept(self)
 
-  def handle_PropertyExp(self, exp):
+  def visit_PropertyExp(self, exp):
     """
     Emission strategy: Objects are represented by structs and are passed around
     as pointers. So accessing a property is accessing a struct member after
@@ -58,79 +58,79 @@ class Emitter(Language):
     """
     return exp.obj.accept(self) + "->" + exp.prop.accept(self)
 
-  def handle_Comment(self, comment):
+  def visit_Comment(self, comment):
     if "\n" in str(comment):
       return "/* " + str(comment) + " */"
     else:
       return "// " + str(comment)
 
-  def handle_IncStmt(self, stmt):
+  def visit_IncStmt(self, stmt):
     return stmt.operand.accept(self) + "++";
 
-  def handle_DecStmt(self, stmt):
+  def visit_DecStmt(self, stmt):
     return stmt.operand.accept(self) + "--";
 
-  def handle_AssignStmt(self, stmt):
+  def visit_AssignStmt(self, stmt):
     return stmt.operand.accept(self) + " = " + stmt.expression.accept(self)
 
-  def handle_AddStmt(self, stmt):
+  def visit_AddStmt(self, stmt):
     return stmt.operand.accept(self) + " += " + stmt.expression.accept(self)
 
-  def handle_SubStmt(self, stmt):
+  def visit_SubStmt(self, stmt):
     return stmt.operand.accept(self) + " -= " + stmt.expression.accept(self)
 
-  def handle_AndExp(self, exp):
+  def visit_AndExp(self, exp):
     return exp.left.accept(self) + " and " + exp.right.accept(self)
 
-  def handle_OrExp(self, exp):
+  def visit_OrExp(self, exp):
     return exp.left.accept(self) + " or " + exp.right.accept(self)
 
-  def handle_EqualsExp(self, exp):
+  def visit_EqualsExp(self, exp):
     return exp.left.accept(self) + " == " + exp.right.accept(self)
 
-  def handle_NotEqualsExp(self, exp):
+  def visit_NotEqualsExp(self, exp):
     return exp.left.accept(self) + " != " + exp.right.accept(self)
 
-  def handle_LTExp(self, exp):
+  def visit_LTExp(self, exp):
     return exp.left.accept(self) + " < " + exp.right.accept(self)
 
-  def handle_LTEQExp(self, exp):
+  def visit_LTEQExp(self, exp):
     return exp.left.accept(self) + " <= " + exp.right.accept(self)
 
-  def handle_GTExp(self, exp):
+  def visit_GTExp(self, exp):
     return exp.left.accept(self) + " > " + exp.right.accept(self)
 
-  def handle_GTEQExp(self, exp):
+  def visit_GTEQExp(self, exp):
     return exp.left.accept(self) + " >= " + exp.right.accept(self)
 
-  def handle_PlusExp(self, exp):
+  def visit_PlusExp(self, exp):
     return exp.left.accept(self) + " + " + exp.right.accept(self)
 
-  def handle_MinusExp(self, exp):
+  def visit_MinusExp(self, exp):
     return exp.left.accept(self) + " - " + exp.right.accept(self)
 
-  def handle_MultExp(self, exp):
+  def visit_MultExp(self, exp):
     return exp.left.accept(self) + " * " + exp.right.accept(self)
 
-  def handle_DivExp(self, exp):
+  def visit_DivExp(self, exp):
     return exp.left.accept(self) + " / " + exp.right.accept(self)
 
-  def handle_ModuloExp(self, exp):
+  def visit_ModuloExp(self, exp):
     return exp.left.accept(self) + " % " + exp.right.accept(self)
 
-  def handle_NotExp(self, exp):
+  def visit_NotExp(self, exp):
     return "! " + exp.operand.accept(self)
 
-  def handle_FunctionCallExp(self, call):
+  def visit_FunctionCallExp(self, call):
     return call.function.accept(self) + \
            "(" + ", ".join([arg.accept(self) for arg in call.arguments])+ ")"
 
   @warn("MethodCalls are badly supported.")
-  def handle_MethodCallExp(self, call):
+  def visit_MethodCallExp(self, call):
     return call.obj.accept(self) + "->" + call.method.accept(self) + \
            "(" + ", ".join([arg.accept(self) for arg in call.arguments])+ ")"
 
-  def handle_AtomLiteral(self, atom):
+  def visit_AtomLiteral(self, atom):
     """
     Emission strategy: replace by unique (sequence) number.
     """
@@ -141,51 +141,51 @@ class Emitter(Language):
       self.atoms.append(atom.name)
       return str(len(self.atoms)-1)
 
-  def handle_BooleanLiteral(self, boolean):
+  def visit_BooleanLiteral(self, boolean):
     return "TRUE" if boolean.value else "FALSE"
 
-  def handle_FloatLiteral(self, literal):
+  def visit_FloatLiteral(self, literal):
     return str(literal.value)
 
-  def handle_IntegerLiteral(self, literal):
+  def visit_IntegerLiteral(self, literal):
     return str(literal.value)
 
   @warn("ListLiterals are badly supported.")
-  def handle_ListLiteral(self, literal):
+  def visit_ListLiteral(self, literal):
     return "{" + [exp.accept(self) for exp in literal.expressions ] + "}"
 
   @warn("TupleLiterals are badly supported.")
-  def handle_TupleLiteral(self, literal):
+  def visit_TupleLiteral(self, literal):
     return "{" + [exp.accept(self) for exp in literal.expressions ] + "}"
 
-  def handle_WhileDoStmt(self, loop):
+  def visit_WhileDoStmt(self, loop):
     return "while(" + loop.condition.accept(self) + ")" + \
            loop.body.accept(self)
 
-  def handle_RepeatUntilStmt(self, loop):
+  def visit_RepeatUntilStmt(self, loop):
     return "do " + loop.body.accept(self) + \
            "while(!" + loop.condition.accept(self) + ")"
 
-  def handle_ForStmt(self, loop):
+  def visit_ForStmt(self, loop):
     return "for(" + loop.init.accept(self) + ";" + \
                     loop.check.accept(self)+ ";" + \
                     loop.change.accept(self)+ ") " + \
               loop.body.accept(self)
 
-  def handle_IfStmt(self, stmt):
+  def visit_IfStmt(self, stmt):
     return "if(" + stmt.expression.accept(self) + ")" + \
            stmt.true_clause.accept(self) + \
            (" else " + stmt.false_clause.accept(self)) \
              if stmt.false_clause != None else ""
 
   @warn("Exceptions are badly supported.")
-  def handle_RaiseStmt(self, stmt):
+  def visit_RaiseStmt(self, stmt):
     return "printf( \"EXCEPTION: " + stmt.expression.accept(self) + "\");\n" + \
            "exit(-1)"
 
-  def handle_PrintStmt(self, stmt):
+  def visit_PrintStmt(self, stmt):
     return "printf( \"" + stmt.expression.accept(self) + "\")"
 
-  def handle_ReturnStmt(self, stmt):
+  def visit_ReturnStmt(self, stmt):
     return "return" + (" " + stmt.expression.accept(self)) \
                         if stmt.expression != None else ""

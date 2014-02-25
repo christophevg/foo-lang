@@ -4,7 +4,8 @@
 
 from collections import OrderedDict
 
-from util.visitor import Visitable, visitor_for, nohandling
+from util.types   import NamedTypedOrderedDict, TypedList
+from util.visitor import Visitable, visits, novisiting
 from util.check   import isidentifier
 
 class Identifier(Visitable):
@@ -21,7 +22,7 @@ class Model(Visitable):
     self.modules = {}
   def __str__(self): return self.__class__.__name__
 
-@nohandling
+@novisiting
 class Domain(Visitable):
   def extend(self, extension):
     raise NotImplementedError, "Domain.extend not implemented on " + str(self)
@@ -32,7 +33,7 @@ class Domain(Visitable):
   def get_property(self, property):
     return self.get_scope(property)
   
-  def handler(self):
+  def visited(self):
     return "Domain"
 
   def get_function(self, function_name):
@@ -44,14 +45,14 @@ class Domain(Visitable):
 
   def __str__(self): return self.__class__.__name__ + "(" + self.name + ")"
 
-@nohandling
+@novisiting
 class Scope(Visitable):
   def __init__(self, domain):
     assert isinstance(domain, Domain)
     self.domain = domain
     self.scope  = None    # implemented by concrete Scope implementation
 
-  def handler(self):
+  def visited(self):
     return "Scope"
 
   def __str__(self): return self.__class__.__name__ + "(" + self.domain.name + ")"
@@ -104,7 +105,7 @@ class Extension(Visitable):
     self.extension = extension
   def __str__(self): return self.__class__.__name__
 
-@nohandling
+@novisiting
 class ExecutionStrategy(Visitable):
   def __init__(self, scope, function):
     assert isinstance(scope, Domain) or isinstance(scope, Scope), \
@@ -136,7 +137,7 @@ class When(ExecutionStrategy):
     assert timing == "after" or timing == "before"
     assert isinstance(event, FunctionExp), \
            "When.event is a " + event.__class__.__name__ + \
-           " but expected an identifier"
+           " but expected a FunctionExp"
     self.timing = timing
     self.event  = event
 
@@ -177,7 +178,7 @@ class Parameter(Visitable):
 
 # STATEMENTS
 
-@nohandling
+@novisiting
 class Stmt(Visitable): pass
 
 class BlockStmt(Stmt):
@@ -185,7 +186,7 @@ class BlockStmt(Stmt):
     self.statements = TypedList(Stmt, statements)
   def __str__(self): return self.__class__.__name__
 
-@nohandling
+@novisiting
 class VariableValueStmt(Stmt):
   def __init__(self, variable, value):
     assert isinstance(variable, VariableExp) or isinstance(variable, PropertyExp)
@@ -198,7 +199,7 @@ class AssignStmt(VariableValueStmt): pass
 class AddStmt(VariableValueStmt): pass
 class SubStmt(VariableValueStmt): pass
 
-@nohandling
+@novisiting
 class VariableStmt(Stmt):
   def __init__(self, variable):
     assert isinstance(variable, VariableExp) or isinstance(variable, PropertyExp)
@@ -236,7 +237,7 @@ class ReturnStmt(Stmt):
 
 # EXPRESSIONS
 
-@nohandling
+@novisiting
 class Exp(Visitable):
   def __init__(self):
     self._type = UnknownType()
@@ -252,7 +253,7 @@ class Exp(Visitable):
   type = property(get_type, set_type)
   def __str__(self): return self.__class__.__name__
 
-@nohandling
+@novisiting
 class LiteralExp(Exp): pass
 
 class BooleanLiteralExp(LiteralExp):
@@ -308,7 +309,7 @@ class Property(Visitable):
   def __str__(self):
     return "Property(" + self.name + ")"
 
-@nohandling
+@novisiting
 class TypeExp(Exp):
   def __str__(self): return self.__class__.__name__
 
@@ -327,19 +328,19 @@ class MixedType(TypeExp):
 class VoidType(TypeExp): pass
 class AtomType(TypeExp): pass
 
-@nohandling
+@novisiting
 class SimpleType(TypeExp): pass
 
 class BooleanType(SimpleType): pass
 
-@nohandling
+@novisiting
 class NumericType(SimpleType): pass
 
 class ByteType(NumericType): pass
 class IntegerType(NumericType): pass
 class FloatType(NumericType): pass
 
-@nohandling
+@novisiting
 class ComplexType(TypeExp): pass
 
 # TODO: make this more specific and probably not instantiated, because the
@@ -425,7 +426,7 @@ class PropertyExp(VariableExp):
   def __str__(self):
     return "PropertyExp(" + str(self.obj) + "." + self.identifier.name + ")"
 
-@nohandling
+@novisiting
 class UnaryExp(Exp):
   def __init__(self, operand):
     assert isinstance(operand, Exp)
@@ -434,16 +435,16 @@ class UnaryExp(Exp):
   def operator(self):
     raise NotimplementedError, "Missing implementation for operator(self))" + \
                                " on " + self.__class__.__name__
-  def handler(self):
+  def visited(self):
     return "UnaryExp"
 
-@nohandling
+@novisiting
 class BooleanUnaryExp(UnaryExp):
   def __init__(self, operand):
     super(BooleanUnaryExp, self).__init__(operand)
     self._type = BooleanType()
 
-@nohandling
+@novisiting
 class BinaryExp(Exp):
   def __init__(self, left, right):
     assert isinstance(left,  Exp)
@@ -454,16 +455,16 @@ class BinaryExp(Exp):
   def operator(self):
     raise NotimplementedError, "Missing implementation for operator(self))" + \
                                " on " + self.__class__.__name__
-  def handler(self):
+  def visited(self):
     return "BinaryExp"
 
-@nohandling
+@novisiting
 class BooleanBinaryExp(BinaryExp):
   def __init__(self, left, right):
     super(BooleanBinaryExp, self).__init__(left, right)
     self._type = BooleanType()
 
-@nohandling
+@novisiting
 class NumericBinaryExp(BinaryExp):
   def __init__(self, left, right):
     super(NumericBinaryExp, self).__init__(left, right)
@@ -511,7 +512,7 @@ class DivExp(NumericBinaryExp):
 class ModuloExp(NumericBinaryExp):
   def operator(self): return "%"
 
-@nohandling
+@novisiting
 class CallExp(Exp, Stmt):
   def __init__(self, arguments=[]):
     self.arguments = TypedList(Exp, arguments)
@@ -556,5 +557,5 @@ class MatchExp(Exp):
 
 # VISITOR
 
-@visitor_for([Visitable])
+@visits([Visitable])
 class SemanticVisitorBase(): pass
