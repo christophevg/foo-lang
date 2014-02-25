@@ -54,17 +54,19 @@ class visits(object):
     module  = inspect.getmodule(frame[0])
     classes = inspect.getmembers(module, inspect.isclass)
 
-    # dynamically adding all Stmt subclasses tot the visitor
+    # dynamically adding all Stmt subclasses to the visitor
     def NotImplemented(name):
       def dummy(self, *args):
         print self.__class__.__name__, ": missing implementation for", name
       return dummy
 
     for name, clazz in classes:
-      fqn = module.__name__ + "." + name
-      if fqn not in novisitings:
-        if super == [] or any([issubclass(clazz, sup) for sup in self.supers]):
-          setattr(visitor, "visit_" + name, NotImplemented("visit_" + name))
+      method_name = "visit_" + name
+      if not method_name in dir(visitor):
+        fqn = module.__name__ + "." + name
+        if fqn not in novisitings:
+          if super == [] or any([issubclass(clazz, sup) for sup in self.supers]):
+            setattr(visitor, "visit_" + name, NotImplemented("visit_" + name))
 
     return visitor
 
