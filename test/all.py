@@ -16,6 +16,7 @@ from test.code                 import TestCode
 from test.environment          import TestEnvironment
 from test.semantic_environment import TestSemanticEnvironment
 from test.infercheck           import TestInferCheck
+from test.codecanvas           import TestCodeCanvas
 
 if __name__ == '__main__':
   tests = [ unittest.TestLoader().loadTestsFromTestCase(test)
@@ -30,7 +31,8 @@ if __name__ == '__main__':
                           TestCode,
                           TestEnvironment,
                           TestSemanticEnvironment,
-                          TestInferCheck
+                          TestInferCheck,
+                          TestCodeCanvas
                          ]
           ]
 
