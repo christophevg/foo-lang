@@ -76,51 +76,6 @@ class Module(Visitable):
   name = property(get_name)
   def __str__(self): return self.__class__.__name__ + "(" + self.name + ")"
 
-@nohandling
-class NamedTypedOrderedDict(Visitable):
-  def __init__(self, type):
-    self.objects = OrderedDict()
-    self.type    = type
-  def items(self):
-    return self.objects.items()
-  def __iter__(self):
-    return iter(self.objects.values())
-  def __contains__(self, key):
-    return key in self.objects
-  def __getitem__(self, key):
-    return self.objects[key]
-  def __setitem__(self, key, value):
-    self.objects[key] = value
-  def append(self, obj):
-    assert isinstance(obj, self.type)
-    self.objects[obj.name] = obj
-    return self
-
-@nohandling
-class TypedList(Visitable):
-  def __init__(self, type, objects=[]):
-    self.objects = []
-    self.type    = type
-    [self.append(obj) for obj in objects]
-  def __iter__(self):
-    return iter(self.objects)
-  def append(self, obj):
-    assert isinstance(obj, self.type), \
-           "TypedList's provided obj is a " + + obj.__class__.__name__ + \
-           " but got a " + self.type.__name__
-    self.objects.append(obj)
-    return self
-  def __len__(self):
-    return len(self.objects)
-  def index(self, obj):
-    try: return self.objects.index(obj)
-    except: return None
-  def __getitem__(self, index):
-    try: return self.objects[index]
-    except: return None
-  def __str__(self):
-    return "TypedList(" + self.type.__name__ + ")"
-
 class Constant(Visitable):
   def __init__(self, identifier, value, type=None):
     if type is None: type = UnknownType()
