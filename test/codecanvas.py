@@ -121,6 +121,18 @@ class TestCodeCanvas(unittest.TestCase):
     self.assertEqual(handler.output[14], "after_section_1")
     self.assertEqual(handler.output[15], "after_canvas")
 
+  def test_dict_iter(self):
+    canvas = self.create_canvas()
+
+    canvas.section("1").insert_before(Section("0"))
+
+    index = 0
+    for name, item in canvas.items():
+      self.assertEqual(name, str(index))
+      self.assertIsInstance(item, Section)
+      self.assertEqual(item.name, str(index))
+      index += 1
+
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestCodeCanvas)
   unittest.TextTestRunner(verbosity=2).run(suite)

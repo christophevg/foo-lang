@@ -4,6 +4,8 @@
 # Using a Visitor and an Emitter, the CodeCanvas can be persisted as code.
 # author: Christophe VG
 
+import itertools
+
 from util.visitor import Visitable, visits, novisiting, with_handling
 from util.check   import isidentifier
 
@@ -21,6 +23,7 @@ class Level(Visitable):
     self.parent = None
 
   def __iter__(self): return iter(self.list)
+  def items(self):    return itertools.imap(lambda x: [x.name, x], self.list)
 
   def insert(self, position, item):
     item.parent = self
