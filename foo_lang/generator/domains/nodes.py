@@ -18,6 +18,7 @@ class Nodes(Domain):
 
   def transform_main(self, section):
     self.add_import_nodes(section)
+    if section.tag("nodes_process_call"): return
     section.tagged("event_loop").body.append(build.Call("nodes_process"))
 
   def populate(self, section, module):
@@ -29,6 +30,5 @@ class Nodes(Domain):
 
   def add_import_nodes(self, section):
     # add import of nodes' domain functionality
-    if section.tagged("nodes_imported"): return
-    section.tag(True, "nodes_imported")
+    if section.tag("nodes_imported"): return
     section.part("def").append(Snippet(content=build.Import("nodes")))
