@@ -90,18 +90,17 @@ class Generator():
     declarations.append(Snippet(content=Comment("starting point")))
     declarations.append(Snippet("main", content=main))
 
-    # ???
+    # construct a builder and hook it into the main function
     event_loop = build.EventLoop()
-    self.canvas.tag(event_loop, "event_loop")
+    main.body.append(event_loop)
+    # tagged for access by domain generators
+    self.canvas.tag("event_loop", event_loop)
     
     # allow each domain generator to alter the main section
     for mod in model.modules.values():
       for domain_name, domain in mod.domains.items():
         domain_generator = self.generator_for_domain(domain_name)
         domain_generator.transform(section)
-
-    # insert event loop
-    main.body.append(event_loop.code())
 
   def generator_for_domain(self, domain_name):
     """

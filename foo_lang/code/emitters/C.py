@@ -193,3 +193,8 @@ class Emitter(Language):
   def visit_ReturnStmt(self, stmt):
     return "return" + (" " + stmt.expression.accept(self)) \
                         if stmt.expression != None else ""
+
+  # visitor for Builders, generate code instructions and continue visiting
+
+  def visit_Builder(self, loop):
+    return loop.code().accept(self)

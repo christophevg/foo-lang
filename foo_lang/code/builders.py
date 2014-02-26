@@ -6,15 +6,24 @@
 import foo_lang.semantic.model as model
 import foo_lang.code.instructions as code
 
-class Builder():
-  def code(self):
-    raise RuntimeError("WARNING: need to implement as_code(self)")
+from util.visitor import Visitable
 
-class EventLoop(Builder):
+class Builder(Visitable):
+  """
+  Base class for Builders. A Builder can be used as a replacement for
+  Instructions. Make sure to add the correct InstructionClass to the Builders'
+  definition.
+  """
+  def visited(self): return "Builder"
+  def code(self): raise RuntimeError("WARNING: need to implement as_code(self)")
+
+class EventLoop(Builder, code.Stmt):
   def __init__(self):
     self.body = code.BlockStmt([])
   def code(self):
     return code.WhileDoStmt(code.BooleanLiteral(True), self.body)
+
+# basic instruction builder functions
 
 def Function(name, type=None, params={}, body=None):
   type = code.UnknownType() if type == None else code.TypeExp(code.Identifier(type))
