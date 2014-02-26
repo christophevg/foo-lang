@@ -153,11 +153,11 @@ class TestCodeCanvas(unittest.TestCase):
     canvas = self.create_canvas()
 
     x = X()
-    canvas.tag(x, "x")
+    canvas.tag("x", x)
     y = Y()
-    canvas.section("1").tag(y, "y")
+    canvas.section("1").tag("y", y)
     z = Z()
-    canvas.section("1").part("1").tag(z, "z")
+    canvas.section("1").part("1").tag("z", z)
 
     self.assertIs(canvas.tagged("x"), x)
     self.assertIs(canvas.section("1").tagged("x"), x)

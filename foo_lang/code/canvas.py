@@ -50,8 +50,10 @@ class Level(Visitable):
       self.insert(index, item)
       return item
 
-  def tag(self, obj, name):
-    self.tags[name] = obj
+  def tag(self, key, obj=True):
+    exists = not self.tagged(key) is False
+    self.tags[key] = obj
+    return exists
 
   def tagged(self, key):
     if key in self.tags: return self.tags[key]
