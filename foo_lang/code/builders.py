@@ -10,25 +10,6 @@ class Builder():
   def code(self):
     raise RuntimeError("WARNING: need to implement as_code(self)")
 
-class Module(Builder):
-  def __init__(self, sections=["instructions"], builders=[]):
-
-    self.sections = sections
-    for section in sections:
-      self.__dict__[section] = code.InstructionList()
-
-    self.builders = builders
-    for builder in builders:
-      self.__dict__[builder] = None
-
-  def code(self):
-    # merge sections into single InstructionList
-    instructions = code.InstructionList()
-    for section in self.sections:
-      for instruction in self.__dict__[section]:
-        instructions.append(instruction)
-    return instructions
-
 class EventLoop(Builder):
   def __init__(self):
     self.body = code.BlockStmt([])
@@ -42,6 +23,9 @@ def Function(name, type=None, params={}, body=None):
                    for name, type in params.items() ]
   return code.FunctionDecl( code.Identifier(name), type=type, parameters=parameters,
                             body=body)
+
+def Import(name):
+  return code.Import(name)
 
 def Call(name, args=[]):
   arguments = [ Expression(arg) for arg in args]

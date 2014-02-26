@@ -10,7 +10,8 @@ class Emitter(Language):
   def __init__(self):
     self.atoms = [] # list with emitted atoms
 
-  def ext(self): return "c"
+  def ext(self, style):
+    return { "def": "h", "dec": "c" }[style]
 
   def visit_Identifier(self, id):
     return str(id.name)
@@ -18,6 +19,9 @@ class Emitter(Language):
   def visit_InstructionList(self, program):
     return "\n".join([ instruction.accept(self)
                        for instruction in program.instructions ])
+
+  def visit_Import(self, imported):
+    return '#include "' + imported.name + '.h"'
 
   def visit_FunctionDecl(self, function):
     params = ", ".join([ param.accept(self) for param in function.parameters ])

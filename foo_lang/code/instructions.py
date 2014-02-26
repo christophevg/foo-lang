@@ -32,6 +32,10 @@ class InstructionList(Instruction):
     self.instructions.append(instruction)
     return self
 
+class Import(Instruction):
+  def __init__(self, name):
+    self.name = name
+
 @novisiting
 class Declaration(Instruction): pass
 

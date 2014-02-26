@@ -5,5 +5,4 @@
 from foo_lang.code.instructions import InstructionVisitor
 
 class Language(InstructionVisitor):
-  def ext(self):
-    raise NotImplementedError, "extension"
+  def ext(self, style): raise NotImplementedError, "ext(style)"

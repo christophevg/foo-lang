@@ -1,98 +1,107 @@
 # build.py
+# module for constructing a generator
 # author: Christophe VG
 
-# module for constructing a generator
-
 import os
-import sys
-import pprint
-
-import foo_lang.code.emitters.C as C
-import foo_lang.code.builders   as build
 
 from foo_lang.code.instructions import *
+
+from foo_lang.code.canvas import CodeCanvas, Section, Part, Snippet
+
+import foo_lang.code.builders   as build
+import foo_lang.code.emitters.C as C
+
 
 class Generator():
   def __init__(self, args):
     self.verbose  = args.verbose
 
-    assert args.language == "c"
+    assert args.language == "c", "Only C language is currently implemented."
     self.language = C.Emitter()
 
     self.output   = args.output
+
+    self.canvas   = CodeCanvas()
 
     # reserved for future use
     self.platform = args.platform
 
     self.domain_generators = {}
-
+    
   def __str__(self):
     return "generating to " + self.output + " using " + self.language + \
                      " on " + self.platform
 
   def generate(self, model):
+    self.transform(model)
+    self.persist()
+
+  def persist(self):
     if not os.path.exists(self.output): os.makedirs(self.output)
-    files = self.transform(model)
-    for name, code in files.items():
-      file_name = os.path.join(self.output, name + "." + self.language.ext())
-      if self.verbose: print "foo-gen: creating", file_name
-      file = open(file_name, 'w+')
-      file.write(code.accept(self.language) + "\n")
-      file.close()
+    for name, module in self.canvas.items():
+      for style, content in module.items():
+        file_name = os.path.join(self.output, name + "." + self.language.ext(style))
+        if self.verbose: print "foo-gen: creating", file_name
+        file = open(file_name, 'w+')
+        for code in content:
+          try: file.write(code.content.accept(self.language) + "\n")
+          except: pass
+        file.close()
 
   def transform(self, model):
     """
-    Transforms a model in a collection of modules consisting of code
+    Transforms a model in snippets of CodeModels on the CodeCanvas
     """
-    modules         = self.create_modules(model)
-    modules['main'] = self.create_main_module(model)
-    return modules
+    self.create_modules(model)
+    self.create_main_module(model)
 
   def create_modules(self, model):
     """
     Creates a module for each domain/module pair.
     """
-    modules = {}
-    
     for module_name, module in model.modules.items():
       for domain_name, domain in module.domains.items():
         domain_generator = self.generator_for_domain(domain_name)
-        code = domain_generator.create(module, model)
         name = domain_name + "-" + module_name
         if self.verbose: print "creating " + name
-        modules[name] = code
+        # construct section
+        section = self.canvas.append(Section(name))
+        section.append(Part("dec"))
+        section.append(Part("def"))
 
-    return modules
+        domain_generator.populate(section, module)
 
   def create_main_module(self, model):
     """
     Creates the top-level main module.
     """
-    module = build.Module(builders=["event_loop"])
+    section = self.canvas.append(Section("main"))
+    declarations = section.append(Part("dec"))
+    definitions = section.append(Part("def"))
 
     # init
     init = build.Function("init", "void")
-    module.instructions.append(init)
     init.body.append(Comment("add framework init here"))
+    declarations.append(Snippet("init", init))
 
     # main
     main = build.Function("main", "int")
-    module.instructions.append(Comment("starting point"))
-    module.instructions.append(main)
-    main.body.append(build.Call("init"));
+    main.body.append(build.Call("init"))
+    declarations.append(Snippet(content=Comment("starting point")))
+    declarations.append(Snippet("main", content=main))
 
-    module.event_loop = build.EventLoop()
+    # ???
+    event_loop = build.EventLoop()
+    self.canvas.tag(event_loop, "event_loop")
     
-    # allow each domain generator to alter the main module
+    # allow each domain generator to alter the main section
     for mod in model.modules.values():
       for domain_name, domain in mod.domains.items():
         domain_generator = self.generator_for_domain(domain_name)
-        domain_generator.transform(module, name="main")
+        domain_generator.transform(section)
 
     # insert event loop
-    main.body.append(module.event_loop.code())
-
-    return module.code()
+    main.body.append(event_loop.code())
 
   def generator_for_domain(self, domain_name):
     """
