@@ -60,9 +60,11 @@ class CodeCanvasTestVisitor(CodeCanvasVisitor, XYZVisitor):
 class TestCodeCanvas(unittest.TestCase):
   
   def create_canvas(self):
-    return CodeCanvas().append(Section("1")
-                       .append(Part("1")
-                       .append(Snippet("1", X(Y(Z()))))))
+    codecanvas = CodeCanvas()
+    codecanvas.append(Section("1")) \
+              .append(Part("1"))    \
+              .append(Snippet("1", X(Y(Z()))))
+    return codecanvas
   
   def test_basic_canvas(self):
     canvas = self.create_canvas()
@@ -132,6 +134,45 @@ class TestCodeCanvas(unittest.TestCase):
       self.assertIsInstance(item, Section)
       self.assertEqual(item.name, str(index))
       index += 1
+
+  def test_multi_append(self):
+    canvas = self.create_canvas()
+
+    canvas.section("1").part("1").append([Snippet("abc"), Snippet("def")])
+
+    handler = CodeCanvasTestVisitor()
+    canvas.accept(handler)
+
+    self.assertEqual(handler.output[11], 'before_snippet_abc')
+    self.assertEqual(handler.output[12], 'after_snippet_abc')
+    self.assertEqual(handler.output[13], 'before_snippet_def')
+    self.assertEqual(handler.output[14], 'after_snippet_def')
+    self.assertEqual(handler.output[15], 'after_part_1')
+
+  def test_tagging(self):
+    canvas = self.create_canvas()
+
+    x = X()
+    canvas.tag(x, "x")
+    y = Y()
+    canvas.section("1").tag(y, "y")
+    z = Z()
+    canvas.section("1").part("1").tag(z, "z")
+
+    self.assertIs(canvas.tagged("x"), x)
+    self.assertIs(canvas.section("1").tagged("x"), x)
+    self.assertIs(canvas.section("1").part("1").tagged("x"), x)
+    self.assertIs(canvas.section("1").part("1").snippet("1").tagged("x"), x)
+
+    self.assertFalse(canvas.tagged("y"))
+    self.assertIs(canvas.section("1").tagged("y"), y)
+    self.assertIs(canvas.section("1").part("1").tagged("y"), y)
+    self.assertIs(canvas.section("1").part("1").snippet("1").tagged("y"), y)
+
+    self.assertFalse(canvas.tagged("z"))
+    self.assertFalse(canvas.section("1").tagged("z"), z)
+    self.assertIs(canvas.section("1").part("1").tagged("z"), z)
+    self.assertIs(canvas.section("1").part("1").snippet("1").tagged("z"), z)
 
 if __name__ == '__main__':
   suite = unittest.TestLoader().loadTestsFromTestCase(TestCodeCanvas)

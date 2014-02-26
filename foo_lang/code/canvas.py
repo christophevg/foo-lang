@@ -21,6 +21,7 @@ class Level(Visitable):
     self.dict   = {}
     self.list   = []
     self.parent = None
+    self.tags   = {}
 
   def __iter__(self): return iter(self.list)
   def items(self):    return itertools.imap(lambda x: [x.name, x], self.list)
@@ -42,9 +43,21 @@ class Level(Visitable):
     return self
 
   def append(self, item):
-    index = len(self.list)
-    self.insert(index, item)
-    return self
+    if isinstance(item, list):
+      [self.append(i) for i in item]
+    else:
+      index = len(self.list)
+      self.insert(index, item)
+      return item
+
+  def tag(self, obj, name):
+    self.tags[name] = obj
+
+  def tagged(self, key):
+    if key in self.tags: return self.tags[key]
+    else:
+      if self.parent is None: return False
+      else: return self.parent.tagged(key)
 
 class CodeCanvas(Level):
   def section(self, key): return self.dict[key]
