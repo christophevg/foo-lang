@@ -49,7 +49,7 @@ class Emitter(Language):
 
   def visit_ByteType(self, type):
     # TODO: dispatch to platform specifics
-    return "uint8"
+    return "uint8_t"
 
   def visit_BooleanType(self, type):
     # TODO: dispatch to platform specifics
