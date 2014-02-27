@@ -71,7 +71,7 @@ show:
 		echo "FILE: " $$f; \
 		printf '~%.0s' {1..79}; echo; \
 		cat $$f; \
-		printf '=%.0s' {1..79}; echo; \
+		printf '=%.0s' {1..79}; echo; echo; \
 	done
 
 coverage:
