@@ -11,7 +11,7 @@ class Fragment(Visitable): pass
 
 class Identifier(Fragment):
   def __init__(self, name):
-    assert isidentifier(name)
+    assert isidentifier(name), "Not an Identifier: " + name
     self.name = name
 
 @novisiting
