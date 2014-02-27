@@ -325,6 +325,9 @@ class BooleanType(TypeExp):
 class FloatType(TypeExp):
   def __init__(self): pass
 
+class LongType(TypeExp):
+  def __init__(self): pass
+
 class StructuredType(Declaration):
   def __init__(self, name, properties=[]):
     assert isinstance(name, Identifier)

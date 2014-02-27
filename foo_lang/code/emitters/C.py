@@ -59,6 +59,10 @@ class Emitter(Language):
     # TODO: dispatch to platform specifics
     return "float"
 
+  def visit_LongType(self, type):
+    # TODO: dispatch to platform specifics
+    return "uint16_t"
+
   def visit_EmptyStmt(self, stmt):
     return "{}"
 
