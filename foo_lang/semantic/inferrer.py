@@ -9,9 +9,7 @@ from foo_lang.semantic.dumper  import Dumper
 
 class Inferrer(SemanticChecker):
 
-  def infer(self):
-    self.prefix = "after_visit_"
-    return self.check()
+  def infer(self): return self.check()
 
   def after_visit_Constant(self, constant):
     """
