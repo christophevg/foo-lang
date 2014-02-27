@@ -16,7 +16,8 @@ class Nodes(Domain):
   def __init__(self, canvas):
     # prepare content for nodes.h
     node_type = build.StructuredType("node")
-    # TODO: add default information (address, ...)
+    # TODO: add default more information (e.g. address, ...)
+    node_type.append(code.Identifier("address"), code.LongType())
     canvas.tag("node_type_def", node_type)
     canvas.append(Section("nodes")) \
           .append(Part("def")) \
