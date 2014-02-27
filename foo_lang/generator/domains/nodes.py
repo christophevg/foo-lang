@@ -17,7 +17,8 @@ class Nodes(Domain):
     # prepare content for nodes.h
     node_type = build.StructuredType("node")
     # TODO: add default more information (e.g. address, ...)
-    node_type.append(code.Identifier("address"), code.LongType())
+    node_type.append(code.Comment("domain properties"))
+    node_type.append(code.PropertyDecl(code.Identifier("address"), code.LongType()))
     canvas.tag("node_type_def", node_type)
     canvas.append(Section("nodes")) \
           .append(Part("def")) \
@@ -39,6 +40,8 @@ class Nodes(Domain):
     self.add_import_nodes(section)
 
     # add extensions to node_t definition
+    section.tagged("node_type_def") \
+      .append(code.Comment("extended properties for " + module.name))
     for ext in module.domains["nodes"].extensions:
       section.tagged("node_type_def").apply(ext.extension)
 
