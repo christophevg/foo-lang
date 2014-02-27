@@ -379,7 +379,7 @@ class ObjectType(ComplexType):
   def get_name(self): return self.identifier.name
   name = property(get_name)
   def __str__(self):
-    return "ObjectType(" + self.name + ")"
+    return self.__class__.__name__+"(" + self.name + ")"
 
 # BUILD-IN object types
 
