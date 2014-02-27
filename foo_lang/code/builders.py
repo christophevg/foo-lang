@@ -31,10 +31,16 @@ class StructuredType(Builder, code.Stmt):
     self.name       = name
     self.properties = []
 
+  def append(self, name, type):
+    if not isinstance(name, code.Identifier):
+      name = Transformer(name).transform()
+    if not isinstance(type, code.TypeExp):
+      type = Transformer(type).transform()
+    self.properties.append(code.PropertyDecl(name, type))
+
   def apply(self, obj):
     for prop in obj.properties:
-      self.properties.append(code.PropertyDecl(code.Identifier(prop.name),
-                                               Transformer(prop.type).transform()))
+      self.append(prop.identifier, prop.type)
 
   def code(self):
     return code.StructuredType(code.Identifier(self.name), self.properties)
