@@ -2,6 +2,7 @@
 # instructions to represent abstract (procedural+OO) code - AST anyone? ;-)
 # author: Christophe VG
 
+from util.types   import TypedList
 from util.visitor import Visitable, visits, novisiting
 from util.check   import isstring, isidentifier
 
@@ -10,7 +11,6 @@ class Fragment(Visitable): pass
 
 class Identifier(Fragment):
   def __init__(self, name):
-    assert isstring(name)
     assert isidentifier(name)
     self.name = name
 
@@ -42,7 +42,7 @@ class Declaration(Instruction): pass
 class FunctionDecl(Declaration):
   def __init__(self, name, parameters=[], body=None, type=None):
     if body is None: body = BlockStmt()
-    if type is None: type = UnknownType()
+    if type is None: type = VoidType()
     assert isinstance(name, Identifier)
     assert isinstance(body, Stmt)
     assert isinstance(type, TypeExp)
@@ -68,7 +68,8 @@ class ParameterList(Fragment):
     return self
 
 class ParameterDecl(Declaration):
-  def __init__(self, name, type, default=None):
+  def __init__(self, name, type=None, default=None):
+    if type is None: type = UnknownType()
     assert isinstance(name, Identifier)
     assert isinstance(type, TypeExp)
     assert default == None or isinstance(default, Expression)
@@ -295,6 +296,8 @@ class AtomLiteral(LiteralExp):
     assert isinstance(name, Identifier)
     self.name = name
 
+# TYPES
+
 class TypeExp(Expression):
   def __init__(self, name):
     assert isinstance(name, Identifier)
@@ -302,6 +305,38 @@ class TypeExp(Expression):
 
 class UnknownType(TypeExp):
   def __init__(self): pass
+
+class VoidType(TypeExp):
+  def __init__(self): pass
+
+class ManyType(TypeExp):
+  def __init__(self, type):
+    assert isinstance(type, TypeExp)
+    self.subtype = type
+
+class ObjectType(TypeExp): pass
+
+class ByteType(TypeExp):
+  def __init__(self): pass
+
+class BooleanType(TypeExp):
+  def __init__(self): pass
+
+class FloatType(TypeExp):
+  def __init__(self): pass
+
+class StructuredType(Declaration):
+  def __init__(self, name, properties=[]):
+    assert isinstance(name, Identifier)
+    self.name       = name
+    self.properties = TypedList(PropertyDecl, properties)
+
+class PropertyDecl(Declaration):
+  def __init__(self, name, type):
+    assert isinstance(name, Identifier)
+    assert isinstance(type, TypeExp), "expected TypeExp but got " + type.__class__.__name__
+    self.name = name
+    self.type = type
 
 # VISITOR FOR INSTRUCTIONS
 

@@ -111,6 +111,6 @@ class Generator():
       module = __import__( "foo_lang.generator.domains." + domain_name, 
                            fromlist=[class_name])
       clazz = getattr(module, class_name)
-      self.domain_generators[domain_name] = clazz()
+      self.domain_generators[domain_name] = clazz(self.canvas)
 
     return self.domain_generators[domain_name]

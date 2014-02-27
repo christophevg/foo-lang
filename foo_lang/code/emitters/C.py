@@ -30,11 +30,34 @@ class Emitter(Language):
            "(" + params + ")" + \
            " " + function.body.accept(self)
 
+  # TYPES
+  
   def visit_TypeExp(self, type):
     return type.name.accept(self)
 
+  def visit_ObjectType(self, ref):
+    return ref.name.accept(self) + "_t*"
+
+  def visit_ManyType(self, ref):
+    return ref.subtype.accept(self) + "*"
+
   def visit_UnknownType(self, type):
+    return "<<unknown-type>>"
+
+  def visit_VoidType(self, type):
     return "void"
+
+  def visit_ByteType(self, type):
+    # TODO: dispatch to platform specifics
+    return "uint8"
+
+  def visit_BooleanType(self, type):
+    # TODO: dispatch to platform specifics
+    return "bool"
+
+  def visit_FloatType(self, type):
+    # TODO: dispatch to platform specifics
+    return "float"
 
   def visit_EmptyStmt(self, stmt):
     return "{}"
@@ -194,7 +217,15 @@ class Emitter(Language):
     return "return" + (" " + stmt.expression.accept(self)) \
                         if stmt.expression != None else ""
 
+  def visit_StructuredType(self, struct):
+    return "typedef struct {\n" + \
+           "\n".join([prop.accept(self) for prop in struct.properties]) + \
+           "\n} " + struct.name.accept(self) + "_t;"
+
+  def visit_PropertyDecl(self, prop):
+    return prop.type.accept(self) + " " + prop.name.accept(self) + ";"
+
   # visitor for Builders, generate code instructions and continue visiting
 
-  def visit_Builder(self, loop):
-    return loop.code().accept(self)
+  def visit_Builder(self, builder):
+    return builder.code().accept(self)
