@@ -33,8 +33,12 @@ class Nodes(Domain):
 
   def transform_main(self, section):
     self.add_import_nodes(section)
-    if section.tag("nodes_process_call"): return
-    section.tagged("event_loop").body.append(build.Call("nodes_process"))
+    if section.tag("nodes_main"): return
+    # prepare top-level actions in event_loop
+    for f in ["incoming", "all", "outgoing"]:
+      # TODO wire incoming call to platform-specific receiving
+      section.part("dec").append(Snippet(content=build.Function("nodes_process_" + f, "void")))
+      section.tagged("event_loop").body.append(build.Call("nodes_process_" + f))
 
   def populate(self, section, module):
     self.add_import_nodes(section)
