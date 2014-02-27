@@ -46,8 +46,7 @@ class Level(Visitable):
     if isinstance(item, list):
       [self.append(i) for i in item]
     else:
-      index = len(self.list)
-      self.insert(index, item)
+      self.insert(len(self.list), item)
       return item
 
   def tag(self, key, obj=True):
