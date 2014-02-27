@@ -53,11 +53,28 @@ class TypedList(object):
     except: return None
 
   def append(self, obj):
-    assert isinstance(obj, self.type), \
-           "TypedList's provided obj is a " + + obj.__class__.__name__ + \
-           " but got a " + self.type.__name__
+    if isinstance(self.type, Any):
+      assert self.type.isa(obj), \
+             "TypedList's provided obj is a " + + obj.__class__.__name__ + \
+             " but expected " + str(self.type.__name__)
+    else:
+      assert isinstance(obj, self.type), \
+             "TypedList's provided obj is a " + + obj.__class__.__name__ + \
+             " but expected " + self.type.__name__
     self.objects.append(obj)
     return self
 
   def __str__(self):
     return "TypedList(" + self.type.__name__ + ")"
+
+class Any(object):
+  def __init__(self, *args):
+    self.types = args
+
+  def isa(self, type):
+    for possibility in self.types:
+      if isinstance(type, possibility): return True
+    return False
+
+  def __str__(self):
+    return "Any(" + ",".join([t.__class__.__name__ for t in self.types]) + ")"
