@@ -51,3 +51,6 @@ class Transformer(SemanticChecker):
 
   def before_visit_TimestampType(self, stamp):
     self.code = TypeExp(Identifier("timestamp"))
+
+  def visit_Identifier(self, id):
+    self.code = Identifier(id.name)
