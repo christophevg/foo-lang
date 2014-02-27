@@ -2,7 +2,7 @@
 # instructions to represent abstract (procedural+OO) code - AST anyone? ;-)
 # author: Christophe VG
 
-from util.types   import TypedList
+from util.types   import TypedList, Any
 from util.visitor import Visitable, visits, novisiting
 from util.check   import isstring, isidentifier
 
@@ -332,7 +332,7 @@ class StructuredType(Declaration):
   def __init__(self, name, properties=[]):
     assert isinstance(name, Identifier)
     self.name       = name
-    self.properties = TypedList(PropertyDecl, properties)
+    self.properties = TypedList(Any(PropertyDecl, Comment), properties)
 
 class PropertyDecl(Declaration):
   def __init__(self, name, type):
