@@ -588,6 +588,7 @@ class SemanticVisitor(SemanticVisitorBase):
   @with_handling
   def visit_Parameter(self, parameter):
     self.env[parameter.name] = parameter
+    parameter.type.accept(self)
 
   # STATEMENTS
 
@@ -768,6 +769,8 @@ class SemanticVisitor(SemanticVisitorBase):
   def visit_ObjectExp(self, exp):
     exp._type.accept(self)
 
+  @stacked
+  @with_handling
   def visit_ObjectType(self, obj): pass
 
   @stacked
