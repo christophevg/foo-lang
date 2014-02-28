@@ -1,0 +1,10 @@
+TODO
+
+- CodeCanvas
+  - implement sticky parts (e.g. keep init as first item)
+  - implement more logical insertion methods -> something like selectors ?
+  - remove Snippet content of Part contains many instructions
+
+!!!!!
+
+DEBUG missing reputation functions -> exception handling hides something !!!
