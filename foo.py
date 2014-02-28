@@ -87,7 +87,7 @@ if __name__ == "__main__":
                       default="c", choices=["c"], metavar='LANGUAGE')
   parser.add_argument("-p", "--platform",
                       help="when format=code: target platform " + choice_default,
-                      default="avr", choices=["avr"], metavar='PLATFORM')
+                      default="moose", choices=["moose"], metavar='PLATFORM')
   args = parser.parse_args()
 
   # make verbose & output module-global

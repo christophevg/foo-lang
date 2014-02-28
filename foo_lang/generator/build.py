@@ -4,12 +4,11 @@
 
 import os
 
-from foo_lang.code.instructions import *
-
 from foo_lang.code.canvas import CodeCanvas, Section, Part, Snippet
 
-import foo_lang.code.builders   as build
-import foo_lang.code.emitters.C as C
+import foo_lang.code.instructions as code
+import foo_lang.code.builders     as build
+import foo_lang.code.emitters.C   as C
 
 
 class Generator():
@@ -17,14 +16,14 @@ class Generator():
     self.verbose  = args.verbose
 
     assert args.language == "c", "Only C language is currently implemented."
-    self.language = C.Emitter()
+    self.language = C.Emitter(self)
 
     self.output   = args.output
 
     self.canvas   = CodeCanvas()
 
     # reserved for future use
-    self.platform = args.platform
+    self.platform = self.get_platform(args.platform)
 
     self.domain_generators = {}
     
@@ -75,19 +74,24 @@ class Generator():
     """
     Creates the top-level main module.
     """
-    section = self.canvas.append(Section("main"))
+    section      = self.canvas.append(Section("main"))
     declarations = section.append(Part("dec"))
-    definitions = section.append(Part("def"))
+    definitions  = section.append(Part("def"))
 
     # init
     init = build.Function("init", "void")
-    init.body.append(Comment("add framework init here"))
+    init.body.append(code.Comment("add framework init here"))
     declarations.append(Snippet("init", init))
+
+    # app
+    app = build.Function("application_step", "void")
+    app.body.append(code.Comment("add application specific code here"))
+    declarations.append(Snippet("app", app))
 
     # main
     main = build.Function("main", "int")
-    main.body.append(build.Call("init"))
-    declarations.append(Snippet(content=Comment("starting point")))
+    self.canvas.tag("main_function", main)
+    declarations.append(Snippet(content=code.Comment("starting point")))
     declarations.append(Snippet("main", content=main))
 
     # construct a builder and hook it into the main function
@@ -96,21 +100,34 @@ class Generator():
     # tagged for access by domain generators
     self.canvas.tag("event_loop", event_loop)
     
+    # add the app specific hook to the event loop
+    event_loop.body.append(code.Comment("your application gets its share"))
+    event_loop.body.append(build.Call("app"))
+
     # allow each domain generator to alter the main section
     for mod in model.modules.values():
       for domain_name, domain in mod.domains.items():
         domain_generator = self.generator_for_domain(domain_name)
         domain_generator.transform(section)
 
+    main.body.prepend(build.Call("init"))
+
   def generator_for_domain(self, domain_name):
     """
     Lazy-Dynamic-Loading of Domain Generators, based on the Semantic Domain name
     """
     if domain_name not in self.domain_generators:
-      class_name = domain_name.capitalize()
-      module = __import__( "foo_lang.generator.domains." + domain_name, 
-                           fromlist=[class_name])
-      clazz = getattr(module, class_name)
-      self.domain_generators[domain_name] = clazz(self.canvas)
-
+      clazz = self.get_class("foo_lang.generator.domains." + domain_name, 
+                             domain_name.capitalize())
+      self.domain_generators[domain_name] = clazz(self)
+      
     return self.domain_generators[domain_name]
+
+  def get_platform(self, platform_name):
+    clazz = self.get_class("foo_lang.generator.platforms." + platform_name, 
+                           platform_name.capitalize())
+    return clazz(self)
+
+  def get_class(self, module_name, class_name):
+    module = __import__( module_name, fromlist=[class_name])
+    return getattr(module, class_name)

@@ -13,12 +13,14 @@ import unittest
 from foo_lang.code.instructions import *
 from foo_lang.code.emitters.C   import Emitter
 
+from foo_lang.generator.platform import Platform
+
 class TestCode(unittest.TestCase):
 
   def test_check_coverage(self):
     backup     = sys.stdout
     sys.stdout = cache = StringIO()
-    Emitter().check_coverage()
+    Emitter(object()).check_coverage()
     sys.stdout = backup
     output     = cache.getvalue()
     if output != "":
@@ -27,7 +29,7 @@ class TestCode(unittest.TestCase):
   def test_program_with_comment_and_function_decl(self):
     program = InstructionList([ Comment("multi-line\ncomment"),
                                 FunctionDecl(Identifier("fname"), [], EmptyStmt()) ])
-    self.assertEqual( program.accept(Emitter()),
+    self.assertEqual( program.accept(Emitter(object())),
                       "/* multi-line\ncomment */\nvoid fname(void) {}" )
 
   def test_full_function_decl(self):
@@ -36,7 +38,7 @@ class TestCode(unittest.TestCase):
       [ ParameterDecl(Identifier("param1"), TypeExp(Identifier("type1"))),
         ParameterDecl(Identifier("param2"), TypeExp(Identifier("type2"))) ],
       BlockStmt([IncStmt(SimpleVariableExp(Identifier("type")))]))
-    self.assertEqual( program.accept(Emitter()),
+    self.assertEqual( program.accept(Emitter(object())),
                       "void fname(type1 param1, type2 param2) {\ntype++;\n}" )
 
 if __name__ == '__main__':

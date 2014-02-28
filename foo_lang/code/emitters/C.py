@@ -7,7 +7,7 @@ from util.support import warn
 from foo_lang.code.language import Language
 
 class Emitter(Language):
-  def __init__(self):
+  def prepare(self):
     self.atoms = [] # list with emitted atoms
 
   def ext(self, style):
@@ -26,7 +26,7 @@ class Emitter(Language):
   def visit_FunctionDecl(self, function):
     params = ", ".join([ param.accept(self) for param in function.parameters ])
     if params == "": params = "void"
-    return function.type.accept(self) + " " + function.name.accept(self) + \
+    return function.type.accept(self) + " " + function.id.accept(self) + \
            "(" + params + ")" + \
            " " + function.body.accept(self)
 
@@ -48,20 +48,16 @@ class Emitter(Language):
     return "void"
 
   def visit_ByteType(self, type):
-    # TODO: dispatch to platform specifics
-    return "uint8_t"
+    return self.generator.platform.type(type)
 
   def visit_BooleanType(self, type):
-    # TODO: dispatch to platform specifics
-    return "bool"
+    return self.generator.platform.type(type)
 
   def visit_FloatType(self, type):
-    # TODO: dispatch to platform specifics
-    return "float"
+    return self.generator.platform.type(type)
 
   def visit_LongType(self, type):
-    # TODO: dispatch to platform specifics
-    return "uint16_t"
+    return self.generator.platform.type(type)
 
   def visit_EmptyStmt(self, stmt):
     return "{}"

@@ -4,6 +4,12 @@
 # Domain interface for the Generator
 
 class Domain():
+  def __init__(self, generator):
+    self.generator = generator
+    self.prepare()
 
-  def transform(self, file, name):
-    return NotImplementedError, "transform(self, file, name)"
+  def prepare(self):
+    return NotImplementedError, "prepare(self)"
+
+  def transform(self, section):
+    return NotImplementedError, "transform(self, section)"

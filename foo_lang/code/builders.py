@@ -53,8 +53,7 @@ def Function(name, type=None, params={}, body=None):
                             body=body)
 
 def Call(name, args=[]):
-  arguments = [ Expression(arg) for arg in args]
-  return code.FunctionCallExp(code.Identifier(name), arguments)
+  return code.FunctionCallExp(code.Identifier(name), args)
 
-# def Variable(name):
-#   return code.SimpleVariableExp(Identifier(name))
+def Variable(name):
+  return code.SimpleVariableExp(code.Identifier(name))

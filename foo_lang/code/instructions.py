@@ -40,16 +40,18 @@ class Import(Instruction):
 class Declaration(Instruction): pass
 
 class FunctionDecl(Declaration):
-  def __init__(self, name, parameters=[], body=None, type=None):
+  def __init__(self, id, parameters=[], body=None, type=None):
     if body is None: body = BlockStmt()
     if type is None: type = VoidType()
-    assert isinstance(name, Identifier)
+    assert isinstance(id,   Identifier)
     assert isinstance(body, Stmt)
     assert isinstance(type, TypeExp)
-    self.name       = name
+    self.id         = id
     self.parameters = ParameterList(parameters)
     self.body       = body
     self.type       = type
+  def get_name(self): return self.id.name
+  name = property(get_name)
 
 @novisiting
 class ParameterList(Fragment):

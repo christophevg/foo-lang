@@ -13,18 +13,18 @@ from foo_lang.code.transform import Transformer
 from foo_lang.code.canvas import Section, Part, Snippet
 
 class Nodes(Domain):
-  def __init__(self, canvas):
+  def prepare(self):
     # prepare content for nodes.h
     node_type = build.StructuredType("node")
     # TODO: add default more information (e.g. address, ...)
     node_type.append(code.Comment("domain properties"))
     node_type.append(code.PropertyDecl(code.Identifier("address"), code.LongType()))
-    canvas.tag("node_type_def", node_type)
-    canvas.append(Section("nodes")) \
-          .append(Part("def")) \
-          .append([ Snippet(content=code.Comment("node_t across modules")),
-                    Snippet("node_type", node_type)
-                  ])
+    self.generator.canvas.tag("node_type_def", node_type)
+    self.generator.canvas.append(Section("nodes")) \
+                         .append(Part("def")) \
+                         .append([ Snippet(content=code.Comment("node_t across modules")),
+                                   Snippet("node_type", node_type)
+                                 ])
   
   def transform(self, section):
     {
@@ -35,10 +35,18 @@ class Nodes(Domain):
     self.add_import_nodes(section)
     if section.tag("nodes_main"): return
     # prepare top-level actions in event_loop
-    for f in ["incoming", "all", "outgoing"]:
-      # TODO wire incoming call to platform-specific receiving
+    section.tagged("event_loop").body.append(code.Comment("nodes logic execution hooks"))
+    for f in ["all", "outgoing"]:
       section.part("dec").append(Snippet(content=build.Function("nodes_process_" + f, "void")))
       section.tagged("event_loop").body.append(build.Call("nodes_process_" + f))
+    # wire processing of incoming frames to our nodes handler
+    receive_handler = build.Function("nodes_process_" + f, "void")
+    section.part("dec").append(Snippet(content=receive_handler))
+    self.generator.platform.add_handler("receive",
+      function=receive_handler,
+      location=section.tagged("main_function").body
+    )
+
 
   def populate(self, section, module):
     self.add_import_nodes(section)

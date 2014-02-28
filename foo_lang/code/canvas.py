@@ -70,7 +70,7 @@ class Part(Level):
   def snippet(self, key): return self.dict[key]
 
 class Snippet(Level):
-  def __init__(self, name=None, content=""):
+  def __init__(self, name=None, content=None):
     super(Snippet, self).__init__(name)
     self.content = content
 
