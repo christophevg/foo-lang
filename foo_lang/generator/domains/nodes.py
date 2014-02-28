@@ -40,7 +40,7 @@ class Nodes(Domain):
       section.part("dec").append(Snippet(content=build.Function("nodes_process_" + f, "void")))
       section.tagged("event_loop").body.append(build.Call("nodes_process_" + f))
     # wire processing of incoming frames to our nodes handler
-    receive_handler = build.Function("nodes_process_" + f, "void")
+    receive_handler = build.Function("nodes_process_incoming", "void")
     section.part("dec").append(Snippet(content=receive_handler))
     self.generator.platform.add_handler("receive",
       function=receive_handler,
