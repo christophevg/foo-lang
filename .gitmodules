@@ -1,0 +1,3 @@
+[submodule "lib/codecanvas"]
+	path = lib/codecanvas
+	url = https://github.com/christophevg/codecanvas.git
