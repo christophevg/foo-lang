@@ -4,7 +4,7 @@
 
 from foo_lang.semantic.visitor import SemanticChecker
 
-from foo_lang.code.instructions import *
+from codecanvas.instructions import *
 
 class Transformer(SemanticChecker):
 
@@ -15,21 +15,22 @@ class Transformer(SemanticChecker):
     # TODO: probably turn this into stack for larger/deeper structures
     self.current = None
     self.check()
+    assert not self.code is None
     return self.code
 
   def before_visit_FunctionDecl(self, function):
-    self.code = FunctionDecl(Identifier(function.name))
+    self.code = Function(function.name)
 
   def before_visit_Parameter(self, parameter):
-    self.current = ParameterDecl(Identifier(parameter.name))
-    self.code.parameters.append(self.current)
+    self.current = Parameter(parameter.name)
+    self.code.params.append(self.current)
   
   def after_visit_Parameter(self, parameter):
     self.current = None
     
   def before_visit_ObjectType(self, type):
     if self.current is None: return
-    self.current.type = ObjectType(Identifier(type.name))
+    self.current.type = NamedType(type.name)
 
   def after_visit_ManyType(self, many):
     if self.current is None:
@@ -50,7 +51,7 @@ class Transformer(SemanticChecker):
     else:                    self.current.type = FloatType()
 
   def before_visit_TimestampType(self, stamp):
-    self.code = TypeExp(Identifier("timestamp"))
+    self.code = NamedType("timestamp")
 
   def visit_Identifier(self, id):
     self.code = Identifier(id.name)

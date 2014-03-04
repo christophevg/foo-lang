@@ -5,12 +5,7 @@
 
 from foo_lang.generator.platform import Platform
 
-import foo_lang.code.builders     as build
-import foo_lang.code.instructions as code
-
-from foo_lang.code.transform import Transformer
-
-from foo_lang.code.canvas import Section, Part, Snippet
+import codecanvas.instructions as code
 
 class AVR(Platform):
   def prepare(self): pass

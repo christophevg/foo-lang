@@ -6,7 +6,7 @@
 from util.visitor import Visitable
 
 import foo_lang.semantic.model as model
-import foo_lang.code.instructions as code
+import codecanvas.instructions as code
 
 from foo_lang.code.transform import Transformer
 
@@ -19,14 +19,14 @@ class Builder(Visitable):
   def visited(self): return "Builder"
   def code(self): raise RuntimeError("WARNING: need to implement as_code(self)")
 
-class EventLoop(Builder, code.Stmt):
+class EventLoop(Builder, code.Statement):
   def __init__(self):
     self.body = code.BlockStmt()
 
   def code(self):
     return code.WhileDoStmt(code.BooleanLiteral(True), self.body)
 
-class StructuredType(Builder, code.Stmt):
+class StructuredType(Builder, code.Statement):
   def __init__(self, name):
     self.name       = name
     self.properties = []

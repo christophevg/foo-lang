@@ -3,7 +3,7 @@
 
 # Platform interface for the Generator
 
-import foo_lang.code.instructions as code
+import codecanvas.instructions as code
 
 class Platform():
   def __init__(self, generator):

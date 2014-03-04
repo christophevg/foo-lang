@@ -12,11 +12,9 @@ from test.semantic             import TestModel
 from test.parser               import TestParser
 from test.astvisitor           import TestAstVisitor
 from test.integration          import TestIntegration
-from test.code                 import TestCode
 from test.environment          import TestEnvironment
 from test.semantic_environment import TestSemanticEnvironment
 from test.infercheck           import TestInferCheck
-from test.codecanvas           import TestCodeCanvas
 
 if __name__ == '__main__':
   tests = [ unittest.TestLoader().loadTestsFromTestCase(test)
@@ -28,11 +26,9 @@ if __name__ == '__main__':
                           TestParser,
                           TestAstVisitor,
                           TestIntegration,
-                          TestCode,
                           TestEnvironment,
                           TestSemanticEnvironment,
-                          TestInferCheck,
-                          TestCodeCanvas
+                          TestInferCheck
                          ]
           ]
 

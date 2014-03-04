@@ -5,12 +5,8 @@
 
 from foo_lang.generator.platforms.avr import AVR
 
-import foo_lang.code.builders     as build
-import foo_lang.code.instructions as code
-
-from foo_lang.code.transform import Transformer
-
-from foo_lang.code.canvas import Section, Part, Snippet
+import foo_lang.code.builders  as build
+import codecanvas.instructions as code
 
 class Moose(AVR):
   def prepare(self): pass
@@ -27,4 +23,5 @@ class Moose(AVR):
   def handle_receive(self, function=None, location=None):
     assert not function is None
     assert not location is None
-    location.prepend(build.Call("xbee_on_receive", [build.Variable(function.name)]))
+    location.append(code.FunctionCall("xbee_on_receive")) \
+              .append(code.SimpleVariable(function.name))

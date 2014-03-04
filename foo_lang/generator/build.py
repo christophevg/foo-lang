@@ -4,48 +4,32 @@
 
 import os
 
-from foo_lang.code.canvas import CodeCanvas, Section, Part, Snippet
+from codecanvas.structure import Unit, Module, Section
 
-import foo_lang.code.instructions as code
-import foo_lang.code.builders     as build
-import foo_lang.code.emitters.C   as C
+import codecanvas.instructions as code
+import codecanvas.languages.C  as C
 
+import foo_lang.code.builders  as build
 
 class Generator():
   def __init__(self, args):
     self.verbose  = args.verbose
 
     assert args.language == "c", "Only C language is currently implemented."
-    self.language = C.Emitter(self)
-
     self.output   = args.output
-
-    self.canvas   = CodeCanvas()
-
-    # reserved for future use
+    self.language = C.Emitter().output_to(self.output)
+    self.unit     = Unit()
     self.platform = self.get_platform(args.platform)
 
     self.domain_generators = {}
     
   def __str__(self):
-    return "generating to " + self.output + " using " + self.language + \
-                     " on " + self.platform
+    return "generating to " + self.output + " using " + str(self.language) + \
+                     " on " + str(self.platform)
 
   def generate(self, model):
     self.transform(model)
-    self.persist()
-
-  def persist(self):
-    if not os.path.exists(self.output): os.makedirs(self.output)
-    for name, module in self.canvas.items():
-      for style, content in module.items():
-        file_name = os.path.join(self.output, name + "." + self.language.ext(style))
-        if self.verbose: print "foo-gen: creating", file_name
-        file = open(file_name, 'w+')
-        for code in content:
-          try: file.write(code.content.accept(self.language) + "\n")
-          except: pass
-        file.close()
+    self.language.emit(self.unit)
 
   def transform(self, model):
     """
@@ -64,53 +48,41 @@ class Generator():
         name = domain_name + "-" + module_name
         if self.verbose: print "creating " + name
         # construct section
-        section = self.canvas.append(Section(name))
-        section.append(Part("dec"))
-        section.append(Part("def"))
-
-        domain_generator.populate(section, module)
+        domain_generator.populate(self.unit.append(Module(name)), module)
 
   def create_main_module(self, model):
     """
     Creates the top-level main module.
     """
-    section      = self.canvas.append(Section("main"))
-    declarations = section.append(Part("dec"))
-    definitions  = section.append(Part("def"))
+    module = self.unit.append(Module("main"))
 
     # init
-    init = build.Function("init", "void")
-    init.body.append(code.Comment("add framework init here"))
-    declarations.append(Snippet("init", init))
+    init = code.Function("init", code.VoidType()) \
+             .contains(code.Comment("add framework init here"))
 
     # app
-    app = build.Function("application_step", "void")
-    app.body.append(code.Comment("add application specific code here"))
-    declarations.append(Snippet("app", app))
+    app = code.Function("application_step", code.VoidType()) \
+            .contains(code.Comment("add application specific code here"))
 
     # main
-    main = build.Function("main", "int")
-    self.canvas.tag("main_function", main)
-    declarations.append(Snippet(content=code.Comment("starting point")))
-    declarations.append(Snippet("main", content=main))
+    main = code.Function("main", code.IntegerType()).tag("main_function")
+    module.select("dec").append(init,
+                                app,
+                                code.Comment("starting point"),
+                                main)
 
-    # construct a builder and hook it into the main function
-    event_loop = build.EventLoop()
-    main.body.append(event_loop)
-    # tagged for access by domain generators
-    self.canvas.tag("event_loop", event_loop)
-    
-    # add the app specific hook to the event loop
-    event_loop.body.append(code.Comment("your application gets its share"))
-    event_loop.body.append(build.Call("app"))
+    # construct an event_loop builder and hook it into the main function
+    event_loop = code.WhileDo(code.BooleanLiteral(True))
+    main.append(event_loop).tag("event_loop") \
+        .append(code.Comment("your application gets its share"),
+                code.FunctionCall("application_step"))
 
     # allow each domain generator to alter the main section
     for mod in model.modules.values():
       for domain_name, domain in mod.domains.items():
-        domain_generator = self.generator_for_domain(domain_name)
-        domain_generator.transform(section)
+        self.generator_for_domain(domain_name).transform(module)
 
-    main.body.prepend(build.Call("init"))
+    main.append(code.FunctionCall("init"))
 
   def generator_for_domain(self, domain_name):
     """

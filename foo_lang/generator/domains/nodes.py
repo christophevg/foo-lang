@@ -5,63 +5,70 @@
 
 from foo_lang.generator.domain import Domain
 
-import foo_lang.code.builders     as build
-import foo_lang.code.instructions as code
+import foo_lang.code.builders  as build
+import codecanvas.instructions as code
+
+from codecanvas.structure import Module
 
 from foo_lang.code.transform import Transformer
 
-from foo_lang.code.canvas import Section, Part, Snippet
-
 class Nodes(Domain):
   def prepare(self):
-    # prepare content for nodes.h
-    node_type = build.StructuredType("node")
+    """
+    Prepares the definition of the node type.
+    """
+    node_type = code.StructuredType("node").tag("node_type_def")
     # TODO: add default more information (e.g. address, ...)
-    node_type.append(code.Comment("domain properties"))
-    node_type.append(code.PropertyDecl(code.Identifier("address"), code.LongType()))
-    self.generator.canvas.tag("node_type_def", node_type)
-    self.generator.canvas.append(Section("nodes")) \
-                         .append(Part("def")) \
-                         .append([ Snippet(content=code.Comment("node_t across modules")),
-                                   Snippet("node_type", node_type)
-                                 ])
+    node_type.append(code.Comment("domain properties"),
+                     code.Property("address", code.LongType()))
+    module = self.generator.unit.append(Module("nodes"))
+    module.select("def").append( code.Comment("THE node type"), node_type )
   
-  def transform(self, section):
+  def transform(self, module):
     {
       "main": self.transform_main
-    }[section.name](section)
+    }[module.name](module)
 
-  def transform_main(self, section):
-    self.add_import_nodes(section)
-    if section.tag("nodes_main"): return
+  def transform_main(self, module):
+    """
+    Transforms the main module by adding nodes functionality to the event_loop.
+    """
+    self.add_import_nodes(module)
+    if not module.find("nodes_main") is None: return
+    module.tag("nodes_main")
+
     # prepare top-level actions in event_loop
-    section.tagged("event_loop").body.append(code.Comment("nodes logic execution hooks"))
+    module.find("event_loop").append(code.Comment("nodes logic execution hooks"))
     for f in ["all", "outgoing"]:
-      section.part("dec").append(Snippet(content=build.Function("nodes_process_" + f, "void")))
-      section.tagged("event_loop").body.append(build.Call("nodes_process_" + f))
+      module.select("dec").append(code.Function("nodes_process_" + f, code.VoidType()))
+      module.find("event_loop").append(code.FunctionCall("nodes_process_" + f))
     # wire processing of incoming frames to our nodes handler
-    receive_handler = build.Function("nodes_process_incoming", "void")
-    section.part("dec").append(Snippet(content=receive_handler))
+    receive_handler = code.Function("nodes_process_incoming", code.VoidType())
+    module.select("dec").append(receive_handler)
     self.generator.platform.add_handler("receive",
       function=receive_handler,
-      location=section.tagged("main_function").body
+      location=module.find("main_function")
     )
 
-
-  def populate(self, section, module):
-    self.add_import_nodes(section)
+  def populate(self, code_module, module):
+    self.add_import_nodes(code_module)
 
     # add extensions to node_t definition
-    section.tagged("node_type_def") \
-      .append(code.Comment("extended properties for " + module.name))
+    node_type = self.generator.unit.find("node_type_def")
+    node_type.append(code.Comment("extended properties for " + module.name))
+
     for ext in module.domains["nodes"].extensions:
-      section.tagged("node_type_def").apply(ext.extension)
+      for prop in ext.extension.properties:
+        node_type.append(code.Property(prop.name,
+                                       Transformer(prop.type).transform()))
 
     # create all functions
     for function in module.functions:
-      section.part("dec").append(Snippet(content=Transformer(function).transform()))
+      code_module.select("dec").append(Transformer(function).transform())
 
-  def add_import_nodes(self, section):
-    # add import of nodes' domain functionality
-    if section.tag("nodes_imported"): return
-    section.part("def").append(Snippet(content=code.Import("nodes")))
+  def add_import_nodes(self, module):
+    """
+    Make sure that nodes functionality is imported (once)
+    """
+    if not module.find("import_nodes") is None: return
+    module.select("def").append(code.Import("nodes")).tag("import_nodes")
