@@ -5,7 +5,6 @@
 
 from foo_lang.generator.platforms.avr import AVR
 
-import foo_lang.code.builders  as build
 import codecanvas.instructions as code
 
 class Moose(AVR):

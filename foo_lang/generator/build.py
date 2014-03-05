@@ -9,8 +9,6 @@ from codecanvas.structure import Unit, Module, Section
 import codecanvas.instructions as code
 import codecanvas.languages.C  as C
 
-import foo_lang.code.builders  as build
-
 class Generator():
   def __init__(self, args):
     self.verbose  = args.verbose

@@ -5,10 +5,8 @@
 
 from foo_lang.generator.domain import Domain
 
-import foo_lang.code.builders  as build
 import codecanvas.instructions as code
-
-from codecanvas.structure import Module
+import codecanvas.structure    as structure
 
 from foo_lang.code.transform import Transformer
 
@@ -21,7 +19,7 @@ class Nodes(Domain):
     # TODO: add default more information (e.g. address, ...)
     node_type.append(code.Comment("domain properties"),
                      code.Property("address", code.LongType()))
-    module = self.generator.unit.append(Module("nodes"))
+    module = self.generator.unit.append(structure.Module("nodes"))
     module.select("def").append( code.Comment("THE node type"), node_type )
   
   def transform(self, module):
