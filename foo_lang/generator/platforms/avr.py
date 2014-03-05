@@ -3,17 +3,14 @@
 
 # AVR Generator Platform implementation
 
-from foo_lang.generator.platform import Platform
-
-import codecanvas.instructions as code
+from codecanvas.platform import Platform
 
 class AVR(Platform):
-  def prepare(self): pass
-
-  def type(self, functional_type):
+  def type(self, type):
     return {
-      code.ByteType    : "uint8_t",
-      code.BooleanType : "uint8_t",
-      code.FloatType   : "float",
-      code.LongType    : "uint16_t"
-    }[functional_type]
+      "ByteType"    : "uint8_t",
+      "BooleanType" : "uint8_t",
+      "IntegerType" : "uint16_t",
+      "FloatType"   : "float",
+      "LongType"    : "uint16_t"
+    }[str(type)]

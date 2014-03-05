@@ -8,16 +8,15 @@ from foo_lang.generator.platforms.avr import AVR
 import codecanvas.instructions as code
 
 class Moose(AVR):
-  def prepare(self): pass
-
-  def type(self, functional_type):
+  def type(self, type):
     try:
       return {
         # override platform generic type by the one provided by extended library
-        code.BooleanType : "bool"
-      }[functional_type]
+        "BooleanType" : "bool"
+      }[str(type)]
     except: pass
-    return super(Moose, self).type(functional_type)
+    # FIXME: why doesn't this work ? TypeError ? avr = super(Moose, self)
+    return AVR.type(self, type)
 
   def handle_receive(self, function=None, location=None):
     assert not function is None

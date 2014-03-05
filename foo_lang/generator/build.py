@@ -15,9 +15,9 @@ class Generator():
 
     assert args.language == "c", "Only C language is currently implemented."
     self.output   = args.output
-    self.language = C.Emitter().output_to(self.output)
-    self.unit     = Unit()
     self.platform = self.get_platform(args.platform)
+    self.language = C.Emitter(platform=self.platform).output_to(self.output)
+    self.unit     = Unit()
 
     self.domain_generators = {}
     
@@ -96,7 +96,7 @@ class Generator():
   def get_platform(self, platform_name):
     clazz = self.get_class("foo_lang.generator.platforms." + platform_name, 
                            platform_name.capitalize())
-    return clazz(self)
+    return clazz()
 
   def get_class(self, module_name, class_name):
     module = __import__( module_name, fromlist=[class_name])
