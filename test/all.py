@@ -11,6 +11,7 @@ from test.statements           import TestStatements
 from test.semantic             import TestModel
 from test.parser               import TestParser
 from test.astvisitor           import TestAstVisitor
+from test.transform            import TestTransform
 from test.integration          import TestIntegration
 from test.environment          import TestEnvironment
 from test.semantic_environment import TestSemanticEnvironment
@@ -26,6 +27,7 @@ if __name__ == '__main__':
                           TestParser,
                           TestAstVisitor,
                           TestIntegration,
+                          TestTransform,
                           TestEnvironment,
                           TestSemanticEnvironment,
                           TestInferCheck

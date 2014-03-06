@@ -14,6 +14,7 @@ class Nodes(Domain):
     self.extensions = []
 
     self.node_t    = ObjectType(Identifier("node"))
+    # TODO: payload = byte* <<-- ??!!
     self.payload_t = ManyType(ManyType(ByteType())) # not exported, internal use
 
     self.type = self.node_t
@@ -55,8 +56,13 @@ class Nodes(Domain):
       self.node_t.provides[prop.identifier.name] = prop
 
   def get_type(self, name):
-    assert name == "node", "Nodes domain only supports the 'node' type."
-    return self.node_t
+    try:
+      return {
+               "node":    self.node_t,
+               "payload": self.payload_t
+             }[name]
+    except KeyError:
+      "Nodes domain only supports the 'node' and 'payload' types."      
 
 class AllNodes(Scope):
   def __init__(self, domain):

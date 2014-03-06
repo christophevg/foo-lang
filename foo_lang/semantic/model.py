@@ -339,6 +339,7 @@ class NumericType(SimpleType): pass
 class ByteType(NumericType): pass
 class IntegerType(NumericType): pass
 class FloatType(NumericType): pass
+class LongType(NumericType): pass
 
 @novisiting
 class ComplexType(TypeExp): pass

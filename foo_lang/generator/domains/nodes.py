@@ -8,19 +8,30 @@ from foo_lang.generator.domain import Domain
 import codecanvas.instructions as code
 import codecanvas.structure    as structure
 
-from foo_lang.code.transform import Transformer
+from foo_lang.semantic.domains.nodes import Nodes as SemanticNodes
+from foo_lang.code.transform         import Transformer
 
 class Nodes(Domain):
   def prepare(self):
     """
     Prepares the definition of the node type.
     """
+    # this is a generator for the Nodes domain, let's get it ;-)
+    self.domain = SemanticNodes()
+    
+    # we need a transformer
+    self.transformer = Transformer()
+
     node_type = code.StructuredType("node").tag("node_type_def")
     # TODO: add default more information (e.g. address, ...)
     node_type.append(code.Comment("domain properties"),
                      code.Property("address", code.LongType()))
     module = self.generator.unit.append(structure.Module("nodes"))
     module.select("def").append( code.Comment("THE node type"), node_type )
+  
+  # TODO: naming is yuch ;-)
+  def convert(self, tree):
+    return self.transformer.transform(tree)
   
   def transform(self, module):
     {
@@ -34,19 +45,28 @@ class Nodes(Domain):
     self.add_import_nodes(module)
     if not module.find("nodes_main") is None: return
     module.tag("nodes_main")
+    
+    # get pointers into the code
+    dec        = module.select("dec")
+    event_loop = module.find("event_loop")
 
     # prepare top-level actions in event_loop
-    module.find("event_loop").append(code.Comment("nodes logic execution hooks"))
+    event_loop.append(code.Comment("nodes logic execution hooks"))
     for f in ["all", "outgoing"]:
-      module.select("dec").append(code.Function("nodes_process_" + f, code.VoidType()))
-      module.find("event_loop").append(code.FunctionCall("nodes_process_" + f))
+      dec.append(code.Function("nodes_process_" + f, code.VoidType()))
+      event_loop.append(code.FunctionCall("nodes_process_" + f))
+
     # wire processing of incoming frames to our nodes handler
-    receive_handler = code.Function("nodes_process_incoming", code.VoidType())
-    module.select("dec").append(receive_handler)
+    incoming_handler = dec.append(
+      code.Function("nodes_process_incoming", code.VoidType(),
+                    [code.Parameter("payload",
+                                    self.convert(self.domain.get_type("payload")))
+                    ]))
+
     self.generator.platform.add_handler("receive",
-      function=receive_handler,
-      location=module.find("main_function")
-    )
+      call     = incoming_handler,
+      location = module.find("main_function")
+    ).stick_top()
 
   def populate(self, code_module, module):
     self.add_import_nodes(code_module)
@@ -58,11 +78,11 @@ class Nodes(Domain):
     for ext in module.domains["nodes"].extensions:
       for prop in ext.extension.properties:
         node_type.append(code.Property(prop.name,
-                                       Transformer(prop.type).transform()))
+                                       self.convert(prop.type)))
 
     # create all functions
     for function in module.functions:
-      code_module.select("dec").append(Transformer(function).transform())
+      code_module.select("dec").append(self.convert(function))
 
   def add_import_nodes(self, module):
     """

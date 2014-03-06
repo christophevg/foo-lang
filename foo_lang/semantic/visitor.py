@@ -579,6 +579,7 @@ class SemanticVisitor(SemanticVisitorBase):
   def visit_FunctionDecl(self, function):
     self.env[function.name] = function
     self.env.extend()
+    function.type.accept(self)
     for param in function.parameters:
       param.accept(self)
     function.body.accept(self)
@@ -670,6 +671,8 @@ class SemanticVisitor(SemanticVisitorBase):
   @with_handling
   def visit_AtomLiteralExp(self, atom): pass
 
+  @stacked
+  @with_handling
   def visit_UnknownType(self, lst): pass
 
   def visit_AnyType(self, type): pass
@@ -696,6 +699,12 @@ class SemanticVisitor(SemanticVisitorBase):
       prop.type.accept(self)
     prop.value.accept(self)
 
+  # types
+
+  @stacked
+  @with_handling
+  def visit_VoidType(self, type): pass
+
   @stacked
   @with_handling
   def visit_BooleanType(self, type): pass
@@ -711,6 +720,10 @@ class SemanticVisitor(SemanticVisitorBase):
   @stacked
   @with_handling
   def visit_FloatType(self, type): pass
+
+  @stacked
+  @with_handling
+  def visit_LongType(self, type): pass
 
   @stacked
   @with_handling

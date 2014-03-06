@@ -69,6 +69,8 @@ class Generator():
                                 code.Comment("starting point"),
                                 main)
 
+    main.append(code.FunctionCall("init")).stick_top()
+
     # construct an event_loop builder and hook it into the main function
     event_loop = code.WhileDo(code.BooleanLiteral(True))
     main.append(event_loop).tag("event_loop") \
@@ -79,8 +81,6 @@ class Generator():
     for mod in model.modules.values():
       for domain_name, domain in mod.domains.items():
         self.generator_for_domain(domain_name).transform(module)
-
-    main.append(code.FunctionCall("init"))
 
   def generator_for_domain(self, domain_name):
     """
