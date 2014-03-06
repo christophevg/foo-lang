@@ -67,7 +67,7 @@ after nodes receive do function(from, to, payload) {
       // that match the payload
       // the remove function takes a matching argument, which here uses the "_"
       // don't care operator
-      from.qeueu.remove([ _, payload ])
+      from.queue.remove([ _, payload ])
   }
 }
 
