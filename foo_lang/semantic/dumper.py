@@ -254,8 +254,11 @@ class Dumper(SemanticVisitorBase):
     return "_"
 
   def visit_MatchExp(self, exp):
-    return (exp.operator if isstring(exp.operator) else exp.operator.accept(self)) + \
+    return (exp.operator.accept(self) if isstring(exp.operator) else exp.operator.accept(self)) + \
            ((" " + exp.operand.accept(self)) if exp.operand != None else "")
+
+  def visit_Comparator(self, comp):
+    return comp.operator
 
 # DOT DUMPER
 #

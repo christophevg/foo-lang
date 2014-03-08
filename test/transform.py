@@ -85,7 +85,8 @@ class TestTransform(unittest.TestCase):
       model.VariableExp(model.Identifier("var_name")),
       model.IntegerLiteralExp(456)
     )]))
-    self.assertIsInstance(result, code.Assign)
+    self.assertEqual(len(result), 1)
+    self.assertIsInstance(result[0], code.Assign)
 
   def test_function_without_params_or_body(self):
     result = self.transform(model.FunctionDecl(model.BlockStmt(),

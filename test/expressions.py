@@ -164,7 +164,7 @@ class TestExpressions(unittest.TestCase):
     self.assertEqual(dump(exp), "_")
 
   def test_match_exp(self):
-    exp = MatchExp("<", FunctionCallExp(FunctionExp(Identifier("biggest"))))
+    exp = MatchExp(Comparator("<"), FunctionCallExp(FunctionExp(Identifier("biggest"))))
     self.assertEqual(dump(exp), "< biggest()")
 
 if __name__ == '__main__':

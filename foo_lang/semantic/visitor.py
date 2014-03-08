@@ -362,7 +362,7 @@ class AstVisitor():
     else:
       # first child is a string representation of the comparator-operator
       # second child is an expression: the right operand of the comparator
-      return MatchExp(children[0].text, self.visit(children[1]))
+      return MatchExp(Comparator(children[0].text), self.visit(children[1]))
 
   def visit_variable_exp(self, tree):
     assert tree.text == "VAR_EXP"
@@ -494,10 +494,12 @@ class AstVisitor():
 # declared entities (Variables, Objects,...)
 
 class SemanticVisitor(SemanticVisitorBase):
-  def __init__(self):
-    self.prefix    = None
-    self._stack    = []
-    self.env       = Environment()
+  def __init__(self, warn_unhandled=False, visit_internal_types=True):
+    self.prefix               = None
+    self._stack               = []
+    self.env                  = Environment()
+    self.warn_unhandled       = warn_unhandled
+    self.visit_internal_types = visit_internal_types
 
   def get_stack(self): return self._stack
   stack = property(get_stack)
@@ -682,7 +684,7 @@ class SemanticVisitor(SemanticVisitorBase):
   @stacked
   @with_handling
   def visit_ListLiteralExp(self, lst):
-    lst.type.accept(self)
+    if self.visit_internal_types: lst.type.accept(self)
     for exp in lst.expressions:
       exp.accept(self) 
 
@@ -800,11 +802,12 @@ class SemanticVisitor(SemanticVisitorBase):
   @stacked
   @with_handling
   def visit_MatchExp(self, exp):
-    # TODO remove this dependency on string operator
-    if not isstring(exp.operator):
-      exp.operator.accept(self)
+    exp.operator.accept(self)
     if exp.operand != None:
       exp.operand.accept(self)
+
+  @with_handling
+  def visit_Comparator(self, comp): pass
 
 # SEMANTIC CHECKER
 #
@@ -815,8 +818,9 @@ class SemanticVisitor(SemanticVisitorBase):
 # - visualisation of the stack
 
 class SemanticChecker(SemanticVisitor):
-  def __init__(self, model, verbose=True):
-    super(SemanticChecker, self).__init__()
+  def __init__(self, model, verbose=True, warn_unhandled=False, visit_internal_types=True):
+    super(SemanticChecker, self).__init__(warn_unhandled=warn_unhandled,
+                                          visit_internal_types=visit_internal_types)
     self.model   = model
     self.name    = "foo-" + self.__class__.__name__.lower()
     self.verbose = verbose

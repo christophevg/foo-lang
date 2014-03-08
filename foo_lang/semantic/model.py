@@ -520,8 +520,8 @@ class CallExp(Exp, Stmt):
 
 class FunctionCallExp(CallExp):
   def __init__(self, function, arguments=[]):
-    super(FunctionCallExp, self).__init__(arguments)
     assert isinstance(function, FunctionExp)
+    super(FunctionCallExp, self).__init__(arguments)
     self.function  = function
   def get_name(self): return self.function.name
   name=property(get_name)
@@ -530,10 +530,9 @@ class FunctionCallExp(CallExp):
 
 class MethodCallExp(CallExp):
   def __init__(self, obj, identifier, arguments=[]):
-    super(MethodCallExp, self).__init__(arguments)
     assert isinstance(obj, ObjectExp) or isinstance(obj, PropertyExp)
-    # and isinstance(obj.type, ObjectType)
     assert isinstance(identifier, Identifier)
+    super(MethodCallExp, self).__init__(arguments)
     self.object     = obj
     self.identifier = identifier
   def get_name(self): return self.object.name + "." + self.identifier.name
@@ -544,13 +543,17 @@ class MethodCallExp(CallExp):
     return UnknownType()
   type = property(get_type)
 
-class AnythingExp(Exp): pass
+class Comparator(Visitable):
+  def __init__(self, operator):
+    assert operator in [ "<", "<=", ">", ">=", "==", "!=", "!" ]
+    self.operator = operator
+
+class AnythingExp(Comparator):
+  def __init__(self): pass
 
 class MatchExp(Exp):
   def __init__(self, operator, operand=None):
-    assert isinstance(operator, AnythingExp) \
-       or operator in [ "<", "<=", ">", ">=", "==", "!=", "!" ], \
-         "MatchExp.operator got " + operator
+    assert isinstance(operator, Comparator)
     assert operand == None or isinstance(operand, Exp)
     self.operator = operator
     self.operand  = operand
