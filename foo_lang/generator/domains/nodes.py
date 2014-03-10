@@ -9,7 +9,7 @@ import codecanvas.instructions as code
 import codecanvas.structure    as structure
 
 from foo_lang.semantic.domains.nodes import Nodes as SemanticNodes
-from foo_lang.code.transform         import Transformer
+from foo_lang.code.translate         import Translator
 
 class Nodes(Domain):
   def prepare(self):
@@ -19,8 +19,8 @@ class Nodes(Domain):
     # this is a generator for the Nodes domain, let's get it ;-)
     self.domain = SemanticNodes()
     
-    # we need a transformer
-    self.transformer = Transformer()
+    # we need a translator
+    self.translator = Translator()
 
     node_type = code.StructuredType("node").tag("node_type_def")
     # TODO: add default more information (e.g. address, ...)
@@ -31,7 +31,7 @@ class Nodes(Domain):
   
   # TODO: naming is yuch ;-)
   def convert(self, tree):
-    return self.transformer.transform(tree)
+    return self.translator.translate(tree)
   
   def transform(self, module):
     {

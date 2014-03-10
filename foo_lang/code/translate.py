@@ -1,5 +1,5 @@
-# transformer.py
-# visitor to transform Semantic Model elements into Code Model elements
+# translator.py
+# visitor to translate Semantic Model elements into Code Model elements
 # author: Christophe VG
 
 from foo_lang.semantic.visitor import SemanticChecker
@@ -7,14 +7,14 @@ from foo_lang.semantic.visitor import SemanticChecker
 import codecanvas.instructions as code
 import foo_lang.semantic.model as model
 
-class Transformer(SemanticChecker):
+class Translator(SemanticChecker):
   def __init__(self):
-    super(Transformer, self).__init__(None, True, warn_unhandled=True, visit_internal_types=False)
+    super(Translator, self).__init__(None, True, warn_unhandled=True, visit_internal_types=False)
 
-  def transform(self, tree):
+  def translate(self, tree):
     self.model = tree
     
-    # we use a stack to populate it with transformed elements and then reduce
+    # we use a stack to populate it with translated elements and then reduce
     # it again constructing higher level constructs after lowerl level 
     # constructs are handled
     self.code = []
@@ -27,7 +27,7 @@ class Transformer(SemanticChecker):
     try: code = self.code.pop()
     except IndexError: code = None
     
-    # assert not code is None, "Got no result from transformation."
+    # assert not code is None, "Got no result from translateation."
     return code
 
   # general

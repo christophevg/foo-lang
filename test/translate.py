@@ -1,74 +1,74 @@
-# transform.py
+# translate.py
 # author: Christophe VG
 
-# unit tests for the foo-lang SM to CM transformer
+# unit tests for the foo-lang SM to CM translator
 
 import unittest
 
-from foo_lang.code.transform import Transformer
+from foo_lang.code.translate import Translator
 
 import foo_lang.semantic.model as model
 import codecanvas.instructions as code
 
-class TestTransform(unittest.TestCase):
+class TestTranslate(unittest.TestCase):
   def setUp(self):
-    self.transformer = Transformer()
+    self.translator = Translator()
 
-  def transform(self, model):
-    return self.transformer.transform(model)
+  def translate(self, model):
+    return self.translator.translate(model)
 
   def test_simple_types(self):
-    self.assertIsInstance(self.transform(model.VoidType()),    code.VoidType)
-    self.assertIsInstance(self.transform(model.IntegerType()), code.IntegerType)
-    self.assertIsInstance(self.transform(model.FloatType()),   code.FloatType)
-    self.assertIsInstance(self.transform(model.LongType()),    code.LongType)
-    self.assertIsInstance(self.transform(model.ByteType()),    code.ByteType)
-    self.assertIsInstance(self.transform(model.BooleanType()), code.BooleanType)
+    self.assertIsInstance(self.translate(model.VoidType()),    code.VoidType)
+    self.assertIsInstance(self.translate(model.IntegerType()), code.IntegerType)
+    self.assertIsInstance(self.translate(model.FloatType()),   code.FloatType)
+    self.assertIsInstance(self.translate(model.LongType()),    code.LongType)
+    self.assertIsInstance(self.translate(model.ByteType()),    code.ByteType)
+    self.assertIsInstance(self.translate(model.BooleanType()), code.BooleanType)
 
   def test_known_named_types(self):
-    result = self.transform(model.TimestampType())
+    result = self.translate(model.TimestampType())
     self.assertIsInstance(result, code.NamedType)
     self.assertEqual(result.name, "timestamp")
 
   def test_manytype(self):
-    result = self.transform(model.ManyType(model.IntegerType()))
-    self.assertIsInstance(result,         code.ManyType)
-    self.assertIsInstance(result.subtype, code.IntegerType)
+    result = self.translate(model.ManyType(model.IntegerType()))
+    self.assertIsInstance(result,      code.ManyType)
+    self.assertIsInstance(result.type, code.IntegerType)
 
   def test_nested_manytypes(self):
-    result = self.transform(model.ManyType(model.ManyType(model.IntegerType())))
-    self.assertIsInstance(result,                 code.ManyType)
-    self.assertIsInstance(result.subtype,         code.ManyType)
-    self.assertIsInstance(result.subtype.subtype, code.IntegerType)
+    result = self.translate(model.ManyType(model.ManyType(model.IntegerType())))
+    self.assertIsInstance(result,           code.ManyType)
+    self.assertIsInstance(result.type,      code.ManyType)
+    self.assertIsInstance(result.type.type, code.IntegerType)
 
   def test_tupletype(self):
-    result = self.transform(model.TupleType([model.IntegerType(), model.FloatType()]))
+    result = self.translate(model.TupleType([model.IntegerType(), model.FloatType()]))
     self.assertIsInstance(result, code.TupleType)
     self.assertIsInstance(result.types[0], code.IntegerType)
     self.assertIsInstance(result.types[1], code.FloatType)
 
   def test_literals(self):
-    result = self.transform(model.BooleanLiteralExp(True))
+    result = self.translate(model.BooleanLiteralExp(True))
     self.assertIsInstance(result, code.BooleanLiteral)
     self.assertTrue(result.value)
-    result = self.transform(model.BooleanLiteralExp(False))
+    result = self.translate(model.BooleanLiteralExp(False))
     self.assertIsInstance(result, code.BooleanLiteral)
     self.assertFalse(result.value)
-    result = self.transform(model.IntegerLiteralExp(123))
+    result = self.translate(model.IntegerLiteralExp(123))
     self.assertIsInstance(result, code.IntegerLiteral)
     self.assertEqual(result.value, 123)
-    result = self.transform(model.FloatLiteralExp(12.3))
+    result = self.translate(model.FloatLiteralExp(12.3))
     self.assertIsInstance(result, code.FloatLiteral)
     self.assertEqual(result.value, 12.3)
 
   def test_variable(self):
-    result = self.transform(model.VariableExp(model.Identifier("var_name")))
+    result = self.translate(model.VariableExp(model.Identifier("var_name")))
     self.assertIsInstance(result,    code.SimpleVariable)
     self.assertIsInstance(result.id, code.Identifier )
     self.assertEqual(result.id.name, "var_name")
 
   def test_assign_stmt(self):
-    result = self.transform(model.AssignStmt(
+    result = self.translate(model.AssignStmt(
       model.VariableExp(model.Identifier("var_name")),
       model.IntegerLiteralExp(456)
       )
@@ -78,10 +78,10 @@ class TestTransform(unittest.TestCase):
     self.assertIsInstance(result.expression, code.IntegerLiteral)
 
   def test_empty_block_stmt(self):
-    self.assertIsNone(self.transform(model.BlockStmt([])))
+    self.assertIsNone(self.translate(model.BlockStmt([])))
 
   def test_filled_block_stmt(self):
-    result = self.transform(model.BlockStmt([model.AssignStmt(
+    result = self.translate(model.BlockStmt([model.AssignStmt(
       model.VariableExp(model.Identifier("var_name")),
       model.IntegerLiteralExp(456)
     )]))
@@ -89,7 +89,7 @@ class TestTransform(unittest.TestCase):
     self.assertIsInstance(result[0], code.Assign)
 
   def test_function_without_params_or_body(self):
-    result = self.transform(model.FunctionDecl(model.BlockStmt(),
+    result = self.translate(model.FunctionDecl(model.BlockStmt(),
                                                type=model.VoidType()))
     self.assertIsInstance(result, code.Function)
     self.assertIsInstance(result.type, code.VoidType)
@@ -97,7 +97,7 @@ class TestTransform(unittest.TestCase):
     self.assertEqual(list(result.params), [])
   
   def test_function_with_params_and_body(self):
-    result = self.transform(model.FunctionDecl(
+    result = self.translate(model.FunctionDecl(
       model.BlockStmt([model.AssignStmt(
         model.VariableExp(model.Identifier("var_name")),
         model.IntegerLiteralExp(456)
@@ -115,5 +115,5 @@ class TestTransform(unittest.TestCase):
     self.assertIsInstance(result.params[0].type, code.IntegerType)
 
 if __name__ == '__main__':
-  suite = unittest.TestLoader().loadTestsFromTestCase(TestTransform)
+  suite = unittest.TestLoader().loadTestsFromTestCase(TestTranslate)
   unittest.TextTestRunner(verbosity=2).run(suite)
