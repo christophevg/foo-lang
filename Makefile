@@ -86,9 +86,13 @@ foo: parser
 	@echo "*** loading $(SRCS) into a model and dumping in foo-lang"
 	@$(FOO) foo $(SRCS) || (cat $@; rm $@; false)
 
-test: parser
+test: test-libs parser
 	@echo "*** performing $(APP) tests"
 	@$(PYTHON) $(COVERAGE) run test/all.py
+
+test-libs:
+	@(cd lib/py-util; make test)
+	@(cd lib/codecanvas; make test)
 
 parser: $(PARSER)
 
