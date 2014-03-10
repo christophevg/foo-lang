@@ -9,6 +9,8 @@ from codecanvas.structure import Unit, Module, Section
 import codecanvas.instructions as code
 import codecanvas.languages.C  as C
 
+from foo_lang.code.translate import Translator
+
 class Generator():
   def __init__(self, args):
     self.verbose  = args.verbose
@@ -33,8 +35,18 @@ class Generator():
     """
     Transforms a model in snippets of CodeModels on the CodeCanvas
     """
+    self.create_constants(model)
     self.create_modules(model)
     self.create_main_module(model)
+
+  def create_constants(self, model):
+    module  = self.unit.append(Module("constants"))
+    defines = module.select("def")
+    for module in model.modules.values():
+      for constant in module.constants:
+        defines.append(code.Constant(constant.name,
+                                     Translator().translate(constant.value),
+                                     Translator().translate(constant.type)))
 
   def create_modules(self, model):
     """
