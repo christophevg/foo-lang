@@ -29,8 +29,7 @@ class Nodes(Domain):
     module = self.generator.unit.append(structure.Module("nodes"))
     module.select("def").append( code.Comment("THE node type"), node_type )
   
-  # TODO: naming is yuch ;-)
-  def convert(self, tree):
+  def translate(self, tree):
     return self.translator.translate(tree)
   
   def transform(self, module):
@@ -60,7 +59,7 @@ class Nodes(Domain):
     incoming_handler = dec.append(
       code.Function("nodes_process_incoming", code.VoidType(),
                     [code.Parameter("payload",
-                                    self.convert(self.domain.get_type("payload")))
+                                    self.translate(self.domain.get_type("payload")))
                     ]))
 
     self.generator.platform.add_handler("receive",
@@ -78,11 +77,11 @@ class Nodes(Domain):
     for ext in module.domains["nodes"].extensions:
       for prop in ext.extension.properties:
         node_type.append(code.Property(prop.name,
-                                       self.convert(prop.type)))
+                                       self.translate(prop.type)))
 
     # create all functions
     for function in module.functions:
-      code_module.select("dec").append(self.convert(function))
+      code_module.select("dec").append(self.translate(function))
 
   def add_import_nodes(self, module):
     """
