@@ -15,11 +15,20 @@ class Generator():
   def __init__(self, args):
     self.verbose  = args.verbose
 
+    # small limitation for now ;-)
     assert args.language == "c", "Only C language is currently implemented."
-    self.output   = args.output
-    self.platform = self.get_platform(args.platform)
-    self.language = C.Emitter(platform=self.platform).output_to(self.output)
-    self.unit     = Unit()
+
+    self.output     = args.output
+    self.platform   = self.get_platform(args.platform)
+
+    # create top-level compilation unit
+    self.unit       = Unit()
+
+    # SM->CM translator
+    self.translator = Translator()
+
+    # prepare code emitter
+    self.language   = C.Emitter(platform=self.platform).output_to(self.output)
 
     self.domain_generators = {}
     
@@ -27,14 +36,22 @@ class Generator():
     return "generating to " + self.output + " using " + str(self.language) + \
                      " on " + str(self.platform)
 
+  def log(self, msg):
+    if self.verbose: print "--- " + msg
+
   def generate(self, model):
-    self.transform(model)
+    self.construct(model)
+    self.log("starting language emission")
     self.language.emit(self.unit)
 
-  def transform(self, model):
+  def translate(self, part):
+    return self.translator.translate(part)
+
+  def construct(self, model):
     """
-    Transforms a model in snippets of CodeModels on the CodeCanvas
+    Constructs a CodeModel given a SemanticModel.
     """
+    self.log("constructing basic code model from semantic model")
     self.create_constants(model)
     self.create_modules(model)
     self.create_main_module(model)
@@ -45,8 +62,8 @@ class Generator():
     for module in model.modules.values():
       for constant in module.constants:
         defines.append(code.Constant(constant.name,
-                                     Translator().translate(constant.value),
-                                     Translator().translate(constant.type)))
+                                     self.translate(constant.value),
+                                     self.translate(constant.type)))
 
   def create_modules(self, model):
     """
@@ -56,7 +73,7 @@ class Generator():
       for domain_name, domain in module.domains.items():
         domain_generator = self.generator_for_domain(domain_name)
         name = domain_name + "-" + module_name
-        if self.verbose: print "creating " + name
+        self.log("creating " + name)
         # construct section
         domain_generator.populate(self.unit.append(Module(name)), module)
 
