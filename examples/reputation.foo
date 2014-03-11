@@ -90,7 +90,7 @@ with nodes do function(node) {
 
   // notify bad node
   if(node.trust < 0.25) {
-    node.send_to([ #excluded ])
+    node.send([ #excluded ])
   }
 
   // reset message counter
@@ -100,5 +100,5 @@ with nodes do function(node) {
 // of all nodes we track, we send out reputation information
 @every(broadcast_interval)
 with nodes do function(node) {
- nodes.send_to( [ #reputation, node, node.alpha, node.beta ] )
+ nodes.broadcast( [ #reputation, node, node.alpha, node.beta ] )
 }
