@@ -58,7 +58,8 @@ class Nodes(Domain):
     # prepare top-level actions in event_loop
     event_loop.append(code.Comment("nodes logic execution hooks"))
     for f in ["all", "outgoing"]:
-      dec.append(code.Function("nodes_process_" + f, code.VoidType()))
+      dec.append(code.Function("nodes_process_" + f, code.VoidType()) \
+                  .contains(code.Comment("nodes_process_" + f)))
       event_loop.append(code.FunctionCall("nodes_process_" + f))
 
     # wire processing of incoming frames to our nodes handler
@@ -66,7 +67,7 @@ class Nodes(Domain):
       code.Function("nodes_process_incoming", code.VoidType(),
                     [code.Parameter("payload",
                                     self.translate(self.domain.get_type("payload")))
-                    ]))
+                    ]).tag("nodes_process_incoming"))
 
     self.generator.platform.add_handler("receive",
       call     = incoming_handler,
@@ -117,3 +118,24 @@ class Transformer(language.Visitor):
       function = code.FunctionCall("nodes_" + call.method.name, call.arguments)
       # replace
       self.stack[-2].update_child(self.child, function)
+
+  @stacked
+  def visit_CaseStatement(self, stmt):
+    """
+    CaseStatements may be used to handle incoming payloads. These should be
+    centralized in the processing of incoming payloads. Payload references are
+    found in the case.expression.type == semantic.Nodes.payload_t
+    """
+    # TODO: take into account execution strategy
+    # TODO: only supported now: SimpleVariable
+    if isinstance(stmt.expression, code.SimpleVariable):
+      if stmt.expression.info == SemanticNodes.payload_t:
+        # move handling to centralized processing of incoming data
+        for case, consequence in zip(stmt.cases, stmt.consequences):
+          # TEMP solution with if to bootstrap moving
+          # TODO: integrate in single pass parsing of payload
+          test = code.IfStatement(case, consequence)
+          self.stack[0].find("nodes_process_incoming").append(test)
+
+        # remove the case
+        self.stack[-2].remove_child(self.child)

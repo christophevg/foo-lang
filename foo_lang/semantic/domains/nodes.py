@@ -6,6 +6,11 @@
 from foo_lang.semantic.model import *
 
 class Nodes(Domain):
+
+  # statically defined for reference - another quick hack ;-
+  # TODO: payload = byte* <<-- ??!!
+  payload_t = ManyType(ManyType(ByteType())) # not exported, internal use
+
   def __init__(self):
     self.scoping = {
       "*"    : AllNodes(self),
@@ -14,8 +19,6 @@ class Nodes(Domain):
     self.extensions = []
 
     self.node_t    = ObjectType(Identifier("node"))
-    # TODO: payload = byte* <<-- ??!!
-    self.payload_t = ManyType(ManyType(ByteType())) # not exported, internal use
 
     self.type = self.node_t
     
@@ -25,23 +28,23 @@ class Nodes(Domain):
 
     self.node_t.provides["broadcast"] = \
       FunctionDecl(BlockStmt(), identifier=Identifier("broadcast"), type=VoidType(),
-                   parameters=[Parameter(Identifier("payload"), self.payload_t)])
+                   parameters=[Parameter(Identifier("payload"), Nodes.payload_t)])
 
     self.node_t.provides["transmit"] = \
       FunctionDecl(BlockStmt(), identifier=Identifier("transmit"),  type=VoidType(),
                    parameters=[Parameter(Identifier("from"),    self.node_t),
                                Parameter(Identifier("to"),      self.node_t),
                                Parameter(Identifier("hop"),     self.node_t),
-                               Parameter(Identifier("payload"), self.payload_t)
+                               Parameter(Identifier("payload"), Nodes.payload_t)
                               ])
     self.node_t.provides["send"] = \
       FunctionDecl(BlockStmt(), identifier=Identifier("transmit"),  type=VoidType(),
-                   parameters=[Parameter(Identifier("payload"), self.payload_t)])
+                   parameters=[Parameter(Identifier("payload"), Nodes.payload_t)])
     self.node_t.provides["receive"] = \
       FunctionDecl(BlockStmt(), identifier=Identifier("receive"),   type=VoidType(),
                    parameters=[Parameter(Identifier("from"),    self.node_t),
                                Parameter(Identifier("to"),      self.node_t),
-                               Parameter(Identifier("payload"), self.payload_t)
+                               Parameter(Identifier("payload"), Nodes.payload_t)
                               ])
 
   def get_scope(self, name="*"):
@@ -59,7 +62,7 @@ class Nodes(Domain):
     try:
       return {
                "node":    self.node_t,
-               "payload": self.payload_t
+               "payload": Nodes.payload_t
              }[name]
     except KeyError:
       "Nodes domain only supports the 'node' and 'payload' types."      

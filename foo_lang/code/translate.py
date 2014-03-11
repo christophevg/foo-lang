@@ -100,7 +100,7 @@ class Translator(SemanticChecker):
   def after_visit_VariableExp(self, var):
     # FIXME? non-consistent behaviour, not visiting Identifier
     # id = self.code.pop()
-    self.code.append(code.SimpleVariable(var.name))
+    self.code.append(code.SimpleVariable(var.name, var.type))
 
   def after_visit_ObjectExp(self, obj):
     type = self.code.pop()
