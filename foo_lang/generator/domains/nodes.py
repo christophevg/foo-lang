@@ -3,10 +3,13 @@
 
 # Nodes domain implementation
 
+from util.visitor import stacked
+
 from foo_lang.generator.domain import Domain
 
 import codecanvas.instructions as code
 import codecanvas.structure    as structure
+import codecanvas.language     as language
 
 from foo_lang.semantic.domains.nodes import Nodes as SemanticNodes
 from foo_lang.code.translate         import Translator
@@ -32,12 +35,15 @@ class Nodes(Domain):
   def translate(self, tree):
     return self.translator.translate(tree)
   
-  def transform(self, module):
+  def extend(self, module):
+    """
+    Add domain specific extensions (e.g. includes, functions, ...)
+    """
     {
-      "main": self.transform_main
+      "main": self.extend_main
     }[module.name](module)
 
-  def transform_main(self, module):
+  def extend_main(self, module):
     """
     Transforms the main module by adding nodes functionality to the event_loop.
     """
@@ -67,7 +73,10 @@ class Nodes(Domain):
       location = module.find("main_function")
     ).stick_top()
 
-  def populate(self, code_module, module):
+  def construct(self, code_module, module):
+    """
+    Constructs a code_module from a module.
+    """
     self.add_import_nodes(code_module)
 
     # add extensions to node_t definition
@@ -89,3 +98,22 @@ class Nodes(Domain):
     """
     if not module.find("import_nodes") is None: return
     module.select("def").append(code.Import("nodes")).tag("import_nodes")
+
+  def transform(self, unit):
+    unit.accept(Transformer())
+
+class Transformer(language.Visitor):
+  """
+  Visitor for CodeCanvas-based ASTs to add/remove code automagically.
+  """
+
+  @stacked
+  def visit_MethodCall(self, call):
+    """
+    Methodcalls to the nodes domain are rewritten to function-calls.
+    """
+    if isinstance(call.obj, code.Object) and call.obj.name == "nodes":
+      # create function-call
+      function = code.FunctionCall("nodes_" + call.method.name, call.arguments)
+      # replace
+      self.stack[-2].update_child(self.child, function)

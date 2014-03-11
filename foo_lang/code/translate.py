@@ -103,13 +103,14 @@ class Translator(SemanticChecker):
     self.code.append(code.SimpleVariable(var.name))
 
   def after_visit_ObjectExp(self, obj):
-    # TODO: it seems that ObjectType is also pushed ?!
-    self.code.pop()
-    self.code.append(code.Object(obj.name))
+    type = self.code.pop()
+    self.code.append(code.Object(obj.name, type))
 
   def after_visit_PropertyExp(self, prop):
-    obj = self.code.pop()
-    self.code.append(code.ObjectProperty(obj, code.Identifier(prop.name)))
+    prop_type = self.code.pop()
+    prop      = self.code.pop()
+    obj       = self.code.pop()
+    self.code.append(code.ObjectProperty(obj, prop, prop_type))
 
   # statements
 

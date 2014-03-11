@@ -511,6 +511,10 @@ class SemanticVisitor(SemanticVisitorBase):
 
   @stacked
   @with_handling
+  def visit_Identifier(self, id): pass
+
+  @stacked
+  @with_handling
   def visit_Model(self, model):
     for module in model.modules.values():
       module.accept(self)
@@ -756,6 +760,8 @@ class SemanticVisitor(SemanticVisitorBase):
   @with_handling
   def visit_PropertyExp(self, prop):
     prop.obj.accept(self)
+    prop.identifier.accept(self)
+    prop.type.accept(self)
 
   @stacked
   @with_handling

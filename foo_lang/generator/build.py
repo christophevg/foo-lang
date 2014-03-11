@@ -40,7 +40,14 @@ class Generator():
     if self.verbose: print "--- " + msg
 
   def generate(self, model):
+    # construct basic model
     self.construct(model)
+
+    # appy domain transformations to entire unit
+    for domain_generator in self.domain_generators.values():
+      domain_generator.transform(self.unit)
+
+    # emit to language
     self.log("starting language emission")
     self.language.emit(self.unit)
 
@@ -75,7 +82,7 @@ class Generator():
         name = domain_name + "-" + module_name
         self.log("creating " + name)
         # construct section
-        domain_generator.populate(self.unit.append(Module(name)), module)
+        domain_generator.construct(self.unit.append(Module(name)), module)
 
   def create_main_module(self, model):
     """
@@ -106,10 +113,10 @@ class Generator():
         .append(code.Comment("your application gets its share"),
                 code.FunctionCall("application_step"))
 
-    # allow each domain generator to alter the main section
+    # allow each domain generator to extend the main section
     for mod in model.modules.values():
       for domain_name, domain in mod.domains.items():
-        self.generator_for_domain(domain_name).transform(module)
+        self.generator_for_domain(domain_name).extend(module)
 
   def generator_for_domain(self, domain_name):
     """
