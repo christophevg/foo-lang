@@ -8,8 +8,7 @@ from foo_lang.semantic.model import *
 class Nodes(Domain):
 
   # statically defined for reference - another quick hack ;-
-  # TODO: payload = byte* <<-- ??!!
-  payload_t = ManyType(ManyType(ByteType())) # not exported, internal use
+  payload_t = ManyType(ByteType()) # not exported, internal use
 
   def __init__(self):
     self.scoping = {

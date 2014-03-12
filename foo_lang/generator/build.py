@@ -13,12 +13,14 @@ from foo_lang.code.translate import Translator
 
 class Generator():
   def __init__(self, args):
-    self.verbose  = args.verbose
+    try:    self.verbose = args.verbose
+    except: self.verbose = False
 
     # small limitation for now ;-)
     assert args.language == "c", "Only C language is currently implemented."
 
-    self.output     = args.output
+    try:    self.output = args.output
+    except: self.output = None
     self.platform   = self.get_platform(args.platform)
 
     # create top-level compilation unit
@@ -40,6 +42,10 @@ class Generator():
     if self.verbose: print "--- " + msg
 
   def generate(self, model):
+    self.construct_code_model(model)
+    return self.emit_source()
+
+  def construct_code_model(self, model):
     # construct basic model
     self.construct(model)
 
@@ -47,9 +53,13 @@ class Generator():
     for domain_generator in self.domain_generators.values():
       domain_generator.transform(self.unit)
 
+    return self.unit
+
+  def emit_source(self, unit=None):
+    if unit is None: unit = self.unit
     # emit to language
     self.log("starting language emission")
-    self.language.emit(self.unit)
+    return self.language.emit(unit)
 
   def translate(self, part):
     return self.translator.translate(part)

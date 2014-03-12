@@ -16,6 +16,7 @@ from test.integration          import TestIntegration
 from test.environment          import TestEnvironment
 from test.semantic_environment import TestSemanticEnvironment
 from test.infercheck           import TestInferCheck
+from test.bugs                 import TestBugs
 
 if __name__ == '__main__':
   tests = [ unittest.TestLoader().loadTestsFromTestCase(test)
@@ -30,7 +31,8 @@ if __name__ == '__main__':
                           TestTranslate,
                           TestEnvironment,
                           TestSemanticEnvironment,
-                          TestInferCheck
+                          TestInferCheck,
+                          TestBugs
                          ]
           ]
 
