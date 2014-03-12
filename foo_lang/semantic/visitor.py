@@ -778,6 +778,7 @@ class SemanticVisitor(SemanticVisitorBase):
   @with_handling
   def visit_FunctionCallExp(self, exp):
     exp.function.accept(self)
+    exp.type.accept(self)
     for arg in exp.arguments:
       arg.accept(self)
 

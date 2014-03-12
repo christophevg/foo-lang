@@ -171,9 +171,10 @@ class Translator(SemanticChecker):
     args = []
     while isinstance(self.code[-1], code.Expression):
       args.append(self.code.pop())
-    assert isinstance(self.code[-1], code.Identifier)
+    assert isinstance(self.code[-1], code.Type)
+    type     = self.code.pop()
     function = self.code.pop()
-    self.code.append(code.FunctionCall(function, list(reversed(args))))
+    self.code.append(code.FunctionCall(function, list(reversed(args)), type=type))
 
   def before_visit_MethodCallExp(self, placeholder):
     self.code.append(placeholder)
