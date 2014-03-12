@@ -117,7 +117,7 @@ class Transformer(language.Visitor):
       # create function-call
       function = code.FunctionCall("nodes_" + call.method.name, call.arguments)
       # replace
-      self.stack[-2].update_child(self.child, function)
+      return function
 
   @stacked
   def visit_CaseStatement(self, stmt):

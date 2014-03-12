@@ -49,12 +49,12 @@ after nodes transmit do function(from, to, hop, payload) {
     self.assertIsInstance(queue_prop.type, ManyType)
     self.assertIsInstance(queue_prop.type.type, NamedType)
 
-    # Module > Section > Function > MethodCall .obj .type
+    # Module > Section > Function > FunctionCall .arguments[0]
     hop_queue = cm.select("nodes-test", "dec") \
                   .children[0] \
                   .children[0] \
-                  .obj
-    
+                  .arguments[0]
+
     # TupleType -> NamedType
     self.assertIsInstance(hop_queue.type, ManyType)
     self.assertIsInstance(hop_queue.type.type, NamedType)
