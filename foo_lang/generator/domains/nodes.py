@@ -111,6 +111,16 @@ class Transformer(language.Visitor):
   Visitor for CodeCanvas-based ASTs to add/remove code automagically.
   """
 
+  def __init__(self):
+    # TODO: use a backlink to generator ?
+    super(Transformer, self).__init__()
+    self.translator = Translator()
+    # this is a Transformer for the Nodes domain, let's get it ;-)
+    self.domain = SemanticNodes()
+
+  def translate(self, tree):
+    return self.translator.translate(tree)
+
   @stacked
   def visit_MethodCall(self, call):
     """
@@ -122,23 +132,52 @@ class Transformer(language.Visitor):
       # replace
       return function
 
+  processors = 0
   @stacked
   def visit_CaseStatement(self, stmt):
     """
     CaseStatements may be used to handle incoming payloads. These should be
     centralized in the processing of incoming payloads. Payload references are
-    found in the case.expression.type == semantic.Nodes.payload_t
+    found in the case.expression.type == semantic.Nodes.payload_t.
+    We now support the typical case with a contains() function. For each of
+    these we generate a function based on the consequence, accepting a payload,
+    positioned where it contains information following the case condition.
+    The case condition's literals are added as to-find literals and a reference
+    to the handling function is also registered with a general purpose byte-
+    stream parser/state machine.
     """
-    # TODO: take into account execution strategy
-    # TODO: only supported now: SimpleVariable
-    if isinstance(stmt.expression, code.SimpleVariable):
-      if stmt.expression.info == SemanticNodes.payload_t:
-        # move handling to centralized processing of incoming data
-        for case, consequence in zip(stmt.cases, stmt.consequences):
-          # TEMP solution with if to bootstrap moving
-          # TODO: integrate in single pass parsing of payload
-          test = code.IfStatement(case, consequence)
-          self.stack[0].find("nodes_process_incoming").append(test)
+    try:
+      # TODO: take into account execution strategy
+      # TODO: only supported now: SimpleVariable
+      if isinstance(stmt.expression, code.SimpleVariable):
+        if stmt.expression.info == SemanticNodes.payload_t:
+          # move handling to centralized processing of incoming data
+          for case, consequence in zip(stmt.cases, stmt.consequences):
+            # create a function that processes matched payload
+            handler = code.Function(
+              "nodes_process_incoming_case_" + str(Transformer.processors),
+              params=[ code.Parameter("from",    code.ObjectType("node")),
+                code.Parameter("to",      code.ObjectType("node")),
+                code.Parameter("payload", self.translate(self.domain.get_type("payload")))
+              ]
+            )
+            Transformer.processors += 1
+            # declare matching local variables from case
+            # NOTE: these are inside a ListLiteral
+            for arg in case.arguments[0]:
+              if isinstance(arg, code.Variable):
+                # TODO: TYPE = ObjectType(node)
+                handler.append(code.FunctionCall("payload_parser_consume_TODO_Type"))
+            # add consequence
+            for stmt in consequence: handler.append(stmt)
 
-        # remove the case
-        self.stack[-2].remove_child(self.child)
+            self.stack[0].find("nodes_main").select("dec").append(handler)
+
+            # register the handle for the literals in the case
+            registration = code.FunctionCall("payload_parser_register")
+            self.stack[0].find("nodes_process_incoming").append(registration)
+
+          # remove the case
+          self.stack[-2].remove_child(self.child)
+    except Exception, e:
+      print e
