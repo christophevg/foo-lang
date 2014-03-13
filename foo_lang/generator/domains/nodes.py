@@ -65,8 +65,11 @@ class Nodes(Domain):
     # wire processing of incoming frames to our nodes handler
     incoming_handler = dec.append(
       code.Function("nodes_process_incoming", code.VoidType(),
-                    [code.Parameter("payload",
-                                    self.translate(self.domain.get_type("payload")))
+                    [code.Parameter("from", code.ObjectType("node")),
+                     code.Parameter("to", code.ObjectType("node")),
+                     code.Parameter("payload",
+                                    self.translate(self.domain.get_type("payload"))),
+                     code.Parameter("length", code.IntegerType())
                     ]).tag("nodes_process_incoming"))
 
     self.generator.platform.add_handler("receive",
