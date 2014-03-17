@@ -476,7 +476,7 @@ class BooleanBinaryExp(BinaryExp):
 class NumericBinaryExp(BinaryExp):
   def __init__(self, left, right):
     super(NumericBinaryExp, self).__init__(left, right)
-    self._type = NumericType()
+    self._type = UnknownType()
 
 class AndExp(BooleanBinaryExp):
   def operator(self): return "and"
@@ -515,6 +515,9 @@ class MultExp(NumericBinaryExp):
   def operator(self): return "*"
 
 class DivExp(NumericBinaryExp):
+  def __init__(self, left, right):
+    super(DivExp, self).__init__(left, right)
+    self._type = FloatType()
   def operator(self): return "/"
 
 class ModuloExp(NumericBinaryExp):

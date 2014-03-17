@@ -101,10 +101,22 @@ class Translator(SemanticChecker):
 
   # expressions
 
+  def before_visit_VariableExp(self, var):
+    # a variable is self-declaring on first-use, if it's part of an assignment
+    # we need to mark this before visiting it, else it's in the env ;-)
+    unknown  = not var.name in self.env
+    inassign = len(self.stack) > 1 and isinstance(self.stack[-2], model.AssignStmt)
+    self.code.append( unknown and inassign )
+
   def after_visit_VariableExp(self, var):
-    # FIXME? non-consistent behaviour, not visiting Identifier
-    # id = self.code.pop()
-    self.code.append(code.SimpleVariable(var.name, var.type))
+    type = self.code.pop()
+    id   = self.code.pop()
+
+    # a variable is self-declaring on first-use, we stored this on the stack
+    if self.code.pop():
+      self.code.append(code.VariableDecl(id, type))
+    else:
+      self.code.append(code.SimpleVariable(id, var.type))
 
   def after_visit_ObjectExp(self, obj):
     type = self.code.pop()

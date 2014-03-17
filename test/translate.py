@@ -62,19 +62,20 @@ class TestTranslate(unittest.TestCase):
     self.assertEqual(result.value, 12.3)
 
   def test_variable(self):
-    result = self.translate(model.VariableExp(model.Identifier("var_name")))
+    result = self.translate(model.VariableExp(model.Identifier("var_name"),
+                                              model.IntegerType()))
     self.assertIsInstance(result,    code.SimpleVariable)
     self.assertIsInstance(result.id, code.Identifier )
     self.assertEqual(result.id.name, "var_name")
 
   def test_assign_stmt(self):
     result = self.translate(model.AssignStmt(
-      model.VariableExp(model.Identifier("var_name")),
+      model.VariableExp(model.Identifier("var_name"), model.IntegerType()),
       model.IntegerLiteralExp(456)
       )
     )
     self.assertIsInstance(result, code.Assign)
-    self.assertIsInstance(result.operand, code.SimpleVariable)
+    self.assertIsInstance(result.operand, code.VariableDecl)
     self.assertIsInstance(result.expression, code.IntegerLiteral)
 
   def test_empty_block_stmt(self):
@@ -82,7 +83,7 @@ class TestTranslate(unittest.TestCase):
 
   def test_filled_block_stmt(self):
     result = self.translate(model.BlockStmt([model.AssignStmt(
-      model.VariableExp(model.Identifier("var_name")),
+      model.VariableExp(model.Identifier("var_name"), model.IntegerType()),
       model.IntegerLiteralExp(456)
     )]))
     self.assertEqual(len(result), 1)
@@ -99,7 +100,7 @@ class TestTranslate(unittest.TestCase):
   def test_function_with_params_and_body(self):
     result = self.translate(model.FunctionDecl(
       model.BlockStmt([model.AssignStmt(
-        model.VariableExp(model.Identifier("var_name")),
+        model.VariableExp(model.Identifier("var_name"), model.IntegerType()),
         model.IntegerLiteralExp(456)
       )]),
       type=model.VoidType(),

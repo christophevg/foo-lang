@@ -767,6 +767,8 @@ class SemanticVisitor(SemanticVisitorBase):
     except KeyError:
       # print "AUTO-DECL", var.name, "Stack=", self.stack_as_string(), "Env=", str(self.env)
       self.env[var.name] = var
+    var.identifier.accept(self)
+    var.type.accept(self)
   
   @stacked
   @with_handling
