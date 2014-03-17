@@ -75,7 +75,7 @@ class TestInferCheck(unittest.TestCase):
     self.assertIsInstance(f["abc"].type, VoidType)
     self.assertIsInstance(f["abc"].parameters[0].type, ObjectType)  # from
     self.assertIsInstance(f["abc"].parameters[1].type, ObjectType)  # to
-    self.assertIsInstance(f["abc"].parameters[2].type, ManyType)    # payload
+    self.assertIsInstance(f["abc"].parameters[2].type, ObjectType)  # payload
     self.assertIsInstance(m.executions[0].event.type, VoidType)
     self.assertIsInstance(m.executions[0].executed.type, VoidType)
 

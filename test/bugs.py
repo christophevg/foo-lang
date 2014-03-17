@@ -40,11 +40,11 @@ after nodes transmit do function(from, to, hop, payload) {
     cm = generator.construct_code_model(sm)
 
     cm.accept(C.Transformer())
-    
+
     # Module > Section > StructuredType > Property
     queue_prop = cm.select("nodes", "def") \
                    .children[1] \
-                   .children[3]
+                   .children[4]
 
     self.assertIsInstance(queue_prop.type, ManyType)
     self.assertIsInstance(queue_prop.type.type, NamedType)
@@ -53,7 +53,8 @@ after nodes transmit do function(from, to, hop, payload) {
     hop_queue = cm.select("nodes-test", "dec") \
                   .children[0] \
                   .children[0] \
-                  .arguments[0]
+                  .arguments[0] \
+                  .variable         # AddressOf in between for push !!
 
     # TupleType -> NamedType
     self.assertIsInstance(hop_queue.type, ManyType)
