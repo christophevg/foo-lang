@@ -62,6 +62,10 @@ class Translator(SemanticChecker):
     subtype = self.code.pop()
     self.code.append(code.ManyType(subtype))
 
+  def after_visit_AmountType(self, type):
+    subtype = self.code.pop()
+    self.code.append(code.AmountType(subtype, type.size))
+
   def after_visit_TupleType(self, type):
     types = []
     for i in range(len(type.types)):

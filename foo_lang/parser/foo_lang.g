@@ -13,13 +13,13 @@ options {
 
 // a few virtual tokens, used as identifying node
 tokens {  // must be declared here/before use, not with other real tokens below
-  ANNOTATED; ANNOTATION; ANON_FUNC_DECL; ANYTHING; APPLY; ARGS; ATOM_LITERAL;
-  BLOCK; BOOLEAN_LITERAL; CASE; CASES; CONST; DEC; DOMAIN; EXTEND; EXTERNAL;
-  FLOAT_LITERAL; FUNC_CALL; FUNC_DECL; FUNC_PROTO; FUNC_REF; IDENTIFIER; IF;
-  IMPORT; INC; INTEGER_LITERAL; LIST_LITERAL; MANY_TYPE_EXP; MATCH_EXP;
-  METHOD_CALL; MODULE; OBJECT_LITERAL; OBJECT_REF; ON; PARAMS; PROPERTY_EXP;
-  PROPERTY_LITERAL; RETURN; ROOT; TUPLE_TYPE_EXP; TYPE_EXP; UNKNOWN_TYPE;
-  VALUE; VAR_EXP;
+  AMOUNT_TYPE_EXP; ANNOTATED; ANNOTATION; ANON_FUNC_DECL; ANYTHING; APPLY; ARGS;
+  ATOM_LITERAL; BLOCK; BOOLEAN_LITERAL; CASE; CASES; CONST; DEC; DOMAIN;
+  EXTEND; EXTERNAL; FLOAT_LITERAL; FUNC_CALL; FUNC_DECL; FUNC_PROTO; FUNC_REF;
+  IDENTIFIER; IF; IMPORT; INC; INTEGER_LITERAL; LIST_LITERAL; MANY_TYPE_EXP;
+  MATCH_EXP; METHOD_CALL; MODULE; OBJECT_LITERAL; OBJECT_REF; ON; PARAMS;
+  PROPERTY_EXP; PROPERTY_LITERAL; RETURN; ROOT; TUPLE_TYPE_EXP; TYPE_EXP;
+  UNKNOWN_TYPE; VALUE; VAR_EXP;
 }
 
 // to have our parser raise its exceptions we need to override some methods in
@@ -288,7 +288,8 @@ list_literal
   ;
 
 type
-  : many_type '*'  -> ^(MANY_TYPE_EXP many_type)    // support for type**
+  : amount_type    -> amount_type
+  | many_type '*'  -> ^(MANY_TYPE_EXP many_type)    // support for type**
   | many_type      -> many_type
   | basic_type     -> basic_type
   | tuple_type '*' -> ^(MANY_TYPE_EXP tuple_type)
@@ -309,6 +310,8 @@ type_identifier
   | identifier
   ;
 tuple_type : '[' t+=type (COMMA t+=type)* ']' -> ^(TUPLE_TYPE_EXP $t+);
+
+amount_type : basic_type '[' size=INTEGER ']' -> ^(AMOUNT_TYPE_EXP basic_type $size);
 
 // to avoid some keywords to be excluded from being an identifier, we add them
 // again here.

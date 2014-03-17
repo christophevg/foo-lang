@@ -14,6 +14,8 @@ import codecanvas.language     as language
 from foo_lang.semantic.domains.nodes import Nodes as SemanticNodes
 from foo_lang.code.translate         import Translator
 
+import inspect
+
 class Nodes(Domain):
   def prepare(self):
     """
@@ -25,10 +27,12 @@ class Nodes(Domain):
     # we need a translator
     self.translator = Translator()
 
-    node_type = code.StructuredType("node").tag("node_type_def")
+    node_type = code.StructuredType("nodes").tag("node_type_def")
     # TODO: add default more information (e.g. address, ...)
     node_type.append(code.Comment("domain properties"),
-                     code.Property("address", code.LongType()))
+                     code.Property("id", code.ByteType()),
+                     code.Property("address", code.LongType())
+                    )
     module = self.generator.unit.append(structure.Module("nodes"))
     module.select("def").append( code.Comment("THE node type"), node_type )
     
@@ -134,8 +138,58 @@ class Transformer(language.Visitor):
     Methodcalls to the nodes domain are rewritten to function-calls.
     """
     if isinstance(call.obj, code.Object) and call.obj.name == "nodes":
+      # FIXME: this is a bit too local, would nicer at C-level, based on the 
+      # definition of the parameters of these functions. not for now ;-)
+
+      # these function call take vararg bytes. we need to convert each non-byte
+      # argument to a ListLiteral of corresponding bytes.
       # create function-call
-      function = code.FunctionCall("nodes_" + call.method.name, call.arguments)
+      
+      # ListLiteral {}
+      #   AtomLiteral {'name': u'heartbeat'}
+      #   ObjectProperty {'obj': Object(node:object nodes), 'prop': sequence}
+      #   SimpleVariable {'info': <foo_lang.semantic.model.IntegerType object at 0x107d77850>, 'id': time}
+      #   FunctionCall {'function': sha1, 'arguments': 1}
+      # 
+      # 
+      # ListLiteral {}
+      #   AtomLiteral {'name': u'reputation'}
+      #   SimpleVariable {'info': <foo_lang.semantic.model.ObjectType object at 0x107dd2690>, 'id': node}
+      #   ObjectProperty {'obj': Object(node:object nodes), 'prop': alpha}
+      #   ObjectProperty {'obj': Object(node:object nodes), 'prop': beta}
+
+      # strategy:
+      # AtomLiteral     will be expanded later, so we skip them here
+      # ObjectProperty  check/convert property type
+      # SimpleVariable  
+      # FunctionCall    extract from arguments, assign to variable, convert
+
+      assert isinstance(call.arguments[0], code.ListLiteral)
+
+      # rebuild the arguments
+      args  = code.ListLiteral()
+      temp = 0;
+      try:
+        for index, arg in enumerate(call.arguments[0]):
+          if isinstance(arg, code.FunctionCall):
+            code.Assign(code.VariableDecl("temp" + str(temp), arg.type), arg).insert_before(call)
+            # TODO: generalize a bit more - this only support our minimal need
+            if isinstance(arg.type, code.AmountType) and \
+               isinstance(arg.type.type, code.ByteType):
+              for i in range(arg.type.size):
+                args.append(code.ListVariable("temp" +str(temp), i))
+            temp += 1
+          elif isinstance(arg, code.SimpleVariable):
+            args.append(arg)
+          elif isinstance(arg, code.ObjectProperty):
+            args.append(arg)
+          else:
+            args.append(arg)
+            
+      except:
+        inspect.print_stack()
+
+      function = code.FunctionCall("nodes_" + call.method.name, [args])
       # replace
       return function
 

@@ -365,6 +365,13 @@ class ManyType(ComplexType):
     self.subtype = subtype
     self.provides = manytype_provides
 
+class AmountType(ComplexType):
+  def __init__(self, subtype, size):
+    assert isinstance(subtype, TypeExp)
+    assert size > 0
+    self.subtype = subtype
+    self.size    = size
+
 class TupleType(ComplexType):
   def __init__(self, types=[]):
     self.types = TypedList(TypeExp, types)

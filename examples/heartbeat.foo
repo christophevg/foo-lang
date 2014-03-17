@@ -20,8 +20,9 @@ const validation_interval    = 5000    // check nodes every 5 seconds
 // through all possible collections of functions. function collections are
 // simple C modules of which the public functions can be called.
 // importing functions require full typing of the prototype
-from crypto import sha1(byte**) : byte*
-from time   import now()        : integer
+from crypto import sha1(byte*)                : byte[20]
+from crypto import sha1_compare(byte*, byte*) : boolean
+from time   import now()                      : integer
 
 // modules can be extended. the implications can differ. here the internal
 // representation of a node is extended with some properties that are specific
@@ -75,7 +76,7 @@ after nodes receive do function(from, to, payload) {
     // e.g. we can check if we find an atom and three variables after is
     contains( [ #heartbeat, time, sequence, signature ] ) {
       // validate signature
-      if(sha1([sequence, time]) == signature) {
+      if(sha1_compare(signature, [sequence, time])) {
         from.last_seen = time
         from.sequence  = sequence
       } else {

@@ -68,6 +68,7 @@ class AstVisitor():
       "TYPE_EXP"        : self.visit_type_exp,
       "UNKNOWN_TYPE"    : self.visit_unknown_type,
       "MANY_TYPE_EXP"   : self.visit_many_type_exp,
+      "AMOUNT_TYPE_EXP" : self.visit_amount_type_exp,
       "TUPLE_TYPE_EXP"  : self.visit_tuple_type_exp,
 
       ">"               : lambda t: self.visit_bin_exp(">",   GTExp,        t),
@@ -398,6 +399,12 @@ class AstVisitor():
     assert tree.text == "MANY_TYPE_EXP"
     type = self.visit(tree.getChildren()[0])
     return ManyType(type)
+
+  def visit_amount_type_exp(self, tree):
+    assert tree.text == "AMOUNT_TYPE_EXP"
+    type = self.visit(tree.getChildren()[0])
+    size = int(tree.getChildren()[1].text)
+    return AmountType(type, size)
 
   def visit_tuple_type_exp(self, tree):
     assert tree.text == "TUPLE_TYPE_EXP"
@@ -739,6 +746,11 @@ class SemanticVisitor(SemanticVisitorBase):
   @with_handling
   def visit_ManyType(self, many):
     many.subtype.accept(self)
+
+  @stacked
+  @with_handling
+  def visit_AmountType(self, many):
+    many.subtype.accept(self)
     
   @stacked
   @with_handling
@@ -815,6 +827,8 @@ class SemanticVisitor(SemanticVisitorBase):
 
   @with_handling
   def visit_Comparator(self, comp): pass
+
+  
 
 # SEMANTIC CHECKER
 #
