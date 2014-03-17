@@ -147,14 +147,14 @@ class Inferrer(SemanticChecker):
 
     parents = list(reversed(self.stack))
 
+    # TODO: too specific (for contains) AND wrong !! :-(
     # special case: if the VarExp is part of a ListLiteral as argument to 
-    # FuncCallExp that is part of a CaseStmt, it takes on the subtype of the
-    # ManyType that is the type of of the CaseStmt's expression
+    # FuncCallExp that is part of a CaseStmt, it takes the subtype of the 
+    # Manytype that the Provided method carries.
     if isinstance(parents[1], ListLiteralExp) and \
        isinstance(parents[2], FunctionCallExp) and \
        isinstance(parents[3], CaseStmt):
-      # TODO: add more checking
-      variable.type = parents[3].expression.type.subtype
+      variable.type = parents[3].expression.type.provides[parents[2].name].parameters[0].type.subtype
       self.success("VariableExp ", variable.name , 
                    "is a VariableDecl for data of type",
                    variable.type.accept(Dumper()))

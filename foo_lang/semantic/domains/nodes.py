@@ -8,7 +8,10 @@ from foo_lang.semantic.model import *
 class Nodes(Domain):
 
   # statically defined for reference - another quick hack ;-
-  payload_t = ManyType(ByteType()) # not exported, internal use
+  payload_t = ObjectType(Identifier("payload"))
+  payload_t.provides["contains"] = \
+    FunctionDecl(BlockStmt(), identifier=Identifier("contains"), type=BooleanType(),
+                 parameters=[Parameter(Identifier("pattern"), ManyType(ByteType()))])
 
   def __init__(self):
     self.scoping = {
@@ -17,7 +20,8 @@ class Nodes(Domain):
     }
     self.extensions = []
 
-    self.node_t    = ObjectType(Identifier("node"))
+    # instantiated because different extensions exist in each module
+    self.node_t = ObjectType(Identifier("nodes"))
 
     self.type = self.node_t
     

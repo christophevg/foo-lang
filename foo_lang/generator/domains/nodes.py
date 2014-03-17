@@ -31,6 +31,13 @@ class Nodes(Domain):
                      code.Property("address", code.LongType()))
     module = self.generator.unit.append(structure.Module("nodes"))
     module.select("def").append( code.Comment("THE node type"), node_type )
+    
+    payload_type = code.StructuredType("payload").tag("payload_type_def")
+    payload_type.append(
+      code.Property("bytes", code.ManyType(code.ByteType())),
+      code.Property("size",  code.IntegerType())
+    )
+    module.select("def").append( code.Comment("THE payload type"), payload_type)
   
   def translate(self, tree):
     return self.translator.translate(tree)
