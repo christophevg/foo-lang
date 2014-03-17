@@ -23,7 +23,7 @@ const indirect_threshold  : float = 0.9   // lower limit for including indirect
 from time import now() : integer
 
 extend nodes with {
-  queue      : [timestamp, byte*]*   = []
+  queue      : [timestamp, payload]* = []
   msg_count  : byte                  = 0
   // alpha and beta are the parameters of the Beta distribution used to 
   // represent the reputation of a node
