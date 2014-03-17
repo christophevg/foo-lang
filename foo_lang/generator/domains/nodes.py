@@ -171,13 +171,13 @@ class Transformer(language.Visitor):
           temp += 1
 
         elif isinstance(arg, code.SimpleVariable):
-          if str(arg.info) == "IntegerType":
+          if str(arg.info) == "TimestampType":
             code.VariableDecl(
               "temp" + str(temp),
               code.UnionType("temp" + str(temp)) \
-                  .contains( code.Property("value", code.IntegerType() ),
+                  .contains( code.Property("value", code.NamedType("timestamp")),
                              code.Property(
-                               "b", code.AmountType(code.ByteType(), 4)
+                               "b", code.AmountType(code.ByteType(), 4) # platf?
                              )
                            )
             ).insert_before(call)

@@ -15,7 +15,7 @@ class AVR(Platform):
         "FloatType"   : "float",
         "LongType"    : "uint16_t",
 
-        "timestamp"   : "time_t"
+        "timestamp"   : "uint32_t"
       }[str(type)]
     except:
       return str(type)

@@ -391,9 +391,9 @@ class ObjectType(ComplexType):
 
 # BUILD-IN object types
 
-class TimestampType(ObjectType):
+class TimestampType(ComplexType):
   def __init__(self):
-    super(TimestampType, self).__init__(Identifier("timestamp"))
+    super(TimestampType, self).__init__()
     self.provides = {}
 
 class VariableExp(Exp):

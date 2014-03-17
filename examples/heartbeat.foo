@@ -22,7 +22,7 @@ const validation_interval    = 5000    // check nodes every 5 seconds
 // importing functions require full typing of the prototype
 from crypto import sha1(byte*)                : byte[20]
 from crypto import sha1_compare(byte*, byte*) : boolean
-from time   import now()                      : integer
+from time   import now()                      : timestamp
 
 // modules can be extended. the implications can differ. here the internal
 // representation of a node is extended with some properties that are specific
