@@ -14,8 +14,6 @@ import codecanvas.language     as language
 from foo_lang.semantic.domains.nodes import Nodes as SemanticNodes
 from foo_lang.code.translate         import Translator
 
-import inspect
-
 class Nodes(Domain):
   def prepare(self):
     """
@@ -145,19 +143,6 @@ class Transformer(language.Visitor):
       # argument to a ListLiteral of corresponding bytes.
       # create function-call
       
-      # ListLiteral {}
-      #   AtomLiteral {'name': u'heartbeat'}
-      #   ObjectProperty {'obj': Object(node:object nodes), 'prop': sequence}
-      #   SimpleVariable {'info': <foo_lang.semantic.model.IntegerType object at 0x107d77850>, 'id': time}
-      #   FunctionCall {'function': sha1, 'arguments': 1}
-      # 
-      # 
-      # ListLiteral {}
-      #   AtomLiteral {'name': u'reputation'}
-      #   SimpleVariable {'info': <foo_lang.semantic.model.ObjectType object at 0x107dd2690>, 'id': node}
-      #   ObjectProperty {'obj': Object(node:object nodes), 'prop': alpha}
-      #   ObjectProperty {'obj': Object(node:object nodes), 'prop': beta}
-
       # strategy:
       # AtomLiteral     will be expanded later, so we skip them here
       # ObjectProperty  check/convert property type
@@ -166,32 +151,83 @@ class Transformer(language.Visitor):
 
       assert isinstance(call.arguments[0], code.ListLiteral)
 
+      # TODO: mark this somehow and move logic to emitter
+      #       the UnionType solution is to C-specific - no more time to do it
+      #       right :-(
+
       # rebuild the arguments
       args  = code.ListLiteral()
       temp = 0;
-      try:
-        for index, arg in enumerate(call.arguments[0]):
-          if isinstance(arg, code.FunctionCall):
-            code.Assign(code.VariableDecl("temp" + str(temp), arg.type), arg).insert_before(call)
-            # TODO: generalize a bit more - this only support our minimal need
-            if isinstance(arg.type, code.AmountType) and \
-               isinstance(arg.type.type, code.ByteType):
-              for i in range(arg.type.size):
-                args.append(code.ListVariable("temp" +str(temp), i))
-            temp += 1
-          elif isinstance(arg, code.SimpleVariable):
-            args.append(arg)
-          elif isinstance(arg, code.ObjectProperty):
-            args.append(arg)
-          else:
-            args.append(arg)
-            
-      except:
-        inspect.print_stack()
+      for index, arg in enumerate(call.arguments[0]):
+        # TODO: generalize a bit more - this only support our minimal needs
 
-      function = code.FunctionCall("nodes_" + call.method.name, [args])
-      # replace
-      return function
+        if isinstance(arg, code.FunctionCall):
+          code.Assign(code.VariableDecl("temp" + str(temp), arg.type), arg) \
+              .insert_before(call)
+          if isinstance(arg.type, code.AmountType) and \
+             isinstance(arg.type.type, code.ByteType):
+            for i in range(arg.type.size):
+              args.append(code.ListVariable("temp" +str(temp), i))
+          temp += 1
+
+        elif isinstance(arg, code.SimpleVariable):
+          if str(arg.info) == "IntegerType":
+            code.VariableDecl(
+              "temp" + str(temp),
+              code.UnionType("temp" + str(temp)) \
+                  .contains( code.Property("value", code.IntegerType() ),
+                             code.Property(
+                               "b", code.AmountType(code.ByteType(), 4)
+                             )
+                           )
+            ).insert_before(call)
+
+            code.Assign(code.StructProperty("temp" + str(temp), "value"), arg) \
+              .insert_before(call)
+
+            for i in range(4):
+              args.append(
+                code.ListVariable(
+                  code.StructProperty("temp" + str(temp), "b"),
+                  i
+                )
+              )
+            temp += 1
+          elif str(arg.info) == "ObjectType(nodes)":
+            args.append(code.ObjectProperty(arg.name, "id"))
+
+        elif isinstance(arg, code.ObjectProperty):
+
+          if isinstance(arg.type, code.ByteType):
+            args.append(arg)
+
+          elif isinstance(arg.type, code.FloatType):
+            code.VariableDecl(
+              "temp" + str(temp),
+              code.UnionType("temp" + str(temp)) \
+                  .contains( code.Property("value", code.FloatType() ),
+                             code.Property(
+                               "b", code.AmountType(code.ByteType(), 4)
+                             )
+                           )
+            ).insert_before(call)
+
+            code.Assign(code.StructProperty("temp" + str(temp), "value"), arg) \
+              .insert_before(call)
+
+            for i in range(4):
+              args.append(
+                code.ListVariable(
+                  code.StructProperty("temp" + str(temp), "b"),
+                  i
+                )
+              )
+            temp += 1
+
+        else: args.append(arg)
+
+      # replace by functioncall
+      return code.FunctionCall("nodes_" + call.method.name, [args])
 
   processors = 0
   @stacked
