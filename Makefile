@@ -6,7 +6,8 @@ COVERAGE=/opt/local/bin/coverage-2.7
 DOT=dot -Nfixedsize=False -Nfontname=Times-Roman -Nshape=rectangle
 ASTYLE=/opt/local/bin/astyle --style=attach --indent=spaces=2 \
 														 --indent-col1-comments --suffix=none \
-														 --quiet --errors-to-stdout
+														 --quiet --errors-to-stdout \
+														 --max-code-length=80
 
 APP=foo_lang
 
