@@ -74,7 +74,7 @@ after nodes receive do function(from, to, payload) {
   // payload is a list of data. we can consider one or more cases
   case payload {
     // e.g. we can check if we find an atom and three variables after is
-    contains( [ #heartbeat, time, sequence, signature ] ) {
+    contains( [ #heartbeat, time:timestamp, sequence, signature:byte[20] ] ) {
       // validate signature
       if(sha1_compare(signature, [sequence, time])) {
         from.last_seen = time
