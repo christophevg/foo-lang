@@ -67,23 +67,21 @@ class Nodes(Domain):
     # prepare top-level actions in event_loop
     event_loop.append(code.Comment("nodes logic execution hooks"))
     for f in ["all", "outgoing"]:
-      dec.append(code.Function("nodes_process_" + f, code.VoidType()) \
-                  .contains(code.Comment("nodes_process_" + f)))
       event_loop.append(code.FunctionCall("nodes_process_" + f))
 
-    # wire processing of incoming frames to our nodes handler
-    incoming_handler = dec.append(
-      code.Function("nodes_process_incoming", code.VoidType(),
-                    [code.Parameter("from", code.ObjectType("node")),
-                     code.Parameter("to", code.ObjectType("node")),
-                     code.Parameter("payload",
-                                    self.translate(self.domain.get_type("payload"))),
-                     code.Parameter("length", code.IntegerType())
-                    ]).tag("nodes_process_incoming"))
+    # prepare the payload parser with callbacks for parsing
+    parser_init = dec.append(
+      code.Function("nodes_parser_init", code.VoidType())
+    ).tag("nodes_parser_init")
+    module.find("main_function").append(
+      code.FunctionCall(parser_init.name).stick_top()
+    )
 
+    # wire the receiving of packets to the underlying platform
     self.generator.platform.add_handler("receive",
-      call     = incoming_handler,
-      location = module.find("main_function")
+      call     = "payload_parser_parse",
+      module   = module,
+      location = "main_function"
     ).stick_top()
 
   def construct(self, code_module, module):
@@ -259,20 +257,50 @@ class Transformer(language.Visitor):
               ]
             )
             Transformer.processors += 1
+
+            handler.append(code.Comment("extract variables from payload"))
             # declare matching local variables from case
             # NOTE: these are inside a ListLiteral
             for arg in case.arguments[0]:
               if isinstance(arg, code.Variable):
-                # TODO: TYPE = ObjectType(node)
-                handler.append(code.FunctionCall("payload_parser_consume_TODO_Type"))
+                code_type = self.translate(arg.info)
+                # TODO: generalize this more
+                code_type_name = {
+                  "NamedType {'name': 'timestamp'}": lambda: code_type.name,
+                  "ByteType"                       : lambda: "byte",
+                  # TODO: amount has type, should be recursively extracted
+                  # TODO:            size
+                  "AmountType {}"                  : lambda: "bytes",
+                  "ObjectType {'name': 'nodes'}"   : lambda: code_type.name[:-1],
+                  "FloatType"                      : lambda: "float"
+                }[str(code_type)]()
+                # TODO: size should be generalized
+                args = [code.IntegerLiteral(code_type.size)] \
+                          if code_type_name == "bytes" else []
+                handler.append(
+                  code.Assign(
+                    code.VariableDecl(arg.name, code_type),
+                    code.FunctionCall("payload_parser_consume_" + code_type_name,
+                      type=code_type, arguments=args)
+                  )
+                )
+
             # add consequence
-            for stmt in consequence: handler.append(stmt)
+            handler.append(code.Comment("perform handling actions"))
+            for stmt in consequence:
+              handler.append(stmt)
 
             self.stack[0].find("nodes_main").select("dec").append(handler)
 
             # register the handle for the literals in the case
-            registration = code.FunctionCall("payload_parser_register")
-            self.stack[0].find("nodes_process_incoming").append(registration)
+            arguments = code.ListLiteral()
+            for arg in case.arguments[0]:
+              if isinstance(arg, code.Literal):
+                arguments.append(arg)
+            registration = code.FunctionCall("payload_parser_register",
+              [ code.SimpleVariable(handler.name), arguments ]
+            )
+            self.stack[0].find("nodes_parser_init").append(registration)
 
           # remove the case
           self.stack[-2].remove_child(self.child)

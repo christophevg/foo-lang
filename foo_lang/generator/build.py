@@ -101,21 +101,26 @@ class Generator():
     module = self.unit.append(Module("main"))
 
     # init
-    init = code.Function("init", code.VoidType()) \
-             .contains(code.Comment("add framework init here"))
+    init = code.Function("init") \
+               .contains(code.Comment("add framework init here"))
 
     # app
-    app = code.Function("application_step", code.VoidType()) \
-            .contains(code.Comment("add application specific code here"))
+    app = code.Function("application_step") \
+              .contains(code.Comment("add application specific code here"))
 
     # main
-    main = code.Function("main", code.IntegerType()).tag("main_function")
-    module.select("dec").append(init,
+    main = code.Function("main", code.IntegerType()).tag("main_function")\
+               .contains(
+                 code.FunctionCall("init").stick_top(),
+                 code.Return(code.IntegerLiteral(1)).stick_bottom()
+               )
+    module.select("dec").append(code.Comment("""init and application_step
+can be implemented using application specific needs."""),
+                                init,
                                 app,
-                                code.Comment("starting point"),
+                                code.Comment("""starting point
+please don't change anything beyond this point."""),
                                 main)
-
-    main.append(code.FunctionCall("init")).stick_top()
 
     # construct an event_loop builder and hook it into the main function
     event_loop = code.WhileDo(code.BooleanLiteral(True))
