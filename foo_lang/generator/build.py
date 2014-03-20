@@ -11,6 +11,8 @@ import codecanvas.languages.C  as C
 
 from foo_lang.code.translate import Translator
 
+from foo_lang.semantic.domains.nodes import AllNodes
+
 class Generator():
   def __init__(self, args):
     try:    self.verbose = args.verbose
@@ -72,6 +74,7 @@ class Generator():
     self.create_constants(model)
     self.create_modules(model)
     self.create_main_module(model)
+    self.create_executions(model)
 
   def create_constants(self, model):
     module  = self.unit.append(Module("constants"))
@@ -132,6 +135,12 @@ please don't change anything beyond this point."""),
     for mod in model.modules.values():
       for domain_name, domain in mod.domains.items():
         self.generator_for_domain(domain_name).extend(module)
+
+  def create_executions(self, model):
+    # executions
+    for module_name, module in model.modules.items():
+      for execution in module.executions:
+        self.generator_for_domain("nodes").link_execution(execution)
 
   def generator_for_domain(self, domain_name):
     """

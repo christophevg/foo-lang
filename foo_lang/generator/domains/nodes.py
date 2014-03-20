@@ -11,7 +11,7 @@ import codecanvas.instructions as code
 import codecanvas.structure    as structure
 import codecanvas.language     as language
 
-from foo_lang.semantic.domains.nodes import Nodes as SemanticNodes
+from foo_lang.semantic.domains.nodes import Nodes as SemanticNodes, AllNodes
 from foo_lang.code.translate         import Translator
 
 class Nodes(Domain):
@@ -41,7 +41,7 @@ class Nodes(Domain):
     )
     module.select("def").append( code.Comment("THE payload type"), payload_type)
   
-  def translate(self, tree):
+  def _translate(self, tree):
     return self.translator.translate(tree)
   
   def extend(self, module):
@@ -65,13 +65,12 @@ class Nodes(Domain):
     event_loop = module.find("event_loop")
 
     # prepare top-level actions in event_loop
-    event_loop.append(code.Comment("nodes logic execution hooks"))
-    for f in ["all", "outgoing"]:
-      event_loop.append(code.FunctionCall("nodes_process_" + f))
+    event_loop.append(code.Comment("nodes logic execution hook"))
+    event_loop.append(code.FunctionCall("nodes_process"))
 
     # prepare the payload parser with callbacks for parsing
     parser_init = dec.append(
-      code.Function("nodes_parser_init", code.VoidType())
+      code.Function("nodes_parser_init")
     ).tag("nodes_parser_init")
     module.find("main_function").append(
       code.FunctionCall(parser_init.name).stick_top()
@@ -83,6 +82,14 @@ class Nodes(Domain):
       module   = module,
       location = "main_function"
     ).stick_top()
+
+    # prepare a hook to setup scheduling
+    scheduler_init = dec.append(
+      code.Function("nodes_scheduler_init")
+    ).tag("nodes_scheduler_init")
+    module.find("main_function").append(
+      code.FunctionCall(scheduler_init.name).stick_top()
+    )
 
   def construct(self, code_module, module):
     """
@@ -97,11 +104,11 @@ class Nodes(Domain):
     for ext in module.domains["nodes"].extensions:
       for prop in ext.extension.properties:
         node_type.append(code.Property(prop.name,
-                                       self.translate(prop.type)))
+                                       self._translate(prop.type)))
 
     # create all functions
     for function in module.functions:
-      code_module.select("dec").append(self.translate(function))
+      code_module.select("dec").append(self._translate(function))
 
   def add_import_nodes(self, module):
     """
@@ -112,6 +119,38 @@ class Nodes(Domain):
 
   def transform(self, unit):
     unit.accept(Transformer())
+
+  def link_execution(self, execution):
+    {
+      "Every": self.create_every_execution,
+      "When" : self.create_when_execution
+    }[execution.__class__.__name__](execution)
+
+  def create_every_execution(self, execution):
+    if isinstance(execution.scope, AllNodes):
+      name = "nodes_schedule_all"
+    else:
+      name = "nodes_schedule_own"
+
+    self.generator.unit.find("nodes_scheduler_init").append(
+      code.FunctionCall(name, arguments=[
+        self._translate(execution.interval),
+        code.SimpleVariable(execution.executed.name)
+      ])
+    )
+  
+  def create_when_execution(self, execution):
+    if execution.event.name == "receive": return # already handled by Transform
+    # TODO: generalize: only supported = after transmit for all nodes
+    assert execution.timing == "after"
+    assert execution.event.name == "transmit"
+    assert isinstance(execution.scope, AllNodes)
+    self.generator.unit.find("nodes_parser_init").append(
+      code.FunctionCall("payload_parser_register", arguments=[
+        code.SimpleVariable(execution.executed.name),
+        code.IntegerLiteral(0)
+      ])
+    )
 
 class Transformer(language.Visitor):
   """
@@ -241,68 +280,66 @@ class Transformer(language.Visitor):
     to the handling function is also registered with a general purpose byte-
     stream parser/state machine.
     """
-    try:
-      # TODO: take into account execution strategy
-      # TODO: only supported now: SimpleVariable
-      if isinstance(stmt.expression, code.SimpleVariable):
-        if stmt.expression.info == SemanticNodes.payload_t:
-          # move handling to centralized processing of incoming data
-          for case, consequence in zip(stmt.cases, stmt.consequences):
-            # create a function that processes matched payload
-            handler = code.Function(
-              "nodes_process_incoming_case_" + str(Transformer.processors),
-              params=[ code.Parameter("from",    code.ObjectType("node")),
-                code.Parameter("to",      code.ObjectType("node")),
-                code.Parameter("payload", self.translate(self.domain.get_type("payload")))
-              ]
-            )
-            Transformer.processors += 1
+    # TODO: take into account execution strategy
+    
+    # TODO: only supported now: SimpleVariable
+    if isinstance(stmt.expression, code.SimpleVariable):
+      if stmt.expression.info == SemanticNodes.payload_t:
+        # move handling to centralized processing of incoming data
+        for case, consequence in zip(stmt.cases, stmt.consequences):
+          # create a function that processes matched payload
+          handler = code.Function(
+            "nodes_process_incoming_case_" + str(Transformer.processors),
+            params=[ code.Parameter("from",    code.ObjectType("node")),
+              code.Parameter("to",      code.ObjectType("node")),
+              code.Parameter("payload", self.translate(self.domain.get_type("payload")))
+            ]
+          )
+          Transformer.processors += 1
 
-            handler.append(code.Comment("extract variables from payload"))
-            # declare matching local variables from case
-            # NOTE: these are inside a ListLiteral
-            for arg in case.arguments[0]:
-              if isinstance(arg, code.Variable):
-                code_type = self.translate(arg.info)
-                # TODO: generalize this more
-                code_type_name = {
-                  "NamedType {'name': 'timestamp'}": lambda: code_type.name,
-                  "ByteType"                       : lambda: "byte",
-                  # TODO: amount has type, should be recursively extracted
-                  # TODO:            size
-                  "AmountType {}"                  : lambda: "bytes",
-                  "ObjectType {'name': 'nodes'}"   : lambda: code_type.name[:-1],
-                  "FloatType"                      : lambda: "float"
-                }[str(code_type)]()
-                # TODO: size should be generalized
-                args = [code.IntegerLiteral(code_type.size)] \
-                          if code_type_name == "bytes" else []
-                handler.append(
-                  code.Assign(
-                    code.VariableDecl(arg.name, code_type),
-                    code.FunctionCall("payload_parser_consume_" + code_type_name,
-                      type=code_type, arguments=args)
-                  )
+          handler.append(code.Comment("extract variables from payload"))
+          # declare matching local variables from case
+          # NOTE: these are inside a ListLiteral
+          for arg in case.arguments[0]:
+            if isinstance(arg, code.Variable):
+              code_type = self.translate(arg.info)
+              # TODO: generalize this more
+              code_type_name = {
+                "NamedType {'name': 'timestamp'}": lambda: code_type.name,
+                "ByteType"                       : lambda: "byte",
+                # TODO: amount has type, should be recursively extracted
+                # TODO:            size
+                "AmountType {}"                  : lambda: "bytes",
+                "ObjectType {'name': 'nodes'}"   : lambda: code_type.name[:-1],
+                "FloatType"                      : lambda: "float"
+              }[str(code_type)]()
+              # TODO: size should be generalized
+              args = [code.IntegerLiteral(code_type.size)] \
+                        if code_type_name == "bytes" else []
+              handler.append(
+                code.Assign(
+                  code.VariableDecl(arg.name, code_type),
+                  code.FunctionCall("payload_parser_consume_" + code_type_name,
+                    type=code_type, arguments=args)
                 )
+              )
 
-            # add consequence
-            handler.append(code.Comment("perform handling actions"))
-            for stmt in consequence:
-              handler.append(stmt)
+          # add consequence
+          handler.append(code.Comment("perform handling actions"))
+          for stmt in consequence:
+            handler.append(stmt)
 
-            self.stack[0].find("nodes_main").select("dec").append(handler)
+          self.stack[0].find("nodes_main").select("dec").append(handler)
 
-            # register the handle for the literals in the case
-            arguments = code.ListLiteral()
-            for arg in case.arguments[0]:
-              if isinstance(arg, code.Literal):
-                arguments.append(arg)
-            registration = code.FunctionCall("payload_parser_register",
-              [ code.SimpleVariable(handler.name), arguments ]
-            )
-            self.stack[0].find("nodes_parser_init").append(registration)
+          # register the handle for the literals in the case
+          arguments = code.ListLiteral()
+          for arg in case.arguments[0]:
+            if isinstance(arg, code.Literal):
+              arguments.append(arg)
+          registration = code.FunctionCall("payload_parser_register",
+            [ code.SimpleVariable(handler.name), arguments ]
+          )
+          self.stack[0].find("nodes_parser_init").append(registration)
 
-          # remove the case
-          self.stack[-2].remove_child(self.child)
-    except Exception, e:
-      print e
+        # remove the case
+        self.stack[-2].remove_child(self.child)

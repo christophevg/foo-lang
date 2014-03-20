@@ -13,3 +13,5 @@ class Domain():
 
   def transform(self, section):
     return NotImplementedError, "transform(self, section)"
+
+  # TODO: add all required methods :-(
