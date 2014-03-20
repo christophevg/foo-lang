@@ -102,6 +102,37 @@ $(PARSER): $(APP)/parser/$(APP).g
 	@$(ANTLR) $< > $(ANTLR_OUT) 2>&1 || (cat $(ANTLR_OUT); false)
 	@rm -f $(ANTLR_OUT)
 
+size: codesize gensize
+
+codesize: mrproper
+	@echo "*** all size"
+	@find . | grep -v lib/codecanvas/lib/ \
+					|	grep \.py\$$  \
+					|	grep -v init  \
+					| xargs wc -l \
+					| sort -rn \
+					| head -1
+	@echo "--- code size"
+	@find . | grep -v lib/codecanvas/lib/ \
+					|	grep \.py\$$  \
+					|	grep -v test  \
+					|	grep -v init  \
+					| xargs wc -l \
+					| sort -rn \
+					| head -5
+	@echo "--- unit test size"
+	@find . | grep -v lib/codecanvas/lib/ \
+					|	grep \.py\$$  \
+					|	grep test  \
+					|	grep -v init  \
+					| xargs wc -l \
+					| sort -rn \
+					| head -5
+
+gensize: generate beautify
+	@echo "*** generated code size"
+	@wc -l $(OUTPUT)/* | sort -rn
+
 clean:
 	@rm -f $(ANTLR_OUT)
 	@rm -f *.dot
@@ -112,6 +143,7 @@ mrproper: clean
 		rm -f $(APP).tokens $(APP)Lexer.py $(APP)Parser.py *.pyc $(APP)__.g)
 	@find . -name \*.pyc -type f -delete
 
-.PHONY: test clean
+.PHONY: mrproper clean gensize codesize size parser test-libs test foo foo-pdf \
+	      ast-pdf pdf coverage show beautify generate infer-check infer check shell
 .PRECIOUS: $(SRC:.foo=.ast.dot) $(SRC:.foo=.sm.dot)
 .SECONDARY: $(SRC:.foo=.ast.dot) $(SRC:.foo=.sm.dot)
