@@ -1,0 +1,144 @@
+// cooperation.foo
+// author: Christophe VG
+
+// example implementation of a cooperative protocol for 
+
+// for more information about the DSL and its implementated considerations
+// see heartbeat.foo and reputation.foo. only functional and additional DSL 
+// aspects will be added in comments here.
+
+// WARNING: this is a design document, exploring what is fundamentally 
+//          additionally needed in foo-lang to actually generate this.
+
+module cooperation
+
+const initial_key_length  = 1024
+const key_chain_length    = 10
+const voting_interval     = 60000
+const publish_key_delay   = 3000
+const evaluation_interval = 60000
+
+from crypto import sha1(byte*)                : byte[20]
+from crypto import sha1_compare(byte*, byte*) : boolean
+from time   import now()                      : integer
+from random import rnd_bytes(int) : byte*
+
+extend nodes with {
+  // TODO: mark properties available for use by other modules (LANGUAGE CHANGE)
+  export read  identified : bool     = false
+  export write suspects   : node*    = []
+
+  valid                   : bool     = false
+  last_key                : byte[20]
+  last_signature          : byte[20]
+
+  // only used by local node (introduce global vars?)
+  keychain          : byte[20]*
+}
+
+// TODO: add start event
+// TODO: check: nodes.self support for this strategy
+after nodes.self start do function(node) {
+  // step 1: create personal key-chain
+  key = rnd_bytes(initial_key_length)
+  // TODO: add very basic fixed length iterator
+  loop(key_chain_length) {
+    key = sha1(key)
+    node.keychain.push(key)
+  }
+  // step 2: broadcast ID + K_0 to 2-hop neighbourhood
+  // TODO: add peek function for lists
+  // TODO: add second parameter to broadcast: TTL
+  nodes.broadcast([ #discover, node.keychain.peek() ], 2 )
+}
+
+// TODO: add self-reference as first parameter
+// TODO: check: nodes.self support for this strategy
+after nodes.self receive do function(node, from, to, payload) {
+  // TODO: complete multi-case implementation
+  case payload {
+    // TODO: using improved inference, the key's type could be matched
+    contains( [ #discover, key:byte[20] ] ) {
+      from.last_key = key
+    }
+    contains( [ #vote, suspects:node*, signature:byte[20] ] ) {
+      // TODO: implement length property on lists (implement as global variable)
+      if(node.suspects.length > 0 and from.suspects.length == 0) { // paper?
+        // TODO: list assignment = copy_
+        from.suspects       = suspects
+        from.valid          = false
+        from.last_signature = signature
+        nodes.broadcast( payload )  // as described in the paper
+      }
+    }
+    contains( [ #key, key:byte[20] ] ) {
+      // validate key
+      if( sha1_compare(from.last_key, key) ) {
+        from.last_key = key
+        // validate message
+        if( sha1_compare(from.last_signature, [from.suspects, key]) ) {
+          // mark suspect list valid
+          from.valid = true
+          node.valid = true // use own validation marker as marker to check
+        } else {
+          // invalid, clear information
+          from.suspects       = []
+        }
+        // clear last signature anyway
+        from.last_signature = []
+      }
+    }
+  }
+}
+
+// TODO: introduce global variables (LANGUAGE CHANGE)
+global suspects : node* = []
+
+@every(voting_interval)
+with nodes.self do function(node) {
+  if(node.suspects.length > 1) {
+    nodes.broadcast( [ #vote, node.suspects,
+                      sha1([node.suspects, node.keychain.peek()]) ] )
+    // TODO: add concept of one-of scheduled executions (LANGUAGE CHANGE)
+    //       could be implemented using another interval and a property on node
+    @after(publish_key_delay)
+    with nodes.self do function(node) {
+      // TODO: implement pop function on list
+      nodes.broadcast( [ #key, node.keychain.pop() ])
+
+      @after(evaluation_delay)
+      with nodes do collect_suspects()
+    }
+  }
+}
+
+function collect_suspects(node) {
+  // TODO: list merging polymorphism (or explicit merge?)
+  suspects.push(node.suspects)
+}
+
+// TODO: @end execution strategy
+@end(collect_suspects)
+with node.self do function(node) {
+  // determine suspect(s)
+  // TODO: special list function : most_common returns list of items with
+  //       highest occurence : [1,2,3,4,2,3,4,3,4] -> [3,4]
+  suspects = suspects.most_common()
+  if(suspects.length > 1) {
+    call_for_external_reinforcement()
+  }
+}
+
+function call_for_external_reinforcement(node) {
+  nodes.broadcast( #reinforce, suspects, sha1([suspects,  ]) )
+}
+
+// TODO: modification of suspects by other modules -> use suspects property :-)
+//      (LANGUAGE CHANGE)
+// e.g. heartbeat
+// extend nodes with {
+// #if_module_cooperation
+//   cooperation.identified     <--- although transparently generated, checks
+//   cooperation.suspects            are currently within module-scope.
+// #endif
+// }
