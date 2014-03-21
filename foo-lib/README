@@ -1,0 +1,8 @@
+foo-lib
+
+This is the foo-lang library, short foo-lib. These directories contain
+implementations of library code that is typically used from the foo-lang based
+generated code. For each supported language a directory is provided.
+
+Current functionality:
+- crypto: sha1, sha1_compare
