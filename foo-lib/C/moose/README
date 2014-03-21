@@ -1,0 +1,13 @@
+This directory contains platform specific implementations of certain foo-lib
+modules. More specifically for the moose platform.
+
+The Makefile expects an ATMEGA1284p micro-controller (mcu), programmable
+through a JTAG interface, with an LED connected to PB0 and wired to a serial
+connection connected to USART1.
+
+The default target of the Makefile will build and program the mcu. After
+linking the serial connection to a terminal, the output shows:
+
+  *** performing all tests for moose implementation of foo-lib...
+  --- testing time
+  *** SUCCESS

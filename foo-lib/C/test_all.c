@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "crypto.h"
+#include "time.h"
 
 void test_crypto(void) {
   uint8_t expected[20] = { 0x2a, 0xae, 0x6c, 0x35, 0xc9, 0x4f, 0xcf, 0xb4, 0x15, 
