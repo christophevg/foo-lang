@@ -1,6 +1,6 @@
 TARGET=test_all
 
-PLATFORMS_PATH=../../../../platforms
+PLATFORMS_PATH=../../../platforms
 INCLUDE_PATH=$(PLATFORMS_PATH)
 
 MOOSE_DIR=$(PLATFORMS_PATH)/moose

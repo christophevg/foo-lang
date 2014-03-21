@@ -4,3 +4,6 @@
 [submodule "lib/py-util"]
 	path = lib/py-util
 	url = https://github.com/christophevg/py-util.git
+[submodule "platforms/moose"]
+	path = platforms/moose
+	url = https://github.com/christophevg/moose.git
