@@ -53,8 +53,10 @@ void handler0(node_t* node) {
 }
 
 void handler1(node_t* node) {
-  handled++;
-  if(handled > 2) { assert(node->address - (node->id*100) == 30); }
+  if(handled > 2 && node->id != 1) {
+    handled++;
+    assert(node->address - ((node->id-1)*100) == 30);
+  }
 }
 
 void test_nodes_scheduling(void) {
@@ -71,20 +73,20 @@ void test_nodes_scheduling(void) {
   // time ~= 0
   usleep(100*1000);
   // time ~= 100
-  nodes_process();  // triggers handler0 3x
+  nodes_process();  // triggers handler0 4x
 
   usleep(100*1000);
   // time ~= 200
-  nodes_process();  // triggers handler0 3x
+  nodes_process();  // triggers handler0 4x
 
   usleep(100*1000);
   // time ~= 300
-  nodes_process();  // triggers handler0 3x and handler1 2x
+  nodes_process();  // triggers handler0 4x and handler1 2x
 
   node_t* self = nodes_self();
   assert(self->address == 30);
 
-  assert( handled == 11 );
+  assert( handled == 14 );
 }
 
 void test_payload_basics(void) {
@@ -111,7 +113,7 @@ bool    found_first  = FALSE;
 bool    found_second = FALSE;
 uint8_t hits         = 0;
 
-void payload_handler0(node_t* from, node_t* to) {
+void payload_handler0(node_t* from, node_t* hop, node_t* to) {
   assert(found_second == FALSE);
   found_first = TRUE;
   hits++;
@@ -121,7 +123,7 @@ void payload_handler0(node_t* from, node_t* to) {
   assert(payload_parser_consume_byte() == 0x40);
 }
 
-void payload_handler1(node_t* from, node_t* to) {
+void payload_handler1(node_t* from, node_t* hop, node_t* to) {
   assert(found_first);
   found_second = TRUE;
   hits++;
@@ -143,8 +145,9 @@ void test_payload_parser(void) {
   // introduce some nodes through the lookup function
   node_t* node1 = nodes_lookup(100);
   node_t* node2 = nodes_lookup(200);
+  node_t* node3 = nodes_lookup(300);
 
-  payload_parser_parse(node1, node2, payload);
+  payload_parser_parse(node1, node2, node3, payload);
 
   assert(found_first && found_second && (hits==2));
 }
@@ -152,7 +155,7 @@ void test_payload_parser(void) {
 time_t ts;
 bool   found_ts = FALSE;
 
-void timestamp_consumer(node_t* from, node_t* to) {
+void timestamp_consumer(node_t* from, node_t* hop, node_t* to) {
   assert(payload_parser_consume_timestamp() == ts);
   found_ts = TRUE;
 }
@@ -174,8 +177,9 @@ void test_payload_timestamp_consumer(void) {
   // introduce some nodes through the lookup function
   node_t* node1 = nodes_lookup(100);
   node_t* node2 = nodes_lookup(200);
+  node_t* node3 = nodes_lookup(300);
 
-  payload_parser_parse(node1, node2, payload);
+  payload_parser_parse(node1, node2, node3, payload);
 
   assert(found_ts);
 }

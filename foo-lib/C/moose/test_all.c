@@ -11,6 +11,7 @@
 #include "moose/clock.h"
 
 #include "../time.h"
+#include "../nodes.h"
 
 #define STATUS_LED_PORT    PORTB  // PB0
 #define STATUS_LED_PIN     0
@@ -32,6 +33,16 @@ void test_time(void) {
   }
 }
 
+void test_nodes(void) {
+  printf("--- testing time\n");
+  
+  nodes_init();
+
+  // TODO: implement realistich scenario
+  uint16_t addr = nodes_self()->address;
+  printf("%02x %02x\n", (uint8_t)(addr >> 8), (uint8_t)addr);
+}
+
 void init(void);
 void deinit(void);
 
@@ -42,6 +53,7 @@ int main(void) {
   printf("\n*** performing all tests for moose implementation of foo-lib...\n");
 
   test_time();
+  test_nodes();
 
   printf("*** SUCCESS\n");
 

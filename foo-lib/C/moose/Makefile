@@ -8,6 +8,8 @@ MOOSE_DIR=$(PLATFORMS_PATH)/moose
 MORE_SRC = $(MOOSE_DIR)/avr.c    \
            $(MOOSE_DIR)/clock.c  \
 					 $(MOOSE_DIR)/serial.c \
+					 $(MOOSE_DIR)/xbee.c   \
+					 ../nodes.c            \
 					 $(patsubst %.c, %.o, $(wildcard *.c))
 
 MORE_OBJECTS = $(patsubst %.c, %.o, $(MORE_SRC))
@@ -17,7 +19,7 @@ F_CPU=8000000
 
 AVRDUDE_PROGRAMMER=jtag2
 
-MORE_CDEFS=-DSERIAL_ON_USART1
+MORE_CDEFS=-DSERIAL_ON_USART1 -DDEBUG
 
 include $(MOOSE_DIR)/Makefile
 

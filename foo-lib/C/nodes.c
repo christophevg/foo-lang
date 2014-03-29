@@ -11,27 +11,32 @@
 #include "nodes.h"
 #include "bool.h"
 
-// based on memory analysis, the maximum number of nodes can be roughly 
-// determined. a low value for testing and demo purposes is used here.
-// could be extended to a dynamic memory allocation system with memory
-// constraint checking. but that is not really the goal here ;-)
-#define MAX_NODES 5
-
 // the internal list of nodes
 node_t  nodes[MAX_NODES];
 uint8_t next_node = 0;
 
 // forward declarations of private functions
-node_t* _add_node(uint64_t address);
+node_t* _add_node(uint16_t address);
 void    _add_node_handler(time_t interval, node_handler_t handler, bool all);
+
+#define MOCK_NETWORK_NAME STR(MOCK_NETWORK)
+#ifdef MOCK_NETWORK
+void nodes_io_init(void) {
+  // nothing todo
+}
+uint16_t nodes_get_nw_address(void) {
+  return 0; // default for local testing
+}
+#endif
 
 // initializes the nodes information with an entry for our own node
 void nodes_init(void) {
-  _add_node(0);
+  nodes_io_init();
 }
 
 // we can only handle the generic attributes
-node_t* _add_node(uint64_t address) {
+node_t* _add_node(uint16_t address) {
+  printf("adding node for address %02x %02x @ %u\n", (uint8_t)(address >> 8), (uint8_t)address, next_node);
   nodes[next_node].id      = next_node;
   nodes[next_node].address = address;
   next_node++;
@@ -39,7 +44,7 @@ node_t* _add_node(uint64_t address) {
 }
 
 // looks up a node based on its address. if not found, the node is created.
-node_t* nodes_lookup(uint64_t address) {
+node_t* nodes_lookup(uint16_t address) {
   for(uint8_t n=0; n<next_node; n++) {
     if(nodes[n].address == address) {
       return &nodes[n];
@@ -47,6 +52,14 @@ node_t* nodes_lookup(uint64_t address) {
   }
   // unknown nodes are created on the fly
   return _add_node(address);
+}
+
+uint8_t nodes_count(void) {
+  return next_node;
+}
+
+node_t* nodes_get(uint8_t id) {
+  return &nodes[id];
 }
 
 node_t* nodes_self(void) {
@@ -328,7 +341,9 @@ payload_handler_t _parse(void) {
   return NULL;
 }
 
-void payload_parser_parse(node_t* sender, node_t* receiver, payload_t* payload) {
+void payload_parser_parse(node_t* sender, node_t* hop, node_t* receiver, 
+                          payload_t* payload)
+{
   parsed = payload;
   cursor = 0;
 
@@ -336,7 +351,7 @@ void payload_parser_parse(node_t* sender, node_t* receiver, payload_t* payload) 
   while(cursor < parsed->size) {
     payload_handler_t handler = _parse();
     if( handler != NULL ) {
-      handler(sender, receiver);
+      handler(sender, hop, receiver);
     }
   }
 }
