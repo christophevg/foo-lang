@@ -185,3 +185,183 @@ parser_node_t* _create_node(uint8_t byte, payload_handler_t handler) {
   return node;
 }
 
+parser_node_t* _add_alt(parser_node_t* sibbling, uint8_t byte,
+                        payload_handler_t handler)
+{
+  parser_node_t* node = _create_node(byte, handler);
+  sibbling->alt = node;
+  return node;
+}
+
+parser_node_t* _add_next(parser_node_t* parent, uint8_t byte,
+                         payload_handler_t handler)
+{
+  parser_node_t* node = _create_node(byte, handler);
+  parent->next = node;
+  return node;
+}
+
+parser_node_t* _find_alt(parser_node_t* node, uint8_t byte) {
+  while(node->byte != byte && node->alt != NULL) {
+    node = node->alt;
+  }
+  return node;
+}
+
+void _append_step(parser_node_t** start, uint8_t byte, payload_handler_t handler) {
+  parser_node_t* node = *start;
+
+  // do we have the next byte already as a node ?
+  if(node->byte != byte) { // we didn't find a previous entry at level
+    node = _add_alt(node, byte, handler);
+  }
+}
+
+// adds a parser rule:
+// a rule consists of a sequences of bytes  B1 B2 B3 ...
+// each byte is matched at a level of the parser L1 L2 L3 ...
+// each level of the parser consists of multiple alternatives LxA1 LxA2 LxA3 ...
+// from each alternative a next alternative level can be constructed.
+// the result is a tree with handlers at the leafs == fully matched rules
+// adding a parser rule requires looping over all bytes and inserting them into
+// the parser at each level. this can require creation of a new alternative 
+// level with a first alternative or adding an alternative.
+void _add_parser_rule(uint8_t* rule, uint16_t size, payload_handler_t handler) {
+  if(size == 0) { return; } // nothing to add ;-)
+
+  parser_node_t* node   = parser;  // points to the current level
+  parser_node_t* parent = NULL;    // points to the previous level
+                                   // e.g. node = parent->next
+
+  // we step through the rule but hold off the last step == execution step
+  // at the start of each iteration, node points to the first alternative for 
+  // the "next" step of its parent.
+  // at the end of the loop, node points to a previously created and found node
+  // or a newly added one for this step. node and parent are updated.
+  for(uint16_t step=0; step<size-1; step++) {
+    // if the current level doesn't contain a list of alternatives yet, we 
+    // create the first and link it from the parent (level)
+    if(node == NULL) {
+      if(parent == NULL) {
+        // we're creating the very first node
+        parser = _create_node(rule[step], NULL);
+        node   = parser;
+      } else {
+        parent = _create_node(rule[step], NULL);
+        node   = parent;
+      }
+    } else {
+      // find an existing alternative for this byte
+      node = _find_alt(node, rule[step]);
+      if(node->byte == rule[step]) {
+        // found a previous alternative, we're good
+      } else {
+        // we're at the end and need to add an alternative
+        node = _add_alt(node, rule[step], NULL);
+      }
+    }
+    // move node and parent
+    parent = node;
+    node   = node->next;
+  }
+
+  // add the last step with its handler
+  if(node == NULL) {
+    parent->next = _create_node(rule[size-1], handler);
+  } else {
+    node = _find_alt(node, rule[size-1]);
+    if(node->byte == rule[size-1]) {
+      node->handler = handler;
+    } else {
+      _add_alt(node, rule[size-1], handler);
+    }
+  }
+}
+
+void payload_parser_register(payload_handler_t handler, int size, ...) {
+  uint8_t* rule = malloc(size * sizeof(uint8_t));
+  va_collect(rule, size, uint8_t);
+  _add_parser_rule(rule, size, handler);
+}
+
+void _dump(parser_node_t* node, int prefix) {
+  parser_node_t* local = node;
+  while(local != NULL) {
+    for(int i=0; i<prefix; i++) { printf(" "); }
+    printf("0x%02X\n", local->byte);
+    _dump(local->next, prefix + 2);
+    local = local->alt;
+  }
+}
+
+void payload_parser_dump_rules(void) {
+  _dump(parser, 0);
+}
+
+payload_t* parsed;
+uint16_t   cursor;
+
+payload_handler_t _parse(void) {
+  parser_node_t* node = parser;
+
+  while(node != NULL && cursor < parsed->size) {
+    // find alternative at this level/step
+    while(node->byte != parsed->bytes[cursor] && node->alt != NULL) {
+      node = node->alt;
+    }
+    // no match ... bail out
+    if(node->byte != parsed->bytes[cursor]) {
+      if(node == parser) {
+        // this was first step in parser, and we couldn't parse the current 
+        // byte, so this byte is unparsable... skip it
+        cursor++;
+      }
+      return NULL;
+    }
+    // match, move cursor
+    cursor++;
+    // check if we have a handler
+    if(node->handler != NULL) { return node->handler; }
+    // continue to next level
+    node = node->next;
+  }
+  return NULL;
+}
+
+void payload_parser_parse(node_t* sender, node_t* receiver, payload_t* payload) {
+  parsed = payload;
+  cursor = 0;
+
+  // loop to restart parsing until all bytes have been parsed
+  while(cursor < parsed->size) {
+    payload_handler_t handler = _parse();
+    if( handler != NULL ) {
+      handler(sender, receiver);
+    }
+  }
+}
+
+time_t payload_parser_consume_timestamp(void) {
+  uint8_t* bytes = payload_parser_consume_bytes(sizeof(time_t));
+  union { 
+    time_t ts;
+    uint8_t  b[sizeof(time_t)];
+  } conv;
+  memcpy(&conv.b, bytes, sizeof(time_t));
+  free(bytes);
+  return conv.ts;
+}
+
+uint8_t payload_parser_consume_byte(void) {
+  uint8_t byte = parsed->bytes[cursor];
+  cursor++;
+  return byte;
+}
+
+uint8_t* payload_parser_consume_bytes(int amount) {
+  uint8_t* bytes = malloc(amount*sizeof(uint8_t));
+  for(uint16_t i=0; i<amount && cursor < parsed->size; i++, cursor++) {
+    bytes[i] = parsed->bytes[cursor];
+  }
+  return bytes;
+}

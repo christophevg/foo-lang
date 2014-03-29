@@ -107,6 +107,79 @@ void test_payload_basics(void) {
   assert(payload2->size == 11);
 }
 
+bool    found_first  = FALSE;
+bool    found_second = FALSE;
+uint8_t hits         = 0;
+
+void payload_handler0(node_t* from, node_t* to) {
+  assert(found_second == FALSE);
+  found_first = TRUE;
+  hits++;
+  // consume 3 bytes
+  assert(payload_parser_consume_byte() == 0x10);
+  assert(payload_parser_consume_byte() == 0x30);
+  assert(payload_parser_consume_byte() == 0x40);
+}
+
+void payload_handler1(node_t* from, node_t* to) {
+  assert(found_first);
+  found_second = TRUE;
+  hits++;
+  // consume 3 bytes
+  assert(payload_parser_consume_byte() == 0x60);
+  assert(payload_parser_consume_byte() == 0x10);
+}
+
+void test_payload_parser(void) {
+  printf("    - payload parser\n");
+
+  uint8_t data[9] = { 0x10, 0x20, 0x10, 0x30, 0x40, 0x10, 0x50, 0x60, 0x10 };
+  payload_t* payload = make_payload((uint8_t*)&data, 9);
+
+  // configure parser actions
+  payload_parser_register(payload_handler0, 2, 0x10, 0x20);
+  payload_parser_register(payload_handler1, 2, 0x10, 0x50);
+
+  // introduce some nodes through the lookup function
+  node_t* node1 = nodes_lookup(100);
+  node_t* node2 = nodes_lookup(200);
+
+  payload_parser_parse(node1, node2, payload);
+
+  assert(found_first && found_second && (hits==2));
+}
+
+time_t ts;
+bool   found_ts = FALSE;
+
+void timestamp_consumer(node_t* from, node_t* to) {
+  assert(payload_parser_consume_timestamp() == ts);
+  found_ts = TRUE;
+}
+
+void test_payload_timestamp_consumer(void) {
+  ts = now();
+  union {
+    time_t  ts;
+    uint8_t b[sizeof(time_t)];
+  } conv = { .ts = ts };
+  uint8_t* ts_data = malloc(2*sizeof(uint8_t)+sizeof(time_t));
+  ts_data[0] = 0x00;
+  ts_data[1] = 0x10;
+  memcpy(&ts_data[2], conv.b, sizeof(time_t));
+  payload_t* payload = make_payload(ts_data, 2+sizeof(time_t));
+
+  payload_parser_register(timestamp_consumer, 2, 0x00, 0x10);
+
+  // introduce some nodes through the lookup function
+  node_t* node1 = nodes_lookup(100);
+  node_t* node2 = nodes_lookup(200);
+
+  payload_parser_parse(node1, node2, payload);
+
+  assert(found_ts);
+}
+
 void test_nodes(void) {
   printf("--- testing nodes\n");
 
@@ -114,6 +187,8 @@ void test_nodes(void) {
 
   test_nodes_scheduling();
   test_payload_basics();
+  test_payload_parser();
+  test_payload_timestamp_consumer();
 }
 
 int main(void) {
