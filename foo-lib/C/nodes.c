@@ -24,6 +24,9 @@ void    _add_node_handler(time_t interval, node_handler_t handler, bool all);
 void nodes_io_init(void) {
   // nothing todo
 }
+void nodes_io_process(void) {
+  // nothing todo
+}
 uint16_t nodes_get_nw_address(void) {
   return 0; // default for local testing
 }
@@ -36,7 +39,6 @@ void nodes_init(void) {
 
 // we can only handle the generic attributes
 node_t* _add_node(uint16_t address) {
-  printf("adding node for address %02x %02x @ %u\n", (uint8_t)(address >> 8), (uint8_t)address, next_node);
   nodes[next_node].id      = next_node;
   nodes[next_node].address = address;
   next_node++;
@@ -118,6 +120,8 @@ void _add_node_handler(time_t interval, node_handler_t handler, bool all) {
 // check if any of the intervals are met, if so, loop all nodes and call handler
 // do this for both all_nodes and own_node.
 void nodes_process(void) {
+  nodes_io_process();
+  
   time_t current = now();
   for(uint8_t s=0; s<next_schedule; s++) {
     if(current >= schedule[s].next) {
@@ -280,7 +284,11 @@ void _add_parser_rule(uint8_t* rule, uint16_t size, payload_handler_t handler) {
 
   // add the last step with its handler
   if(node == NULL) {
-    parent->next = _create_node(rule[size-1], handler);
+    if(parent == NULL) {
+      parser = _create_node(rule[size-1], handler);
+    } else {
+      parent->next = _create_node(rule[size-1], handler);
+    }
   } else {
     node = _find_alt(node, rule[size-1]);
     if(node->byte == rule[size-1]) {
@@ -316,14 +324,14 @@ uint16_t   cursor;
 
 payload_handler_t _parse(void) {
   parser_node_t* node = parser;
-
   while(node != NULL && cursor < parsed->size) {
     // find alternative at this level/step
     while(node->byte != parsed->bytes[cursor] && node->alt != NULL) {
       node = node->alt;
     }
-    // no match ... bail out
+    // we found a match, or we're at the last alternative
     if(node->byte != parsed->bytes[cursor]) {
+      // no match ... bail out
       if(node == parser) {
         // this was first step in parser, and we couldn't parse the current 
         // byte, so this byte is unparsable... skip it
@@ -334,7 +342,9 @@ payload_handler_t _parse(void) {
     // match, move cursor
     cursor++;
     // check if we have a handler
-    if(node->handler != NULL) { return node->handler; }
+    if(node->handler != NULL) {
+      return node->handler;
+    }
     // continue to next level
     node = node->next;
   }

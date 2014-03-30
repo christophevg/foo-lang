@@ -2,9 +2,7 @@
 // nodes related functions, specific for the moose platform
 // author: Christophe VG
 
-// #include <stdio.h>
-// #include <stdlib.h>
-#include <string.h>
+#include <string.h> // for memcpy: can be avoided
 
 #include "../stdarg-collect.h"
 #include "../nodes.h"
@@ -24,11 +22,10 @@
  */
 
 // forward declarations of private helper functions
-void     _accept_frame(xbee_rx_t* frame);
-uint16_t _extract_nw_addr(uint8_t* data);
-void     _broadcast(void);
-void     _send(void);
-void     _xbee_send(uint16_t hop, uint16_t to, uint8_t size, uint8_t* payload);
+void _accept_frame(xbee_rx_t* frame);
+void _broadcast(void);
+void _send(void);
+void _xbee_send(uint16_t hop, uint16_t to, uint8_t size, uint8_t* payload);
 
 // our fixed next hop
 node_t* next_hop;
@@ -90,32 +87,26 @@ uint16_t nodes_get_nw_address(void) {
 // private helper functions
 
 void _accept_frame(xbee_rx_t* frame) {
-  printf("accepting frame\n");
   node_t* from = nodes_lookup(frame->nw_address);
-  node_t* hop  = nodes_lookup(_extract_nw_addr(frame->data));
-  node_t* to   = nodes_lookup(_extract_nw_addr(&(frame->data[8])));
-  payload_parser_parse(from, hop, to, make_payload(&(frame->data[2]),
-                                                   frame->size-2));
-}
-
-uint16_t _extract_nw_addr(uint8_t* data) {
-  union { 
-    uint16_t address;
-    uint8_t  b[sizeof(uint16_t)];
-  } conv;
-  memcpy(&conv.b, data, sizeof(uint16_t));
-  return conv.address;
+  node_t* hop  = nodes_lookup(frame->data[1] | frame->data[0] << 8);
+  node_t* to   = nodes_lookup(frame->data[3] | frame->data[2] << 8);
+  payload_parser_parse(from, hop, to,
+                       make_payload(&(frame->data[4]), frame->size-4));
 }
 
 void _broadcast(void) {
-  _xbee_send(0x00FE, 0x00FE, broadcast_size, broadcast_buffer);
-  broadcast_size = 0;
+  if(broadcast_size > 0) {
+    _xbee_send(XB_NW_BROADCAST, XB_NW_BROADCAST, broadcast_size, 
+               broadcast_buffer);
+    broadcast_size = 0;
+  }
 }
 
 void _send(void) {
   for(uint8_t i=0; i<nodes_count(); i++) {
     if(send_size[i] > 0) {
-      _xbee_send(next_hop->address, nodes_get(i)->address, send_size[i], send_buffer[i]);
+      _xbee_send(next_hop->address, nodes_get(i)->address, send_size[i],
+                 send_buffer[i]);
       send_size[i] = 0;
     }
   }

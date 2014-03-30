@@ -53,9 +53,9 @@ void handler0(node_t* node) {
 }
 
 void handler1(node_t* node) {
-  if(handled > 2 && node->id != 1) {
+  if(handled > 2) {
     handled++;
-    assert(node->address - ((node->id-1)*100) == 30);
+    assert(node->address - ((node->id)*100) == 130);
   }
 }
 
@@ -73,20 +73,20 @@ void test_nodes_scheduling(void) {
   // time ~= 0
   usleep(100*1000);
   // time ~= 100
-  nodes_process();  // triggers handler0 4x
+  nodes_process();  // triggers handler0 2x
 
   usleep(100*1000);
   // time ~= 200
-  nodes_process();  // triggers handler0 4x
+  nodes_process();  // triggers handler0 2x
 
   usleep(100*1000);
   // time ~= 300
-  nodes_process();  // triggers handler0 4x and handler1 2x
+  nodes_process();  // triggers handler0 2x and handler1 1x
 
   node_t* self = nodes_self();
-  assert(self->address == 30);
+  assert(self->address == 130);
 
-  assert( handled == 14 );
+  assert( handled == 7 );
 }
 
 void test_payload_basics(void) {
