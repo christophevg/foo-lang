@@ -319,6 +319,11 @@ void payload_parser_dump_rules(void) {
   _dump(parser, 0);
 }
 
+void payload_parser_reset(void) {
+  // TODO: clean up used memory
+  parser = NULL;
+}
+
 payload_t* parsed;
 uint16_t   cursor;
 
@@ -358,9 +363,9 @@ void payload_parser_parse(node_t* sender, node_t* hop, node_t* receiver,
   cursor = 0;
 
   // loop to restart parsing until all bytes have been parsed
-  while(cursor < parsed->size) {
+  while(parser != NULL && cursor < parsed->size) {
     payload_handler_t handler = _parse();
-    if( handler != NULL ) {
+    if( handler != NULL && cursor < parsed->size) {
       handler(sender, hop, receiver);
     }
   }

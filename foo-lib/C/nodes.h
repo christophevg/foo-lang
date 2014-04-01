@@ -76,6 +76,8 @@ typedef void (*payload_handler_t)(node_t* from, node_t* hop, node_t* to);
 
 void payload_parser_dump_rules(void);
 
+void payload_parser_reset(void);
+
 void payload_parser_register(payload_handler_t handler, int num, ...);
 
 void payload_parser_parse(node_t* sender, node_t* hop, node_t* receiver,
