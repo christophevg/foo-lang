@@ -77,7 +77,7 @@ after nodes receive do function(from, to, payload) {
     contains( [ #heartbeat, time:timestamp, sequence, signature:byte[20] ] ) {
       // validate signature
       if(sha1_compare(signature, [sequence, time])) {
-        from.last_seen = time
+        from.last_seen = now()
         from.sequence  = sequence
       } else {
         from.fail_count++
