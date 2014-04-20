@@ -43,11 +43,11 @@ after nodes transmit do function(from, to, hop, payload) {
   // expect to see a forward action
   if( ! payload.contains([#reputation]) ) {
     hop.msg_count++
-  }
 
-  // we add the payload to a queue of payloads we expect to be forwarded by
-  // the hop.
-  hop.queue.push( [ now() + forward_timeout, payload ] )
+    // we add the payload to a queue of payloads we expect to be forwarded by
+    // the hop.
+    hop.queue.push( [ now() + forward_timeout, payload ] )
+  }
 }
 
 after nodes receive do function(from, to, payload) {
