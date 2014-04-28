@@ -28,7 +28,6 @@ class Nodes(Domain):
     node_type = code.StructuredType("nodes").tag("node_type_def")
     # TODO: add default more information (e.g. address, ...)
     node_type.append(code.Comment("domain properties"),
-                     code.Property("id", code.ByteType()),
                      code.Property("address", code.LongType())
                     )
     module = self.generator.unit.append(structure.Module("nodes"))
@@ -231,7 +230,8 @@ class Transformer(language.Visitor):
               )
             temp += 1
           elif str(arg.info) == "ObjectType(nodes)":
-            args.append(code.ObjectProperty(arg.name, "id"))
+            # a node is identified in a distributed manner by its nw address
+            args.append(code.ObjectProperty(arg.name, "address"))
 
         elif isinstance(arg, code.ObjectProperty):
 
