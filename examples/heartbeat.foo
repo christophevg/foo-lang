@@ -34,7 +34,7 @@ from time   import now()                      : timestamp
 extend nodes with {
   last_seen  : timestamp = 0
   fail_count : byte      = 0
-  trust      : boolean   = true    // we trust nodes until otherwise proven
+  sane       : boolean   = true    // nodes and sane at start
   sequence   : byte      = 0
 }
 
@@ -62,7 +62,7 @@ with nodes do function(node) {
 
   // make sure that the number of failures doesn't exceed our limits
   if( node.fail_count > max_fail_count ) {
-    node.trust = false
+    node.sane = false
   }
 }
 
