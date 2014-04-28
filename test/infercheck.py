@@ -62,27 +62,28 @@ class TestInferCheck(unittest.TestCase):
   def test_nodes_receive_handler(self):
     src = """
     module test
-    function abc(from, to, payload) {}
+    function abc(from, hop, to, payload) {}
     after nodes receive do abc
     """
     model = api.load(src)
 
-    self.infer(model, 6)
+    self.infer(model, 7)
 
     # after (assert successes)
     m = model.modules["test"]
     f = m.functions
     self.assertIsInstance(f["abc"].type, VoidType)
     self.assertIsInstance(f["abc"].parameters[0].type, ObjectType)  # from
-    self.assertIsInstance(f["abc"].parameters[1].type, ObjectType)  # to
-    self.assertIsInstance(f["abc"].parameters[2].type, ObjectType)  # payload
+    self.assertIsInstance(f["abc"].parameters[1].type, ObjectType)  # hop
+    self.assertIsInstance(f["abc"].parameters[2].type, ObjectType)  # to
+    self.assertIsInstance(f["abc"].parameters[3].type, ObjectType)  # payload
     self.assertIsInstance(m.executions[0].event.type, VoidType)
     self.assertIsInstance(m.executions[0].executed.type, VoidType)
 
   def test_case(self):
     src = """
     module test
-    after nodes receive do function(from, to, payload) {
+    after nodes receive do function(from, hop, to, payload) {
       case payload {
         contains( [ #heartbeat, time, sequence, signature ] ) {}
       }
@@ -90,7 +91,7 @@ class TestInferCheck(unittest.TestCase):
     """
     model = api.load(src)
   
-    self.infer(model, 14)
+    self.infer(model, 15)
   
     # after (assert successes)
     m = model.modules["test"]

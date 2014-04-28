@@ -290,7 +290,9 @@ class Transformer(language.Visitor):
           # create a function that processes matched payload
           handler = code.Function(
             "nodes_process_incoming_case_" + str(Transformer.processors),
-            params=[ code.Parameter("from",    code.ObjectType("node")),
+            params=[
+              code.Parameter("from",    code.ObjectType("node")),
+              code.Parameter("hop",     code.ObjectType("node")),
               code.Parameter("to",      code.ObjectType("node")),
               code.Parameter("payload", self.translate(self.domain.get_type("payload")))
             ]
