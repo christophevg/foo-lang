@@ -103,6 +103,13 @@ class Generator():
     """
     module = self.unit.append(Module("main"))
 
+    module.select("dec").append(code.Import("main"))
+
+    # add basic set of includes
+    module.select("def").append(code.Import("<stdint.h>"))
+    module.select("def").append(code.Import("moose/bool"))
+    module.select("def").append(code.Import("tuples"))
+
     # init
     init = code.Function("init") \
                .contains(code.Comment("add framework init here"))
