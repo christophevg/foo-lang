@@ -44,7 +44,7 @@ after nodes transmit do function(from, to, hop, payload) {
     # Module > Section > StructuredType > Property
     queue_prop = cm.select("nodes", "def") \
                    .children[1] \
-                   .children[4]
+                   .children[3]
 
     self.assertIsInstance(queue_prop.type, ManyType)
     self.assertIsInstance(queue_prop.type.type, NamedType)
