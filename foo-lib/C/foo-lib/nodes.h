@@ -13,26 +13,12 @@
 
 // NODES
 
-// nodes_t is generated and should already be known before this header file
-// is included. To allow compilation without specific extended functionality,
-// the default/minimal node struct is added here conditionally.
-
-#ifndef _NODES_STRUCT
-#define _NODES_STRUCT
-
 // based on memory analysis, the maximum number of nodes can be roughly 
 // determined. a low value for testing and demo purposes is used here.
 // could be extended to a dynamic memory allocation system with memory
 // constraint checking. but that is not really the goal here ;-)
+
 #define MAX_NODES 5
-
-typedef struct {
-  // domain properties
-  uint8_t  id;
-  uint16_t address;
-} node_t;
-
-#endif
 
 // initializes the internal working of the nodes module
 void nodes_init(void);
@@ -54,25 +40,11 @@ void nodes_schedule_all(time_t interval, node_handler_t handler);
 
 void nodes_schedule_own(time_t interval, node_handler_t handler);
 
-
-// PAYLOAD
-
-typedef struct payload_t {
-  uint8_t* bytes;
-  uint16_t size;
-} payload_t;
-
-payload_t* make_payload(uint8_t* bytes, int size);
-
-payload_t* copy_payload(payload_t* source);
-
-void free_payload(payload_t* payload);
-
-bool payload_contains(payload_t* payload, int num, ...);
+#include "payload.h"
 
 // PAYLOAD PARSER
 
-typedef void (*payload_handler_t)(node_t* from, node_t* hop, node_t* to);
+typedef void (*payload_handler_t)(node_t* from, node_t* hop, node_t* to, payload_t* payload);
 
 void payload_parser_dump_rules(void);
 
@@ -80,14 +52,19 @@ void payload_parser_reset(void);
 
 void payload_parser_register(payload_handler_t handler, int num, ...);
 
-void payload_parser_parse(node_t* sender, node_t* hop, node_t* receiver,
-                          payload_t* payload);
+void payload_parser_parse(uint16_t source_addr,
+                          uint16_t from_addr, uint16_t hop_addr, uint16_t to_addr,
+                          uint8_t size, uint8_t* payload_bytes);
 
 time_t payload_parser_consume_timestamp(void);
 
 uint8_t payload_parser_consume_byte(void);
 
 uint8_t* payload_parser_consume_bytes(int amount);
+
+node_t* payload_parser_consume_node(void);
+
+float payload_parser_consume_float(void);
 
 /*
  * Network related functions are platform specific. A platform implementation

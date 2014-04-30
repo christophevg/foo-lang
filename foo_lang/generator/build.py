@@ -108,7 +108,17 @@ class Generator():
     # add basic set of includes
     module.select("def").append(code.Import("<stdint.h>"))
     module.select("def").append(code.Import("moose/bool"))
+    module.select("def").append(code.Import("constants"))
+    module.select("def").append(code.Import("nodes"))
     module.select("def").append(code.Import("tuples"))
+    module.select("def").append(code.Import("foo-lib/nodes"))
+    module.select("def").append(code.Import("foo-lib/crypto"))
+    module.select("def").append(code.Import("../lib/network"))
+
+    for domain_module_name, domain_module in model.modules.items():
+      for domain_name, domain in domain_module.domains.items():
+        name = domain_name + "-" + domain_module_name
+        module.select("def").append(code.Import(name))
 
     # init
     init = code.Function("init") \
@@ -119,7 +129,7 @@ class Generator():
               .contains(code.Comment("add application specific code here"))
 
     # main
-    main = code.Function("main", code.IntegerType()).tag("main_function")\
+    main = code.Function("main", code.NamedType("int")).tag("main_function")\
                .contains(
                  code.FunctionCall("init").stick_top(),
                  code.Return(code.IntegerLiteral(1)).stick_bottom()

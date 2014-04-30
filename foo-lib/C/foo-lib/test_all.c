@@ -10,6 +10,10 @@
 
 #include "crypto.h"
 #include "time.h"
+
+#include "external.h"
+#define NODES_T_H_name STR(NODES_T_H)
+#include STR(NODES_T_H)
 #include "nodes.h"
 
 void test_crypto(void) {
@@ -113,7 +117,7 @@ bool    found_first  = FALSE;
 bool    found_second = FALSE;
 uint8_t hits         = 0;
 
-void payload_handler0(node_t* from, node_t* hop, node_t* to) {
+void payload_handler0(node_t* from, node_t* hop, node_t* to, payload_t* data) {
   assert(found_second == FALSE);
   found_first = TRUE;
   hits++;
@@ -123,7 +127,7 @@ void payload_handler0(node_t* from, node_t* hop, node_t* to) {
   assert(payload_parser_consume_byte() == 0x40);
 }
 
-void payload_handler1(node_t* from, node_t* hop, node_t* to) {
+void payload_handler1(node_t* from, node_t* hop, node_t* to, payload_t* data) {
   assert(found_first);
   found_second = TRUE;
   hits++;
@@ -136,18 +140,17 @@ void test_payload_parser(void) {
   printf("    - payload parser\n");
 
   uint8_t data[9] = { 0x10, 0x20, 0x10, 0x30, 0x40, 0x10, 0x50, 0x60, 0x10 };
-  payload_t* payload = make_payload((uint8_t*)&data, 9);
 
   // configure parser actions
   payload_parser_register(payload_handler0, 2, 0x10, 0x20);
   payload_parser_register(payload_handler1, 2, 0x10, 0x50);
 
   // introduce some nodes through the lookup function
-  node_t* node1 = nodes_lookup(100);
-  node_t* node2 = nodes_lookup(200);
-  node_t* node3 = nodes_lookup(300);
+  nodes_lookup(100);
+  nodes_lookup(200);
+  nodes_lookup(300);
 
-  payload_parser_parse(node1, node2, node3, payload);
+  payload_parser_parse(0, 100, 200, 300, 9, data);
 
   assert(found_first && found_second && (hits==2));
 }
@@ -156,22 +159,21 @@ void test_payload_parser_no_match(void) {
   printf("    - payload parser (no match)\n");
 
   uint8_t data[9] = { 0x10, 0x20, 0x10, 0x30, 0x40, 0x10, 0x50, 0x60, 0x10 };
-  payload_t* payload = make_payload((uint8_t*)&data, 9);
 
   // configure parser actions
   payload_parser_reset();
   payload_parser_register(payload_handler0, 1, 0x11);
 
   // introduce some nodes through the lookup function
-  node_t* node1 = nodes_lookup(100);
-  node_t* node2 = nodes_lookup(200);
-  node_t* node3 = nodes_lookup(300);
+  nodes_lookup(100);
+  nodes_lookup(200);
+  nodes_lookup(300);
 
   found_first  = FALSE;
   found_second = FALSE;
   hits         = 0;
 
-  payload_parser_parse(node1, node2, node3, payload);
+  payload_parser_parse(0, 100, 200, 300, 9, data);
 
   assert(!found_first);
   assert(hits == 0);
@@ -181,22 +183,21 @@ void test_payload_parser_match_at_end(void) {
   printf("    - payload parser (match at end)\n");
 
   uint8_t data[9] = { 0x10, 0x20, 0x10, 0x30, 0x40, 0x10, 0x50, 0x60, 0x11 };
-  payload_t* payload = make_payload((uint8_t*)&data, 9);
 
   // configure parser actions
   payload_parser_reset();
   payload_parser_register(payload_handler0, 1, 0x11);
 
   // introduce some nodes through the lookup function
-  node_t* node1 = nodes_lookup(100);
-  node_t* node2 = nodes_lookup(200);
-  node_t* node3 = nodes_lookup(300);
+  nodes_lookup(100);
+  nodes_lookup(200);
+  nodes_lookup(300);
 
   found_first  = FALSE;
   found_second = FALSE;
   hits         = 0;
 
-  payload_parser_parse(node1, node2, node3, payload);
+  payload_parser_parse(0, 100, 200, 300, 9, data);
 
   assert(!found_first);
   assert(hits == 0);
@@ -206,22 +207,21 @@ void test_payload_parser_no_payload(void) {
   printf("    - payload parser (no payload)\n");
 
   uint8_t data[0] = {};
-  payload_t* payload = make_payload((uint8_t*)&data, 0);
 
   // configure parser actions
   payload_parser_reset();
   payload_parser_register(payload_handler0, 1, 0x11);
 
   // introduce some nodes through the lookup function
-  node_t* node1 = nodes_lookup(100);
-  node_t* node2 = nodes_lookup(200);
-  node_t* node3 = nodes_lookup(300);
+  nodes_lookup(100);
+  nodes_lookup(200);
+  nodes_lookup(300);
 
   found_first  = FALSE;
   found_second = FALSE;
   hits         = 0;
 
-  payload_parser_parse(node1, node2, node3, payload);
+  payload_parser_parse(0, 100, 200, 300, 0, data);
 
   assert(!found_first);
   assert(hits == 0);
@@ -231,21 +231,20 @@ void test_payload_parser_no_rules(void) {
   printf("    - payload parser (no rules)\n");
 
   uint8_t data[9] = { 0x10, 0x20, 0x10, 0x30, 0x40, 0x10, 0x50, 0x60, 0x10 };
-  payload_t* payload = make_payload((uint8_t*)&data, 9);
 
   // configure NO parser actions
   payload_parser_reset();
 
   // introduce some nodes through the lookup function
-  node_t* node1 = nodes_lookup(100);
-  node_t* node2 = nodes_lookup(200);
-  node_t* node3 = nodes_lookup(300);
+  nodes_lookup(100);
+  nodes_lookup(200);
+  nodes_lookup(300);
 
   found_first  = FALSE;
   found_second = FALSE;
   hits         = 0;
 
-  payload_parser_parse(node1, node2, node3, payload);
+  payload_parser_parse(0, 100, 200, 300, 9, data);
 
   assert(!found_first);
   assert(hits == 0);
@@ -254,7 +253,7 @@ void test_payload_parser_no_rules(void) {
 time_t ts;
 bool   found_ts = FALSE;
 
-void timestamp_consumer(node_t* from, node_t* hop, node_t* to) {
+void timestamp_consumer(node_t* from, node_t* hop, node_t* to, payload_t* data) {
   assert(payload_parser_consume_timestamp() == ts);
   found_ts = TRUE;
 }
@@ -265,22 +264,75 @@ void test_payload_timestamp_consumer(void) {
     time_t  ts;
     uint8_t b[sizeof(time_t)];
   } conv = { .ts = ts };
-  uint8_t* ts_data = malloc(2*sizeof(uint8_t)+sizeof(time_t));
-  ts_data[0] = 0x00;
-  ts_data[1] = 0x10;
-  memcpy(&ts_data[2], conv.b, sizeof(time_t));
-  payload_t* payload = make_payload(ts_data, 2+sizeof(time_t));
+  uint8_t* data = malloc(2*sizeof(uint8_t)+sizeof(time_t));
+  data[0] = 0x00;
+  data[1] = 0x10;
+  memcpy(&data[2], conv.b, sizeof(time_t));
 
   payload_parser_register(timestamp_consumer, 2, 0x00, 0x10);
 
   // introduce some nodes through the lookup function
-  node_t* node1 = nodes_lookup(100);
-  node_t* node2 = nodes_lookup(200);
-  node_t* node3 = nodes_lookup(300);
+  nodes_lookup(100);
+  nodes_lookup(200);
+  nodes_lookup(300);
 
-  payload_parser_parse(node1, node2, node3, payload);
+  payload_parser_parse(0, 100, 200, 300, 2*sizeof(uint8_t)+sizeof(time_t), data);
 
   assert(found_ts);
+}
+
+bool found_node = FALSE;
+
+void node_consumer(node_t* from, node_t* hop, node_t* to, payload_t* data) {
+  assert(payload_parser_consume_node() == nodes_lookup(300));
+  found_node = TRUE;
+}
+
+void test_payload_node_consumer(void) {
+  uint8_t data[4] = { 0x00, 0x20, 0x01, 0x2c }; 
+
+  payload_parser_register(node_consumer, 2, 0x00, 0x20);
+
+  // introduce some nodes through the lookup function
+  nodes_lookup(100);
+  nodes_lookup(200);
+  nodes_lookup(300);
+  nodes_lookup(400);
+  nodes_lookup(500);
+
+  payload_parser_parse(0, 100, 200, 300, 4, data);
+
+  assert(found_node);
+}
+
+float fl = 12345.67;
+bool found_float = FALSE;
+
+void float_consumer(node_t* from, node_t* hop, node_t* to, payload_t* data) {
+  assert(payload_parser_consume_float() == fl);
+  found_float = TRUE;
+}
+
+void test_payload_float_consumer(void) {
+  union {
+    float   value;
+    uint8_t b[sizeof(float)];
+  } conv = { .value = fl };
+  uint8_t* data = malloc(2*sizeof(uint8_t)+sizeof(float));
+  data[0] = 0x00;
+  data[1] = 0x30;
+  memcpy(&data[2], conv.b, sizeof(float));
+
+  payload_parser_register(float_consumer, 2, 0x00, 0x30);
+
+  // introduce some nodes through the lookup function
+  nodes_lookup(100);
+  nodes_lookup(200);
+  nodes_lookup(300);
+
+  payload_parser_parse(0, 100, 200, 300, 2*sizeof(uint8_t)+sizeof(float), data);
+
+  assert(found_float);
 }
 
 void test_nodes(void) {
@@ -296,6 +348,8 @@ void test_nodes(void) {
   test_payload_parser_no_payload();
   test_payload_parser_no_rules();
   test_payload_timestamp_consumer();
+  test_payload_node_consumer();
+  test_payload_float_consumer();
 }
 
 int main(void) {

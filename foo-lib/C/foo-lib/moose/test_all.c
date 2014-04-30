@@ -11,6 +11,10 @@
 #include "moose/clock.h"
 
 #include "../time.h"
+
+#include "../external.h"
+#define NODES_T_H_name STR(NODES_T_H)
+#include STR(NODES_T_H)
 #include "../nodes.h"
 
 #define STATUS_LED_PORT    PORTB  // PB0
@@ -40,7 +44,7 @@ void test_time(void) {
 bool handler0 = FALSE,
      handler1 = FALSE;
 
-void handle_incoming_payload0(node_t* from, node_t* hop, node_t* to) {
+void handle_incoming_payload0(node_t* from, node_t* hop, node_t* to, payload_t* payload) {
   if( payload_parser_consume_byte() != 0x02 ) {
     printf("FAIL: first byte of echo != 0x02\n");
     return;
@@ -64,7 +68,7 @@ void handle_incoming_payload0(node_t* from, node_t* hop, node_t* to) {
   handler0 = TRUE;
 }
 
-void handle_incoming_payload1(node_t* from, node_t* hop, node_t* to) {
+void handle_incoming_payload1(node_t* from, node_t* hop, node_t* to, payload_t* payload) {
   if( payload_parser_consume_byte() != 0x20 ) {
     printf("FAIL: first byte of echo != 0x20\n");
     return;

@@ -4,10 +4,14 @@
 
 #include <string.h> // for memcpy: can be avoided
 
-#include "../stdarg-collect.h"
-#include "../nodes.h"
-
 #include "moose/xbee.h"
+
+#include "../stdarg-collect.h"
+
+#include "../external.h"
+#define NODES_T_H_name STR(NODES_T_H)
+#include STR(NODES_T_H)
+#include "../nodes.h"
 
 /*
  * This implementation adds a bit of additional functionality to simulate
@@ -87,11 +91,10 @@ uint16_t nodes_get_nw_address(void) {
 // private helper functions
 
 void _accept_frame(xbee_rx_t* frame) {
-  node_t* from = nodes_lookup(frame->nw_address);
-  node_t* hop  = nodes_lookup(frame->data[1] | frame->data[0] << 8);
-  node_t* to   = nodes_lookup(frame->data[3] | frame->data[2] << 8);
-  payload_parser_parse(from, hop, to,
-                       make_payload(&(frame->data[4]), frame->size-4));
+  uint16_t from = frame->nw_address;
+  uint16_t hop  = frame->data[1] | frame->data[0] << 8;
+  uint16_t to   = frame->data[3] | frame->data[2] << 8;
+  payload_parser_parse(from, from, hop, to, frame->size-4, &(frame->data[4]));
 }
 
 void _broadcast(void) {

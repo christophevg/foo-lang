@@ -28,22 +28,24 @@ class Nodes(Domain):
     node_type = code.StructuredType("nodes").tag("node_type_def")
     # TODO: add default more information (e.g. address, ...)
     node_type.append(code.Comment("domain properties"),
+                     code.Property("id", code.ByteType()),
                      code.Property("address", code.LongType())
                     )
-    module = self.generator.unit.append(structure.Module("nodes"))
-    module.select("def").append(code.Import("tuples"))
+
+    module = self.generator.unit.append(structure.Module("node_t"))
+    module.select("def").append( code.Import("moose/bool") )
+    module.select("def").append( code.Import("tuples") )
     module.select("def").append( code.Comment("THE node type"), node_type )
 
-    payload_type = code.StructuredType("payload").tag("payload_type_def")
-    payload_type.append(
-      code.Property("bytes", code.ManyType(code.ByteType())),
-      code.Property("size",  code.IntegerType())
-    )
-    module = self.generator.unit.append(structure.Module("payload"))
-    module.select("def").append( code.Comment("THE payload type"), payload_type)
-
-    module = self.generator.unit.append(structure.Module("tuples"))
-    module.select("def").append( code.Import("payload") )
+    module = self.generator.unit.append(structure.Module("nodes"))
+    module.select("def").append(code.Import("constants"))
+    module.select("def").append(code.Import("moose/bool"))
+    module.select("def").append(code.Import("foo-lib/time"))
+    module.select("def").append(code.Import("foo-lib/crypto"))
+    module.select("def").append(code.Import("foo-lib/payload"))
+    module.select("def").append(code.Import("tuples"))
+    module.select("def").append(code.Import("node_t"))
+    module.select("def").append(code.Import("foo-lib/nodes"))
   
   def _translate(self, tree):
     return self.translator.translate(tree)
@@ -100,6 +102,9 @@ class Nodes(Domain):
     Constructs a code_module from a module.
     """
     self.add_import_nodes(code_module)
+    code_module.select("dec").append(code.Import(code_module.data))
+    code_module.select("def").append(code.Import("tuples"))
+    code_module.select("def").append(code.Import("lists"))
 
     # add extensions to node_t definition
     node_type = self.generator.unit.find("node_type_def")
@@ -149,6 +154,9 @@ class Nodes(Domain):
     assert execution.timing == "after"
     assert execution.event.name == "transmit"
     assert isinstance(execution.scope, AllNodes)
+    
+    # TODO: transmit
+    
     self.generator.unit.find("nodes_parser_init").append(
       code.FunctionCall("payload_parser_register", arguments=[
         code.SimpleVariable(execution.executed.name),
@@ -323,6 +331,8 @@ class Transformer(language.Visitor):
               # TODO: size should be generalized
               args = [code.IntegerLiteral(code_type.size)] \
                         if code_type_name == "bytes" else []
+              if isinstance(code_type, code.AmountType):
+                code_type = code.ManyType(code.ByteType())
               handler.append(
                 code.Assign(
                   code.VariableDecl(arg.name, code_type),

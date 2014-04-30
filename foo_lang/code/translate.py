@@ -197,12 +197,13 @@ class Translator(SemanticChecker):
 
   def after_visit_MethodCallExp(self, placeholder):
     args = []
-    while not self.code[-2] is placeholder:
+    while not self.code[-3] is placeholder:
       args.append(self.code.pop())
-    obj    = self.code.pop()
+    type = self.code.pop()
+    obj  = self.code.pop()
     self.code.pop()  # placeholder
     method = placeholder.identifier.name
-    self.code.append(code.MethodCall(obj, method, list(reversed(args))))
+    self.code.append(code.MethodCall(obj, method, list(reversed(args)), type=type))
 
   def after_visit_UnaryExp(self, exp):
     operand = self.code.pop()

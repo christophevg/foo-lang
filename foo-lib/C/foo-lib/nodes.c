@@ -8,7 +8,12 @@
 #include <string.h>
 
 #include "stdarg-collect.h"
+
+#include "external.h"
+#define NODES_T_H_name STR(NODES_T_H)
+#include STR(NODES_T_H)
 #include "nodes.h"
+
 #include "bool.h"
 
 // the internal list of nodes
@@ -356,9 +361,19 @@ payload_handler_t _parse(void) {
   return NULL;
 }
 
-void payload_parser_parse(node_t* sender, node_t* hop, node_t* receiver, 
-                          payload_t* payload)
+// signature of payload_parser_parse is aligned with the signature of the 
+// receive event-handler
+void payload_parser_parse(uint16_t source_addr,
+                          uint16_t from_addr, uint16_t hop_addr, uint16_t to_addr,
+                          uint8_t size, uint8_t* payload_bytes)
 {
+  // node_t* source = nodes_lookup(source_addr);
+  node_t* from   = nodes_lookup(from_addr);
+  node_t* hop    = nodes_lookup(hop_addr);
+  node_t* to     = nodes_lookup(to_addr);
+  
+  payload_t* payload = make_payload(payload_bytes, size);
+  
   parsed = payload;
   cursor = 0;
 
@@ -366,7 +381,7 @@ void payload_parser_parse(node_t* sender, node_t* hop, node_t* receiver,
   while(parser != NULL && cursor < parsed->size) {
     payload_handler_t handler = _parse();
     if( handler != NULL && cursor < parsed->size) {
-      handler(sender, hop, receiver);
+      handler(from, hop, to, payload);
     }
   }
 }
@@ -394,4 +409,22 @@ uint8_t* payload_parser_consume_bytes(int amount) {
     bytes[i] = parsed->bytes[cursor];
   }
   return bytes;
+}
+
+node_t* payload_parser_consume_node(void) {
+  uint8_t msb = parsed->bytes[cursor];  cursor++;
+  uint8_t lsb = parsed->bytes[cursor];  cursor++;
+  uint16_t address = (msb << 8) | lsb;
+  return nodes_lookup(address);
+}
+
+float payload_parser_consume_float(void) {
+  uint8_t* bytes = payload_parser_consume_bytes(sizeof(float));
+  union { 
+    float   value;
+    uint8_t b[sizeof(float)];
+  } conv;
+  memcpy(&conv.b, bytes, sizeof(float));
+  free(bytes);
+  return conv.value;  
 }
