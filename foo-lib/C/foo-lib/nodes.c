@@ -11,7 +11,9 @@
 
 #include "external.h"
 #define NODES_T_H_name STR(NODES_T_H)
+#ifdef NODES_T_H
 #include STR(NODES_T_H)
+#endif
 #include "nodes.h"
 
 #include "bool.h"
