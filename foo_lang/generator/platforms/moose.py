@@ -8,6 +8,15 @@ from foo_lang.generator.platforms.avr import AVR
 import codecanvas.instructions as code
 
 class Moose(AVR):
+  def setup(self, unit):
+    unit.select("includes", "def").append(code.Import("moose/avr"))
+    unit.select("includes", "def").append(code.Import("moose/bool"))
+    unit.select("includes", "def").append(code.Import("moose/serial"))
+    unit.select("includes", "def").append(code.Import("moose/clock"))
+    unit.select("includes", "def").append(code.Import("moose/xbee"))
+    
+    unit.find("event_loop").append(code.FunctionCall("xbee_receive"))
+
   def type(self, type):
     try:
       return {
@@ -31,8 +40,6 @@ class Moose(AVR):
     # TODO: supports only one instance -> foo_lib/payload_parser
     
     return module.find(location).append(
-      code.FunctionCall("xbee_on_receive",  [code.SimpleVariable("mesh_receive")]),
-      code.FunctionCall("mesh_on_receive",  [code.SimpleVariable(call)]),
     )
 
   def handle_transmit(self, call=None, module=None, location=None):

@@ -71,16 +71,20 @@ class Generator():
     Constructs a CodeModel given a SemanticModel.
     """
     self.log("constructing basic code model from semantic model")
+    self.create_main_module(model)
+    # basic setup is ready, allow platform to add stuff
+    self.platform.setup(self.unit)
+    
     self.create_constants(model)
     self.create_modules(model)
-    self.create_main_module(model)
     self.create_executions(model)
 
   def create_constants(self, model):
-    module  = self.unit.append(Module("constants"))
-    defines = module.select("def")
+    defines = None
     for module in model.modules.values():
       for constant in module.constants:
+        if defines is None:
+          defines = self.unit.append(Module("constants")).select("def")
         defines.append(code.Constant(constant.name,
                                      self.translate(constant.value),
                                      self.translate(constant.type)))
@@ -99,21 +103,28 @@ class Generator():
 
   def create_main_module(self, model):
     """
-    Creates the top-level main module.
+    Creates the top-level main and includes modules.
     """
-    module = self.unit.append(Module("main"))
-
-    module.select("dec").append(code.Import("main"))
-
-    # add basic set of includes
+    module = self.unit.append(Module("includes"))
+    module.select("def").tag("includes")
+    # add basic set of includes that apply to all generations, without causing
+    # compilation problems
     module.select("def").append(code.Import("<stdint.h>"))
-    module.select("def").append(code.Import("moose/bool"))
-    module.select("def").append(code.Import("constants"))
-    module.select("def").append(code.Import("nodes"))
-    module.select("def").append(code.Import("tuples"))
-    module.select("def").append(code.Import("foo-lib/nodes"))
-    module.select("def").append(code.Import("foo-lib/crypto"))
+
+    for mod in model.modules.values():
+      if len(mod.constants.items()) > 0:
+        module.select("def").append(code.Import("constants"))
+        break
+
+    module.select("def").append(code.Import("foo-lib/crypto")).tag("foo-lib-start")
+    module.select("def").append(code.Import("foo-lib/time"))
+    
     module.select("def").append(code.Import("../lib/network"))
+
+    # MAIN module
+    module = self.unit.append(Module("main"))
+    module.select("def").append(code.Import("includes"))
+    module.select("dec").append(code.Import("main"))
 
     for domain_module_name, domain_module in model.modules.items():
       for domain_name, domain in domain_module.domains.items():
@@ -121,7 +132,7 @@ class Generator():
         module.select("def").append(code.Import(name))
 
     # init
-    init = code.Function("init") \
+    init = code.Function("init").tag("init") \
                .contains(code.Comment("add framework init here"))
 
     # app
@@ -129,11 +140,10 @@ class Generator():
               .contains(code.Comment("add application specific code here"))
 
     # main
-    main = code.Function("main", code.NamedType("int")).tag("main_function")\
-               .contains(
-                 code.FunctionCall("init").stick_top(),
-                 code.Return(code.IntegerLiteral(1)).stick_bottom()
-               )
+    main = code.Function("main", code.NamedType("int")).tag("main_function")
+    main.append(code.FunctionCall("init").stick_top())
+    main.append(code.Return(code.IntegerLiteral(1))).stick_bottom()
+
     module.select("dec").append(code.Comment("""init and application_step
 can be implemented using application specific needs."""),
                                 init,

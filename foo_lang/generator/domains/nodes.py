@@ -11,6 +11,8 @@ import codecanvas.instructions as code
 import codecanvas.structure    as structure
 import codecanvas.language     as language
 
+import foo_lang.semantic.model as model 
+
 from foo_lang.semantic.domains.nodes import Nodes as SemanticNodes, AllNodes
 from foo_lang.code.translate         import Translator
 
@@ -26,26 +28,29 @@ class Nodes(Domain):
     self.translator = Translator()
 
     node_type = code.StructuredType("nodes").tag("node_type_def")
-    # TODO: add default more information (e.g. address, ...)
     node_type.append(code.Comment("domain properties"),
                      code.Property("id", code.ByteType()),
                      code.Property("address", code.LongType())
                     )
 
     module = self.generator.unit.append(structure.Module("node_t"))
-    module.select("def").append( code.Import("moose/bool") )
-    module.select("def").append( code.Import("tuples") )
-    module.select("def").append( code.Comment("THE node type"), node_type )
+    module.select("def").append( code.Import("moose/bool"))
+    module.select("def").append( code.Comment("THE node type"), node_type ).tag("node_t-start")
 
     module = self.generator.unit.append(structure.Module("nodes"))
-    module.select("def").append(code.Import("constants"))
-    module.select("def").append(code.Import("moose/bool"))
-    module.select("def").append(code.Import("foo-lib/time"))
-    module.select("def").append(code.Import("foo-lib/crypto"))
-    module.select("def").append(code.Import("foo-lib/payload"))
-    module.select("def").append(code.Import("tuples"))
-    module.select("def").append(code.Import("node_t"))
-    module.select("def").append(code.Import("foo-lib/nodes"))
+    module.select("def").append( code.Import("includes") )
+
+    # add more imports to includes
+    anchor = self.generator.unit.select("includes").select("def").find("foo-lib-start")
+    code.Import("nodes").insert_before(anchor).tag("requires-tuples")
+    code.Import("node_t").insert_before(anchor)
+    code.Import("foo-lib/nodes").insert_before(anchor)
+    code.Import("foo-lib/payload").insert_before(anchor)
+    
+    # add handling of receive packets
+    self.generator.unit.find("init").append(
+      code.FunctionCall("mesh_on_receive",  [code.SimpleVariable("payload_parser_parse")])
+    )
   
   def _translate(self, tree):
     return self.translator.translate(tree)
@@ -61,7 +66,7 @@ class Nodes(Domain):
   def extend_main(self, module):
     """
     Transforms the main module by adding nodes functionality to the event_loop.
-    """
+    """    
     self.add_import_nodes(module)
     if not module.find("nodes_main") is None: return
     module.tag("nodes_main")
@@ -73,21 +78,6 @@ class Nodes(Domain):
     # prepare top-level actions in event_loop
     event_loop.append(code.Comment("nodes logic execution hook"))
     event_loop.append(code.FunctionCall("nodes_process"))
-
-    # prepare the payload parser with callbacks for parsing
-    parser_init = dec.append(
-      code.Function("nodes_parser_init")
-    ).tag("nodes_parser_init")
-    module.find("main_function").append(
-      code.FunctionCall(parser_init.name).stick_top()
-    )
-
-    # wire the receiving of packets to the underlying platform
-    self.generator.platform.add_handler("receive",
-      call     = "payload_parser_parse",
-      module   = module,
-      location = "main_function"
-    ).stick_top()
 
     # prepare a hook to setup scheduling
     scheduler_init = dec.append(
@@ -103,8 +93,7 @@ class Nodes(Domain):
     """
     self.add_import_nodes(code_module)
     code_module.select("dec").append(code.Import(code_module.data))
-    code_module.select("def").append(code.Import("tuples"))
-    code_module.select("def").append(code.Import("lists"))
+    code_module.select("def").append(code.Import("includes"))
 
     # add extensions to node_t definition
     node_type = self.generator.unit.find("node_type_def")
@@ -112,6 +101,9 @@ class Nodes(Domain):
 
     for ext in module.domains["nodes"].extensions:
       for prop in ext.extension.properties:
+        if isinstance(prop.type, model.ManyType) and \
+           isinstance(prop.type.subtype, model.TupleType):
+          code.Import("tuples").insert_before(node_type)
         node_type.append(code.Property(prop.name,
                                        self._translate(prop.type)))
 
@@ -157,7 +149,7 @@ class Nodes(Domain):
     
     # TODO: transmit
     
-    self.generator.unit.find("nodes_parser_init").append(
+    self.generator.unit.find("init").append(
       code.FunctionCall("payload_parser_register", arguments=[
         code.SimpleVariable(execution.executed.name),
         code.IntegerLiteral(0)
@@ -356,7 +348,7 @@ class Transformer(language.Visitor):
           registration = code.FunctionCall("payload_parser_register",
             [ code.SimpleVariable(handler.name), arguments ]
           )
-          self.stack[0].find("nodes_parser_init").append(registration)
+          self.stack[0].find("init").append(registration)
 
         # remove the case
         self.stack[-2].remove_child(self.child)
