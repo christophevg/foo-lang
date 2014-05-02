@@ -105,8 +105,7 @@ class Generator():
     """
     Creates the top-level main and includes modules.
     """
-    module = self.unit.append(Module("includes"))
-    module.select("def").tag("includes")
+    module = self.unit.append(Module("includes").tag("includes"))
     # add basic set of includes that apply to all generations, without causing
     # compilation problems
     module.select("def").append(code.Import("<stdint.h>"))
@@ -124,7 +123,7 @@ class Generator():
     # MAIN module
     module = self.unit.append(Module("main"))
     module.select("def").append(code.Import("includes"))
-    module.select("dec").append(code.Import("main"))
+    module.select("dec").append(code.Import("main")).tag("main_h")
 
     for domain_module_name, domain_module in model.modules.items():
       for domain_name, domain in domain_module.domains.items():
@@ -137,7 +136,8 @@ class Generator():
 
     # app
     app = code.Function("application_step") \
-              .contains(code.Comment("add application specific code here"))
+              .contains(code.Comment("add application specific code here")) \
+              .tag("step")
 
     # main
     main = code.Function("main", code.NamedType("int")).tag("main_function")
