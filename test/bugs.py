@@ -42,16 +42,16 @@ after nodes transmit do function(from, to, hop, payload) {
     cm.accept(C.Transformer())
 
     # Module > Section > StructuredType > Property
-    queue_prop = cm.select("nodes", "def") \
-                   .children[1] \
-                   .children[3]
+    queue_prop = cm.select("node_t", "def") \
+                   .children[3] \
+                   .children[4]
 
     self.assertIsInstance(queue_prop.type, ManyType)
     self.assertIsInstance(queue_prop.type.type, NamedType)
 
     # Module > Section > Function > FunctionCall .arguments[0]
     hop_queue = cm.select("nodes-test", "dec") \
-                  .children[0] \
+                  .children[1] \
                   .children[0] \
                   .arguments[0] \
                   .variable         # AddressOf in between for push !!
