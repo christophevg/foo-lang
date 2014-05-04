@@ -375,3 +375,35 @@ class Inferrer(SemanticChecker):
     # don't fail on this one, ListLiteralExp is following later due to bottom-
     # up handling, and can in certain cases fix this
     # self.fail("Couldn't infer ManyType's subtype")
+
+  #############################################################################
+  # TODO: these aren't visited :-( ????
+
+  def after_visit_AddExp(self, exp):
+    if not isinstance(exp.type, UnknownType): return
+    print "ADD"
+
+  def after_visit_PlusExp(self, exp):
+    if not isinstance(exp.type, UnknownType): return
+    infer_numeric_binary_exp(exp)
+
+  def after_visit_MultExp(self, exp):
+    if not isinstance(exp.type, UnknownType): return
+    infer_numeric_binary_exp(exp)
+    
+  def infer_numeric_binary_exp(self, exp):
+    left  = exp.left.type
+    right = exp.right.type
+    
+    if isinstance(left, FloatType) or isinstance(right, FloatType):
+      exp.type = FloatType()
+    else:
+      if isinstance(left, LongType) or isinstance(right, LongType):
+        exp.type = LongType()
+      else:
+        if isinstance(left, IntegerType) or isinstance(right, IntegerType):
+          exp.type = IntegerType()
+        else:
+          exp.type = ByteType()
+
+    print "inferred numeric binary exp to", str(exp.type)
