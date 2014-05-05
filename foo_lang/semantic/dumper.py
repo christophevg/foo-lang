@@ -341,7 +341,7 @@ class DotDumper(object):
       node = self.dot.node(obj.__class__.__name__, options)
 
       # if the obj supports the .type property, add it as such
-      if hasattr(obj, "type"):
+      if hasattr(obj, "type") and not isinstance(obj, TimestampType):
         subnode = self.process(obj.type)
         self.dot.vertex(node, subnode, {"label": "type"})
 
