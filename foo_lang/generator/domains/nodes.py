@@ -146,14 +146,36 @@ class Nodes(Domain):
     assert execution.timing == "after"
     assert execution.event.name == "transmit"
     assert isinstance(execution.scope, AllNodes)
-    
-    # TODO: transmit
-    
+
+    # wire transmit handler
     self.generator.unit.find("init").append(
-      code.FunctionCall("payload_parser_register", arguments=[
-        code.SimpleVariable(execution.executed.name),
-        code.IntegerLiteral(0)
-      ])
+      code.FunctionCall("mesh_on_transmit", [code.SimpleVariable("handle_transmit")])
+    )
+    # setup transforming handle_transmit
+    self.generator.unit.find("nodes_main").select("dec").append(
+      code.Function(
+        "handle_transmit",
+        params=[
+          code.Parameter("from",    code.IntegerType()),
+          code.Parameter("hop",     code.IntegerType()),
+          code.Parameter("to",      code.IntegerType()),
+          code.Parameter("size",    code.ByteType()),
+          code.Parameter("payload", code.ManyType(code.ByteType()))
+        ]
+      ).contains(
+        code.FunctionCall(
+          execution.executed.name,
+          arguments=[
+            code.FunctionCall("nodes_lookup", type=code.ObjectType("node"), arguments=[code.SimpleVariable("from")]),
+            code.FunctionCall("nodes_lookup", type=code.ObjectType("node"), arguments=[code.SimpleVariable("hop")]),
+            code.FunctionCall("nodes_lookup", type=code.ObjectType("node"), arguments=[code.SimpleVariable("to")]),
+            code.FunctionCall("make_payload", type=code.ObjectType("payload"), arguments=[
+              code.SimpleVariable("payload"),
+              code.SimpleVariable("size")
+            ]),
+          ]
+        )
+      )
     )
 
 class Transformer(language.Visitor):
