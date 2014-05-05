@@ -790,6 +790,12 @@ class SemanticVisitor(SemanticVisitorBase):
 
   @stacked
   @with_handling
+  def visit_NumericBinaryExp(self, exp):
+    exp.left.accept(self)
+    exp.right.accept(self)
+
+  @stacked
+  @with_handling
   def visit_FunctionCallExp(self, exp):
     exp.function.accept(self)
     exp.type.accept(self)

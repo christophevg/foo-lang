@@ -233,6 +233,9 @@ class Translator(SemanticChecker):
         "ModuleExp"    : code.Modulo
       }[exp.__class__.__name__](left, right))
 
+  def after_visit_NumericBinaryExp(self, exp):
+    return self.after_visit_BinaryExp(exp)
+
   def after_visit_IncStmt(self, stmt):
     var = self.code.pop()
     self.code.append(code.Inc(var))

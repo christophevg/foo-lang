@@ -240,6 +240,9 @@ class Dumper(SemanticVisitorBase):
     return "( " + exp.left.accept(self) + " "  + exp.operator() + " " + \
                  exp.right.accept(self) + " )"
 
+  def visit_NumericBinaryExp(self, exp):
+    return self.visit_BinaryExp(exp)
+
   @indent
   def visit_FunctionCallExp(self, exp):
     return exp.function.accept(self) + \

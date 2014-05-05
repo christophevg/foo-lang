@@ -478,6 +478,9 @@ class NumericBinaryExp(BinaryExp):
     super(NumericBinaryExp, self).__init__(left, right)
     self._type = UnknownType()
 
+  def visited(self):
+    return "NumericBinaryExp"
+
 class AndExp(BooleanBinaryExp):
   def operator(self): return "and"
 

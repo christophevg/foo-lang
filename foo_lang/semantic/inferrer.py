@@ -376,22 +376,9 @@ class Inferrer(SemanticChecker):
     # up handling, and can in certain cases fix this
     # self.fail("Couldn't infer ManyType's subtype")
 
-  #############################################################################
-  # TODO: these aren't visited :-( ????
-
-  def after_visit_AddExp(self, exp):
+  def after_visit_NumericBinaryExp(self, exp):
     if not isinstance(exp.type, UnknownType): return
-    print "ADD"
 
-  def after_visit_PlusExp(self, exp):
-    if not isinstance(exp.type, UnknownType): return
-    infer_numeric_binary_exp(exp)
-
-  def after_visit_MultExp(self, exp):
-    if not isinstance(exp.type, UnknownType): return
-    infer_numeric_binary_exp(exp)
-    
-  def infer_numeric_binary_exp(self, exp):
     left  = exp.left.type
     right = exp.right.type
     
