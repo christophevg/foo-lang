@@ -335,8 +335,8 @@ class Transformer(language.Visitor):
 
           # add consequence
           handler.append(code.Comment("perform handling actions"))
-          for stmt in consequence:
-            handler.append(stmt)
+          for statement in consequence:
+            handler.append(statement)
 
           self.stack[0].find("nodes_main").select("dec").append(handler)
 
@@ -350,5 +350,23 @@ class Transformer(language.Visitor):
           )
           self.stack[0].find("init").append(registration)
 
+        # if there is an else case, also generate it and register it
+        if not stmt.case_else == None:
+          handler = code.Function(
+            "nodes_process_incoming_else",
+            params=[
+              code.Parameter("from",    code.ObjectType("node")),
+              code.Parameter("hop",     code.ObjectType("node")),
+              code.Parameter("to",      code.ObjectType("node")),
+              code.Parameter("payload", self.translate(self.domain.get_type("payload")))
+            ]
+          )
+          handler.append(self.translate(stmt.case_else))
+          self.stack[0].find("nodes_main").select("dec").append(handler)
+          
+          registration = code.FunctionCall("payload_parser_register_else",
+            [ code.SimpleVariable(handler.name) ]
+          )
+          self.stack[0].find("init").append(registration)
         # remove the case
         self.stack[-2].remove_child(self.child)

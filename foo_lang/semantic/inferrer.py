@@ -393,4 +393,9 @@ class Inferrer(SemanticChecker):
         else:
           exp.type = ByteType()
 
-    print "inferred numeric binary exp to", str(exp.type)
+    self.success("inferred numeric binary exp to", str(exp.type))
+
+  def after_visit_CaseStmt(self, exp):
+    # TODO: this should be solved at visitor level
+    if exp.case_else == None: return
+    exp.case_else.accept(self)

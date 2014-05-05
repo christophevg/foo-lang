@@ -52,6 +52,8 @@ void payload_parser_reset(void);
 
 void payload_parser_register(payload_handler_t handler, int num, ...);
 
+void payload_parser_register_else(payload_handler_t handler);
+
 void payload_parser_parse(uint16_t source_addr,
                           uint16_t from_addr, uint16_t hop_addr, uint16_t to_addr,
                           uint8_t size, uint8_t* payload_bytes);

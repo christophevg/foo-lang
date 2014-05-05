@@ -288,10 +288,14 @@ class AstVisitor():
     children     = tree.getChildren()
     expression   = self.visit(children[0])
     cases        = []
+    case_else    = None
     for index in range(1,len(children)):
-      cases.append(self.visit_case(children[index]))
+      if children[index].getChildren()[0].text == "else":
+        case_else = self.visit_case_else(children[index])
+      else:
+        cases.append(self.visit_case(children[index]))
     [cases, consequences] = zip(*cases)
-    return CaseStmt(expression, cases, consequences)
+    return CaseStmt(expression, cases, consequences, case_else)
 
   def visit_case(self, tree):
     assert tree.text == "CASE"
@@ -305,6 +309,12 @@ class AstVisitor():
       function = FunctionCallExp(function_name)
       body     = self.visit(children[1])
     return [function, body]
+
+  def visit_case_else(self, tree):
+    assert tree.text == "CASE"
+    children = tree.getChildren()
+    body     = self.visit(children[1])
+    return body
 
   def visit_inc_stmt(self, tree):
     assert tree.text == "INC"

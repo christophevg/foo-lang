@@ -23,6 +23,8 @@ payload_t* copy_payload(payload_t* source);
 
 void free_payload(payload_t* payload);
 
+bool equal_payload(payload_t* pl1, payload_t* pl2);
+
 bool payload_contains(payload_t* payload, int num, ...);
 
 #endif

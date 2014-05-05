@@ -220,13 +220,14 @@ class IfStmt(Stmt):
   def __str__(self): return self.__class__.__name__ + "(" + str(self.condition) + ")"
 
 class CaseStmt(Stmt):
-  def __init__(self, expression, cases, consequences):
+  def __init__(self, expression, cases, consequences, case_else=None):
     if len(cases) != len(consequences):
       raise AttributeError, "Cases and consequences don't match."
     assert isinstance(expression, Exp)
     self.expression   = expression
     self.cases        = TypedList(FunctionCallExp, cases)
     self.consequences = TypedList(Stmt, consequences)
+    self.case_else    = case_else
   def __str__(self): return self.__class__.__name__ + "(" + str(self.expression) + ")"
 
 class ReturnStmt(Stmt):

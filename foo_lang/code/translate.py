@@ -292,9 +292,12 @@ class Translator(SemanticChecker):
     # code stack = expression [case [consequence]]
     cases        = []
     consequences = []
+    case_else    = placeholder.case_else
     while not self.code[-2] is placeholder:
       consequences.append(self.code.pop())
       cases.append(self.code.pop())
     expression = self.code.pop()
     self.code.pop() # placeholder
-    self.code.append(code.CaseStatement(expression, cases, consequences))
+    self.code.append(
+      code.CaseStatement(expression, cases, consequences, case_else)
+    )

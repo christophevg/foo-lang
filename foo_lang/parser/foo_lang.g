@@ -152,7 +152,7 @@ if_statement
   ;
 
 case_statement
-  : 'case' expression LBRACE case_clauses? else_clause? RBRACE
+  : 'case' expression LBRACE case_clauses? RBRACE
     -> ^(CASES expression case_clauses?)
   ;
 
@@ -160,8 +160,8 @@ case_clauses: case_clause*;
 case_clause
   : function_call_expression block_statement
     -> ^(CASE function_call_expression block_statement)
+  | 'else' statement -> ^(CASE 'else' statement)
   ;
-else_clause: 'else' statement -> ^(CASE 'else' statement);
 
 expression: logical_expression;
 

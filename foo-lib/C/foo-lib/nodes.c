@@ -173,6 +173,11 @@ void free_payload(payload_t* payload) {
   free(payload);
 }
 
+bool equal_payload(payload_t* pl1, payload_t* pl2) {
+  if(pl1->size != pl2->size) { return FALSE; }
+  return memcmp(pl1->bytes, pl2->bytes, pl1->size) == 0;
+}
+
 bool payload_contains(payload_t* payload, int size, ...) {
   uint8_t* needle = malloc(size * sizeof(uint8_t));
   va_collect(needle, size, uint8_t);
@@ -312,6 +317,12 @@ void payload_parser_register(payload_handler_t handler, int size, ...) {
   _add_parser_rule(rule, size, handler);
 }
 
+static payload_handler_t payload_parser_else_handler = NULL;
+
+void payload_parser_register_else(payload_handler_t handler) {
+  payload_parser_else_handler = handler;
+}
+
 void _dump(parser_node_t* node, int prefix) {
   parser_node_t* local = node;
   while(local != NULL) {
@@ -378,13 +389,21 @@ void payload_parser_parse(uint16_t source_addr,
   
   parsed = payload;
   cursor = 0;
+  
+  bool unhandled = TRUE;
 
   // loop to restart parsing until all bytes have been parsed
   while(parser != NULL && cursor < parsed->size) {
     payload_handler_t handler = _parse();
     if( handler != NULL && cursor < parsed->size) {
       handler(from, hop, to, payload);
+      unhandled = FALSE;
     }
+  }
+  
+  // did we fire a handler ?
+  if(unhandled) {
+    payload_parser_else_handler(from, hop, to, payload);
   }
 }
 
