@@ -400,9 +400,9 @@ void payload_parser_parse(uint16_t source_addr,
       unhandled = FALSE;
     }
   }
-  
-  // did we fire a handler ?
-  if(unhandled) {
+
+  // did we fire a handler ? do we have an else-handler ?
+  if(unhandled && payload_parser_else_handler != NULL) {
     payload_parser_else_handler(from, hop, to, payload);
   }
 }
