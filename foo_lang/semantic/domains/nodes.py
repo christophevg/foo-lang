@@ -45,7 +45,8 @@ class Nodes(Domain):
                    parameters=[Parameter(Identifier("payload"), Nodes.payload_t)])
     self.node_t.provides["receive"] = \
       FunctionDecl(BlockStmt(), identifier=Identifier("receive"),   type=VoidType(),
-                   parameters=[Parameter(Identifier("from"),    self.node_t),
+                   parameters=[Parameter(Identifier("node"),    self.node_t),
+                               Parameter(Identifier("from"),    self.node_t),
                                Parameter(Identifier("hop"),     self.node_t),
                                Parameter(Identifier("to"),      self.node_t),
                                Parameter(Identifier("payload"), Nodes.payload_t)

@@ -50,7 +50,7 @@ after nodes transmit do function(from, to, hop, payload) {
   }
 }
 
-after nodes receive do function(from, hop, to, payload) {
+after nodes receive do function(me, from, hop, to, payload) {
   case payload {
     contains( [ #reputation, of:node, alpha:float, beta:float ] ) {
       if( from.trust > indirect_threshold ) {
