@@ -13,9 +13,8 @@
 module reputation
 
 const forward_timeout             = 1000
-const validation_interval         = 5000
+const check_interval              = 5000
 const broadcast_interval          = 7500
-const max_fail_count              =    3
 const aging_weight                = 0.98  // factor to age reputation
 const indirect_threshold  : float = 0.9   // lower limit for including indirect
 
@@ -74,7 +73,7 @@ after nodes receive do function(me, from, hop, to, payload) {
 // validation consists of counting the number of non-cooperative actions of a 
 // node (aka non-forwarded payloads) and recomputing the reputation taking into
 // account these new 
-@every(validation_interval)
+@every(check_interval)
 with nodes do function(node) {
   // the remove function returns the number of removals, which we simply
   // use as failure count. the matching here uses the don't care operator for

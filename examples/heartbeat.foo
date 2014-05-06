@@ -11,10 +11,9 @@ module heartbeat
 // define constants to configure the solution. types are inferred from the
 // value (integer, float (with .), boolean (true/false), "string", 'atom')
 // or can be explicited using the ": <type>" typing information
-const heartbeat_interval     = 1000    // 1 sec
-const max_last_seen_interval = 1000    // 1 sec
+const heartbeat_interval     = 3000    // 3 sec
+const validation_interval    = 1000    // check nodes every second
 const max_fail_count         =    3    // 3 strikes and you're out
-const validation_interval    = 5000    // check nodes every 5 seconds
 
 // imports general purpose functionality. this is done explicit to avoid lookup
 // through all possible collections of functions. function collections are
@@ -54,8 +53,12 @@ extend nodes with {
 // every node is validated using this function at the validation_interval.
 @every(validation_interval)
 with nodes do function(node) {
+  // init node's last_seen value and initial sanity
+  if(node.last_seen == 0) {
+    node.last_seen = now()
+  }
   // validate if the time that passed since the last heartbeat isn't too long
-  if( now() - node.last_seen > max_last_seen_interval ) {
+  if( now() - node.last_seen > heartbeat_interval ) {
     // the heartbeat is late, let's track this incident
     node.fail_count++
   }
@@ -78,6 +81,11 @@ after nodes receive do function(me, from, hop, to, payload) {
 
       // skip our own heartbeat messages
       if(from == me) { return }
+
+      // init node's last_seen value and initial sanity
+      if(from.last_seen == 0) {
+        from.sane = true
+      }
 
       // don't handle untrusted nodes
       if( ! from.sane ) { return }
