@@ -137,7 +137,10 @@ void nodes_process(void) {
         if(schedule[s].handlers[h].all) {
           // for all nodes, excluding ourselves (aka node 0)
           for(uint8_t n=1; n<next_node; n++) {
-            schedule[s].handlers[h].handler(&nodes[n]);
+            // also exclude coordinator and broadcast address
+            if(nodes[n].address != 0x0000 && nodes[n].address != 0xfffe) {
+              schedule[s].handlers[h].handler(&nodes[n]);
+            }
           }
         } else {
           // only for our node
