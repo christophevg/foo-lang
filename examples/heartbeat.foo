@@ -12,7 +12,7 @@ module heartbeat
 // value (integer, float (with .), boolean (true/false), "string", 'atom')
 // or can be explicited using the ": <type>" typing information
 const heartbeat_interval     = 3000    // 3 sec
-const validation_interval    = 1000    // check nodes every second
+const validation_interval    = 5000    // check nodes every second
 const max_fail_count         =    3    // 3 strikes and you're out
 
 // imports general purpose functionality. this is done explicit to avoid lookup
