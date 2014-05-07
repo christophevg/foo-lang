@@ -33,10 +33,24 @@ class Nodes(Domain):
                      code.Property("address", code.LongType())
                     )
 
+    # the node type
     module = self.generator.unit.append(structure.Module("node_t"))
-    module.select("def").append( code.Import("moose/bool"))
-    module.select("def").append( code.Comment("THE node type"), node_type ).tag("node_t-start")
+    module.select("def").append( code.Import("moose/bool") )
 
+    module.select("def").append(
+      code.Comment("THE node type"),
+      node_type
+    ).tag("node_t-start")
+
+    # provide init_node to initialise module-specific properties
+    module.select("dec").append(
+      code.Import("node_t"),
+      code.Function("init_node", params=[
+        code.Parameter("node", type=code.ObjectType("node"))
+      ]).tag("init_node") # filled when creating node_t
+    )
+
+    # TODO: remove this redundant header file
     module = self.generator.unit.append(structure.Module("nodes"))
     module.select("def").append( code.Import("includes") )
 
@@ -99,13 +113,26 @@ class Nodes(Domain):
     node_type = self.generator.unit.find("node_type_def")
     node_type.append(code.Comment("extended properties for " + module.name))
 
+    # add initializations to init_node function
+    init = self.generator.unit.find("init_node")
+
     for ext in module.domains["nodes"].extensions:
       for prop in ext.extension.properties:
         if isinstance(prop.type, model.ManyType) and \
            isinstance(prop.type.subtype, model.TupleType):
           code.Import("tuples").insert_before(node_type)
-        node_type.append(code.Property(prop.name,
-                                       self._translate(prop.type)))
+        node_type.append(code.Property(prop.name, self._translate(prop.type)))
+        init.append(code.Assign(
+          code.ObjectProperty("node", prop.name),
+          self.translator.translate(prop.value)
+        ))
+        # TODO: this should go in the emission of a functioncal :-/
+        #       and lookup the function in the externals (no time now)
+        if isinstance(prop.value, model.FunctionCallExp) and \
+           prop.value.name == "now":
+         self.generator.unit.select("node_t", "def").append(
+           code.Import("foo-lib/time")
+         )
 
     # create all functions
     for function in module.functions:

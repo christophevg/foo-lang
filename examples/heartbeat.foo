@@ -31,10 +31,10 @@ from time   import now()                      : timestamp
 // from the outside (=here), all this is abstracted into nodes in general.
 // the format is a simple hash of <name> : <type> = value's
 extend nodes with {
-  last_seen  : timestamp = 0
+  sequence   : byte      = 0
+  last_seen  : timestamp = now()
   fail_count : byte      = 0
   sane       : boolean   = true    // nodes and sane at start
-  sequence   : byte      = 0
 }
 
 // note: the nodes module keeps track of all nodes it encounters. the very first
@@ -53,10 +53,6 @@ extend nodes with {
 // every node is validated using this function at the validation_interval.
 @every(validation_interval)
 with nodes do function(node) {
-  // init node's last_seen value and initial sanity
-  if(node.last_seen == 0) {
-    node.last_seen = now()
-  }
   // validate if the time that passed since the last heartbeat isn't too long
   if( now() - node.last_seen > heartbeat_interval ) {
     // the heartbeat is late, let's track this incident
@@ -81,11 +77,6 @@ after nodes receive do function(me, from, hop, to, payload) {
 
       // skip our own heartbeat messages
       if(from == me) { return }
-
-      // init node's last_seen value and initial sanity
-      if(from.last_seen == 0) {
-        from.sane = true
-      }
 
       // don't handle untrusted nodes
       if( ! from.sane ) { return }

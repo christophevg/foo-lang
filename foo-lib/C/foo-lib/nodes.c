@@ -48,6 +48,10 @@ void nodes_init(void) {
 node_t* _add_node(uint16_t address) {
   nodes[next_node].id      = next_node;
   nodes[next_node].address = address;
+#ifdef NODES_T_H
+  // and need to dispatch further initialisation to a generated function
+  init_node(&nodes[next_node]);
+#endif
   next_node++;
   return &nodes[next_node-1];
 }

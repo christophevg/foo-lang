@@ -300,7 +300,9 @@ class ObjectLiteralExp(LiteralExp):
 class Property(Visitable):
   def __init__(self, identifier, value, type):
     assert isinstance(identifier, Identifier)
-    assert isinstance(value, LiteralExp), "Property.value is a " + value.__class__.__name__ + " but expected a LiteralExp" 
+    assert isinstance(value, Exp), \
+           "Property.value is a " + value.__class__.__name__ + \
+           " but expected an Expression" 
     assert isinstance(type, TypeExp)
     self.identifier = identifier
     self.value      = value

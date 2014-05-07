@@ -263,9 +263,10 @@ numeric_literal
 object_literal: LBRACE (property_literal_list)? RBRACE
                 -> ^(OBJECT_LITERAL property_literal_list?);
 property_literal_list: property_literal (property_literal)*;
-property_literal: name_type_value -> ^(PROPERTY_LITERAL name_type_value);
+property_literal: name_type_exp -> ^(PROPERTY_LITERAL name_type_exp);
 
 name_type_value: identifier optional_type ASSIGN! literal;
+name_type_exp:   identifier optional_type ASSIGN! expression;
 
 optional_type
   : COLON type -> type
