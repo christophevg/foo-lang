@@ -44,7 +44,9 @@ void nodes_schedule_own(time_t interval, node_handler_t handler);
 
 // PAYLOAD PARSER
 
-typedef void (*payload_handler_t)(node_t* from, node_t* hop, node_t* to, payload_t* payload);
+typedef void (*payload_handler_t)(node_t* me, node_t* sender,
+                                  node_t* from, node_t* hop, node_t* to,
+                                  payload_t* payload);
 
 void payload_parser_dump_rules(void);
 
@@ -53,6 +55,8 @@ void payload_parser_reset(void);
 void payload_parser_register(payload_handler_t handler, int num, ...);
 
 void payload_parser_register_else(payload_handler_t handler);
+
+void payload_parser_register_all(payload_handler_t handler);
 
 void payload_parser_parse(uint16_t source_addr,
                           uint16_t from_addr, uint16_t hop_addr, uint16_t to_addr,

@@ -330,6 +330,12 @@ void payload_parser_register_else(payload_handler_t handler) {
   payload_parser_else_handler = handler;
 }
 
+static payload_handler_t payload_parser_all_handler = NULL;
+
+void payload_parser_register_all(payload_handler_t handler) {
+  payload_parser_all_handler = handler;
+}
+
 void _dump(parser_node_t* node, int prefix) {
   parser_node_t* local = node;
   while(local != NULL) {
@@ -383,11 +389,11 @@ payload_handler_t _parse(void) {
 
 // signature of payload_parser_parse is aligned with the signature of the 
 // receive event-handler
-void payload_parser_parse(uint16_t source_addr,
+void payload_parser_parse(uint16_t sender_addr,
                           uint16_t from_addr, uint16_t hop_addr, uint16_t to_addr,
                           uint8_t size, uint8_t* payload_bytes)
 {
-  // node_t* source = nodes_lookup(source_addr);
+  node_t* sender = nodes_lookup(sender_addr);
   node_t* from   = nodes_lookup(from_addr);
   node_t* hop    = nodes_lookup(hop_addr);
   node_t* to     = nodes_lookup(to_addr);
@@ -399,18 +405,23 @@ void payload_parser_parse(uint16_t source_addr,
   
   bool unhandled = TRUE;
 
+  // trigger the catch-all handler
+  if(payload_parser_all_handler != NULL) {
+    payload_parser_all_handler(&nodes[0], sender, from, hop, to, payload);
+  }
+
   // loop to restart parsing until all bytes have been parsed
   while(parser != NULL && cursor < parsed->size) {
     payload_handler_t handler = _parse();
     if( handler != NULL && cursor < parsed->size) {
-      handler(from, hop, to, payload);
+      handler(&nodes[0], sender, from, hop, to, payload);
       unhandled = FALSE;
     }
   }
 
   // did we fire a handler ? do we have an else-handler ?
   if(unhandled && payload_parser_else_handler != NULL) {
-    payload_parser_else_handler(from, hop, to, payload);
+    payload_parser_else_handler(&nodes[0], sender, from, hop, to, payload);
   }
 }
 

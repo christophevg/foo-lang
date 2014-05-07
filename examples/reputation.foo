@@ -49,10 +49,18 @@ after nodes transmit do function(from, to, hop, payload) {
   hop.queue.push( [ now() + forward_timeout, payload ] )
 }
 
-after nodes receive do function(me, from, hop, to, payload) {
+// if the origin (from) is me, we've just received a forwarded message
+// so we want to stop tracking it, because the sender did what was expected
+after nodes receive do function(me, sender, from, hop, to, payload) {
+  if(from != me) { return }
+  sender.queue.remove([ _, payload ])
+}
+
+// reputation information from other nodes needs to be taken into consideration
+after nodes receive do function(me, sender, from, hop, to, payload) {
   case payload {
     contains( [ #reputation, of:node, alpha:float, beta:float ] ) {
-      if( from.trust > indirect_threshold ) {
+      if( from != me and from.trust > indirect_threshold ) {
         // taking into account of indirect reputation information
         weight = (2 * from.alpha) /
                  ( (from.beta+2) * (alpha + beta + 2) * 2 * from.alpha )
@@ -60,13 +68,6 @@ after nodes receive do function(me, from, hop, to, payload) {
         of.beta  += weight * beta
       }
     }
-    else
-      // when we see a payload that matches one we were expecting from the 
-      // sender we remove it from its queue by removing any items in the queue 
-      // that match the payload
-      // the remove function takes a matching argument, which here uses the "_"
-      // don't care operator
-      from.queue.remove([ _, payload ])
   }
 }
 

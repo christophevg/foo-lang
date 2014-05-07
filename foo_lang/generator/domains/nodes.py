@@ -168,7 +168,20 @@ class Nodes(Domain):
     )
   
   def create_when_execution(self, execution):
-    if execution.event.name == "receive": return # already handled by Transform
+    if execution.event.name == "receive":
+      f = self.generator.unit.find(execution.executed.name+"_decl")
+      if not f is None and len(f.children) > 0:
+        # if children are single CaseStatement, it will be handled by Transform
+        if not isinstance(f.children[0], code.CaseStatement):
+          # else we need to register a catch-all handlers
+          self.generator.unit.find("init").append(
+            code.FunctionCall("payload_parser_register_all", [
+              code.SimpleVariable(execution.executed.name)
+            ])
+          )
+      return # Case-based receiving is handled by Transform
+
+
     # TODO: generalize: only supported = after transmit for all nodes
     assert execution.timing == "after"
     assert execution.event.name == "transmit"
@@ -176,7 +189,9 @@ class Nodes(Domain):
 
     # wire transmit handler
     self.generator.unit.find("init").append(
-      code.FunctionCall("mesh_on_transmit", [code.SimpleVariable("handle_transmit")])
+      code.FunctionCall("mesh_on_transmit", [
+        code.SimpleVariable("handle_transmit")
+      ])
     )
     # setup transforming handle_transmit
     self.generator.unit.find("nodes_main").select("dec").append(
@@ -345,6 +360,8 @@ class Transformer(language.Visitor):
           handler = code.Function(
             "nodes_process_incoming_case_" + str(Transformer.processors),
             params=[
+              code.Parameter("me",      code.ObjectType("node")),
+              code.Parameter("sender",  code.ObjectType("node")),
               code.Parameter("from",    code.ObjectType("node")),
               code.Parameter("hop",     code.ObjectType("node")),
               code.Parameter("to",      code.ObjectType("node")),
@@ -404,6 +421,7 @@ class Transformer(language.Visitor):
           handler = code.Function(
             "nodes_process_incoming_else",
             params=[
+              code.Parameter("sender",  code.ObjectType("node")),
               code.Parameter("from",    code.ObjectType("node")),
               code.Parameter("hop",     code.ObjectType("node")),
               code.Parameter("to",      code.ObjectType("node")),

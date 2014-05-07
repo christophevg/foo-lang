@@ -168,7 +168,7 @@ class Translator(SemanticChecker):
     f = code.Function(function.name, type=type, params=list(reversed(params)))
     for stmt in body: f.append(stmt)
 
-    self.code.append(f)
+    self.code.append(f.tag(function.name+"_decl"))
 
   def after_visit_Parameter(self, parameter):
     # TODO: grmbl: identifier is not handled consistently again ;-(
