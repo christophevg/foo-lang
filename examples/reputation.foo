@@ -37,16 +37,16 @@ extend nodes with {
 after nodes transmit do function(from, to, hop, payload) {
   // only if we expect the addressee to actually route the message futher...
   if( hop == to ) { return }
+  // messages sent via the coordinator, shouldn't be tracked
+  if( hop.address == 0) { return }
 
   // count the total number of packets that are being sent and for which we
   // expect to see a forward action
-  if( ! payload.contains([#reputation]) ) {
-    hop.msg_count++
+  hop.msg_count++
 
-    // we add the payload to a queue of payloads we expect to be forwarded by
-    // the hop.
-    hop.queue.push( [ now() + forward_timeout, payload ] )
-  }
+  // we add the payload to a queue of payloads we expect to be forwarded by
+  // the hop.
+  hop.queue.push( [ now() + forward_timeout, payload ] )
 }
 
 after nodes receive do function(me, from, hop, to, payload) {

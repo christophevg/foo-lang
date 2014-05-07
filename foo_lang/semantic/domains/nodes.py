@@ -25,6 +25,11 @@ class Nodes(Domain):
 
     self.type = self.node_t
     
+    # default property (don't expose id!!!)
+    self.node_t.provides["address"] = \
+      VariableExp(Identifier("address"), type=self.node_t)
+
+    # methods
     self.node_t.provides["foreach_node"] = \
       FunctionDecl(BlockStmt(), identifier=Identifier("foreach_node"), type=VoidType(),
                    parameters=[Parameter(Identifier("node"), self.node_t)])
