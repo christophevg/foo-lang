@@ -61,8 +61,9 @@ class Nodes(Domain):
     code.Import("foo-lib/nodes").insert_before(anchor)
     code.Import("foo-lib/payload").insert_before(anchor)
     
-    # add handling of receive packets
+    # initialiase nodes and add handling of receive packets
     self.generator.unit.find("init").append(
+      code.FunctionCall("nodes_init"),
       code.FunctionCall("mesh_on_receive",  [code.SimpleVariable("payload_parser_parse")])
     )
   
