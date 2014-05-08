@@ -34,7 +34,7 @@ extend nodes with {
 
 // we can react on "events". events are actions taken by nodes. actions are
 // statements performed by nodes (e.g. sending data, raising of events,...)
-after nodes transmit do function(from, to, hop, payload) {
+after nodes transmit do function(from, hop, to, payload) {
   // only if we expect the addressee to actually route the message futher...
   if( hop == to ) { return }
   // messages sent via the coordinator, shouldn't be tracked
