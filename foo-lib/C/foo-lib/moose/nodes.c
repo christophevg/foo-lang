@@ -57,10 +57,10 @@ void nodes_io_init(void) {
   xbee_wait_for_association();    // wait until the network is available
   xbee_on_receive(_accept_frame);
   // add our own node and a broadcast node
-  nodes_lookup(xbee_get_nw_address());
-  nodes_lookup(0xFFFE);
-  // prepare node for parent
-  next_hop = nodes_lookup(xbee_get_parent_address());
+  nodes_lookup(xbee_get_nw_address());    // 0 (own address)
+  nodes_lookup(0xFFFE);                   // 1 (broadcast)
+  nodes_lookup(0x0000);                   // 2 (coordinator)
+  next_hop = nodes_lookup(xbee_get_parent_address()); // 3 (parent)
   // init buffers
   broadcast_size = 0;
   for(uint8_t i=0; i<nodes_count(); i++) { send_size[i] = 0; }

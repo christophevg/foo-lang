@@ -139,16 +139,14 @@ void nodes_process(void) {
       // execute handlers for this interval
       for(uint8_t h=0; h<schedule[s].next_handler; h++) {
         if(schedule[s].handlers[h].all) {
-          // for all nodes, excluding ourselves (aka node 0)
-          for(uint8_t n=1; n<next_node; n++) {
-            // also exclude coordinator and broadcast address
-            if(nodes[n].address != 0x0000 && nodes[n].address != 0xfffe) {
-              schedule[s].handlers[h].handler(&nodes[n]);
-            }
+          // all nodes, excluding ourselves (0), broadcast (1), coordinator (2)
+          // so we start at 3 = parent node
+          for(uint8_t n=3; n<next_node; n++) {
+            schedule[s].handlers[h].handler(&nodes[n]);
           }
         } else {
           // only for our node
-          schedule[s].handlers[h].handler(nodes_self());
+          schedule[s].handlers[h].handler(&nodes[0]);
         }
       }
       // and schedule next execution
