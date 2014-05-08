@@ -301,7 +301,11 @@ class Transformer(language.Visitor):
             temp += 1
           elif str(arg.info) == "ObjectType(nodes)":
             # a node is identified in a distributed manner by its nw address
-            args.append(code.ObjectProperty(arg.name, "address"))
+            # TODO: maybe not always correct, but split it out as 2 bytes
+            args.append(
+              code.ShiftLeft(code.ObjectProperty(arg.name, "address"), 8),
+              code.ObjectProperty(arg.name, "address")
+            )
 
         elif isinstance(arg, code.ObjectProperty):
 
