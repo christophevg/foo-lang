@@ -1,0 +1,20 @@
+// hello.foo
+// author: Christophe VG
+
+// elementary example to illustrate the steps in the generation process
+
+module hello
+
+const interval = 1000
+
+extend nodes with {
+  sequence : byte      = 0
+}
+
+function step(node) {
+  if( node.sequence < 10 ) {
+    node.sequence++
+  }
+}
+
+@every(interval) with nodes do step
