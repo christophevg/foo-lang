@@ -64,7 +64,9 @@ class Checker(SemanticChecker):
     # example: Model > Module(heartbeat) > When(receive) > FunctionExp(receive)
     parent = parents[0]
     if isinstance(parent, ExecutionStrategy):
-      if parent.scope.get_function(function.name): return
+      try:
+        if parent.scope.get_function(function.name): return
+      except: pass
 
     # special case 2 : 
     # example: Model > Module(heartbeat) > When(receive) >
