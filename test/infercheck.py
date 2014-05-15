@@ -83,7 +83,7 @@ class TestInferCheck(unittest.TestCase):
   def test_case(self):
     src = """
     module test
-    after nodes receive do function(me, from, hop, to, payload) {
+    after nodes receive do function(me, sender, from, hop, to, payload) {
       case payload {
         contains( [ #heartbeat, time, sequence, signature ] ) {}
       }
@@ -91,7 +91,7 @@ class TestInferCheck(unittest.TestCase):
     """
     model = api.load(src)
   
-    self.infer(model, 16)
+    self.infer(model, 17)
   
     # after (assert successes)
     m = model.modules["test"]
