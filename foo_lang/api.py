@@ -6,6 +6,8 @@
 import antlr3
 from antlr3 import RecognitionException
 
+from foo_lang.generator              import build
+
 from foo_lang.parser.foo_langLexer   import foo_langLexer
 from foo_lang.parser.foo_langParser  import foo_langParser
 
@@ -66,5 +68,7 @@ def infer(model, silent=False):
   verbose = not silent
   return Inferrer(model, verbose=verbose).infer()
 
-def generate(model, generator):
+def generate(model, args):
+  generator = build.Generator(args)
+  if args.verbose: print "foo: " + str(generator)
   generator.generate(model)

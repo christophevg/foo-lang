@@ -57,9 +57,7 @@ def dump_ast_dot(args, model=None):
 
 def generate_code(args, model=None):
   if model is None: model = load(args)
-  generator = build.Generator(args)
-  if args.verbose: print "foo: " + str(generator)
-  api.generate(model, generator)
+  api.generate(model, args)
 
 if __name__ == "__main__":
   # process command line arguments
