@@ -1,7 +1,7 @@
 // cooperation.foo
 // author: Christophe VG
 
-// example implementation of a cooperative protocol for 
+// example implementation of a cooperative protocol for IDS in WSN
 
 // for more information about the DSL and its implementated considerations
 // see heartbeat.foo and reputation.foo. only functional and additional DSL 
@@ -21,10 +21,11 @@ const evaluation_interval = 60000
 from crypto import sha1(byte*)                : byte[20]
 from crypto import sha1_compare(byte*, byte*) : boolean
 from time   import now()                      : integer
-from random import rnd_bytes(int) : byte*
+from random import rnd_bytes(int)             : byte*
 
 extend nodes with {
   // TODO: mark properties available for use by other modules (LANGUAGE CHANGE)
+  // TODO: or not and make them importable elsewhere
   export read  identified : bool     = false
   export write suspects   : node*    = []
 
@@ -32,8 +33,8 @@ extend nodes with {
   last_key                : byte[20]
   last_signature          : byte[20]
 
-  // only used by local node (introduce global vars?)
-  keychain          : byte[20]*
+  // TODO: only used by local node (introduce global vars?)
+  keychain                : byte[20]*
 }
 
 // TODO: add start event
@@ -41,7 +42,7 @@ extend nodes with {
 after nodes.self start do function(node) {
   // step 1: create personal key-chain
   key = rnd_bytes(initial_key_length)
-  // TODO: add very basic fixed length iterator
+  // TODO: add very basic fixed length iterator (ALTERNATIVE NEEDED)
   loop(key_chain_length) {
     key = sha1(key)
     node.keychain.push(key)
@@ -92,6 +93,7 @@ after nodes.self receive do function(node, from, to, payload) {
 }
 
 // TODO: introduce global variables (LANGUAGE CHANGE)
+// TODO: or add to domain extension as "shared" property
 global suspects : node* = []
 
 @every(voting_interval)
