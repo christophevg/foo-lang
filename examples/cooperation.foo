@@ -24,21 +24,24 @@ from time   import now()                      : integer
 from random import rnd_bytes(int)             : byte*
 
 extend nodes with {
-  // TODO: mark properties available for use by other modules (LANGUAGE CHANGE)
+  // TODO: add "visibility" (LANGUAGE CHANGE)
   // TODO: or not and make them importable elsewhere
-  export read  identified : bool     = false
-  export write suspects   : node*    = []
+  public read  identified : bool     = false
+  public write suspects   : node*    = []
 
-  valid                   : bool     = false
+  // TODO: private is default
+  private valid                   : bool     = false
   last_key                : byte[20]
   last_signature          : byte[20]
 
-  // TODO: only used by local node (introduce global vars?)
-  keychain                : byte[20]*
+  // TODO: only used by local node -> special visiblity
+  local keychain                : byte[20]*
+  
+  // TODO: 
+  shared tmp_suspects : node* = []
 }
 
 // TODO: add start event
-// TODO: check: nodes.self support for this strategy
 after nodes.self start do function(node) {
   // step 1: create personal key-chain
   key = rnd_bytes(initial_key_length)
@@ -53,16 +56,16 @@ after nodes.self start do function(node) {
   nodes.broadcast([ #discover, node.keychain.peek() ], 2 )
 }
 
-// TODO: add self-reference as first parameter
 // TODO: check: nodes.self support for this strategy
-after nodes.self receive do function(node, from, to, payload) {
+after nodes.self receive do function(me, sender, from, hop, to, payload) {
   // TODO: complete multi-case implementation
   case payload {
     // TODO: using improved inference, the key's type could be matched
-    contains( [ #discover, key:byte[20] ] ) {
+    contains( [ #discover, key ] ) {
       from.last_key = key
     }
-    contains( [ #vote, suspects:node*, signature:byte[20] ] ) {
+    // TODO: transmit boundaries to undefined lists (suspects)
+    contains( [ #vote, suspects:node*, signature ] ) {
       // TODO: implement length property on lists (implement as global variable)
       if(node.suspects.length > 0 and from.suspects.length == 0) { // paper?
         // TODO: list assignment = copy_
@@ -92,10 +95,6 @@ after nodes.self receive do function(node, from, to, payload) {
   }
 }
 
-// TODO: introduce global variables (LANGUAGE CHANGE)
-// TODO: or add to domain extension as "shared" property
-global suspects : node* = []
-
 @every(voting_interval)
 with nodes.self do function(node) {
   if(node.suspects.length > 1) {
@@ -109,14 +108,17 @@ with nodes.self do function(node) {
       nodes.broadcast( [ #key, node.keychain.pop() ])
 
       @after(evaluation_delay)
-      with nodes do collect_suspects()
+      with nodes do function() {
+        tmp_supects = []
+        collect_suspects()
+      }
     }
   }
 }
 
 function collect_suspects(node) {
   // TODO: list merging polymorphism (or explicit merge?)
-  suspects.push(node.suspects)
+  node.tmp_suspects.push(node.suspects)
 }
 
 // TODO: @end execution strategy
@@ -125,14 +127,14 @@ with node.self do function(node) {
   // determine suspect(s)
   // TODO: special list function : most_common returns list of items with
   //       highest occurence : [1,2,3,4,2,3,4,3,4] -> [3,4]
-  suspects = suspects.most_common()
+  tmp_suspects = tmp_suspects.most_common()
   if(suspects.length > 1) {
     call_for_external_reinforcement()
   }
 }
 
 function call_for_external_reinforcement(node) {
-  nodes.broadcast( #reinforce, suspects, sha1([suspects,  ]) )
+  nodes.broadcast( #reinforce, tmp_suspects, sha1([tmp_suspects,  ]) )
 }
 
 // TODO: modification of suspects by other modules -> use suspects property :-)
