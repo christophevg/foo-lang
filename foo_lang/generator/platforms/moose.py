@@ -45,3 +45,6 @@ class Moose(AVR):
   def handle_transmit(self, call=None, module=None, location=None):
     # TODO
     pass
+
+  def __str__(self):
+    return "Moose"
