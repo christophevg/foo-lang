@@ -1,3 +1,49 @@
 foo-lang
 
 This repository contains the sources for foo-lang, as well as its website.
+See http://foo-lang.org for more information.
+
++ disclaimer
+
+  I'm happy working on my Mac. This also means that the repository is based on
+  this environment. Currently instructions or example instructions are therefore
+  also targetting this platform.
+
+  That being said, make sure that...
+  $ which python
+  /usr/bin/python
+
+  $ python --version
+  Python 2.7.5
+
+  I use MacPorts for installation of general purpose tools and for Python
+  started to use pip (in stead of easy_install).
+  $ sudo easy_install pip
+
++ setup
+
+  For the development of foo-lang the following pre-requisites are needed:
+
+  - coverage
+    $ sudo pip install coverage
+  - antlr3 is included in lib/
+  - antlr3 Python runtime
+    download http://www.antlr3.org/download/Python/antlr_python_runtime-3.1.3.zip
+    unzip
+    $ cd antlr_python_runtime-3.1.3/
+    $ sudo python setup.py install
+  - stringtemplate3
+    $ sudo pip install stringtemplate3
+  - antlr-2.7
+    See http://stackoverflow.com/questions/5198902/ especially the comments on
+    why we need to do this :-(
+    download http://www.antlr2.org/download/antlr-2.7.7.tar.gz
+    unarchive
+    $ cd antlr-2.7.7/lib/python/
+    $ sudo python setup.py install
+  - dot from GraphViz
+    $ sudo port install graphviz
+  - astyle
+    $ sudo port install astyle
+
+  Executing make in the top-level foo-lang repository directory should now work.

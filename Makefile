@@ -1,8 +1,8 @@
 SRCS=examples/heartbeat.foo examples/reputation.foo
 
 ANTLR=java -cp lib/antlr-3.1.jar org.antlr.Tool
-PYTHON=PYTHONPATH=lib/codecanvas/src:lib/py-util/src:. /opt/local/bin/python2.7
-COVERAGE=/opt/local/bin/coverage-2.7
+PYTHON=PYTHONPATH=lib/codecanvas/src:lib/py-util/src:. python
+COVERAGE=/usr/local/bin/coverage
 DOT=dot -Nfixedsize=False -Nfontname=Times-Roman -Nshape=rectangle
 ASTYLE=/opt/local/bin/astyle --style=attach --indent=spaces=2 \
 														 --indent-col1-comments --suffix=none \
